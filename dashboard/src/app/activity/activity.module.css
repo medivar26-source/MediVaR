@@ -1,0 +1,106 @@
+/* /activity — weekly rhythm and the day-by-day log */
+
+.columns {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: var(--s-5);
+  align-items: stretch;
+  margin-bottom: var(--s-7);
+}
+
+@media (max-width: 1100px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.panelTitle {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-semibold);
+  line-height: var(--t-h3-lh);
+}
+
+.panelSub {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: var(--t-caption);
+}
+
+.caption {
+  margin-top: auto;
+  padding-top: var(--s-4);
+  border-top: var(--bw) solid var(--divider);
+  color: var(--text-muted);
+  font-size: var(--t-caption);
+  line-height: var(--t-caption-lh);
+}
+
+.day {
+  margin-bottom: var(--s-6);
+}
+
+.dayHead {
+  margin-bottom: var(--s-3);
+  font-size: var(--t-label);
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+}
+
+.dayList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-height: var(--h-md);
+  padding: var(--s-3) var(--s-4);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: inherit;
+  text-decoration: none;
+}
+
+.entry:hover {
+  background: var(--brand-surface);
+  border-color: var(--brand-border);
+}
+
+.entryTime {
+  min-width: 46px;
+  color: var(--text-muted);
+  font-size: var(--t-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.entryTitle {
+  flex: 1;
+  font-size: var(--t-body);
+  font-weight: var(--fw-medium);
+}
+
+.entryMeta {
+  color: var(--text-muted);
+  font-size: var(--t-caption);
+}
+
+.entryScore {
+  min-width: 40px;
+  text-align: right;
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}

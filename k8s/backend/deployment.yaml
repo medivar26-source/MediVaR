@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mediver-backend
+  labels:
+    app: mediver-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mediver-backend
+  template:
+    metadata:
+      labels:
+        app: mediver-backend
+    spec:
+      containers:
+      - name: backend
+        image: mediver-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - secretRef:
+            name: mediver-backend-secrets
+            optional: true
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/v1/ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10

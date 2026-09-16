@@ -1,0 +1,746 @@
+/* ============================================================
+   Dashboard visualisation kit — green / black / white.
+   Density modelled on the CRM reference; semantics from the report.
+   ============================================================ */
+
+/* ---------- hero metric ---------- */
+
+.hero {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-6);
+  flex-wrap: wrap;
+}
+
+.heroMain {
+  min-width: 240px;
+}
+
+.heroLabel {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+  font-family: var(--font-display);
+}
+
+.heroRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: var(--s-2) 0 var(--s-3);
+  flex-wrap: wrap;
+}
+
+.heroValue {
+  font-family: var(--font-display);
+  font-size: 52px;
+  line-height: 1;
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.035em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The trailing fragment sits back, as in the reference's cents treatment. */
+.heroValueDim {
+  color: var(--text-disabled);
+}
+
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-pill);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Solid, always. A delta is a verdict about direction — it should read at a
+   glance, not sit back as a tint. */
+.deltaUp {
+  background: var(--pass);
+  color: #fff;
+}
+
+.deltaDown {
+  background: var(--fail);
+  color: #fff;
+}
+
+.deltaDark {
+  background: var(--dark);
+  color: #fff;
+}
+
+.deltaIcon {
+  width: 13px;
+  height: 13px;
+}
+
+.heroCompare {
+  font-size: var(--t-label);
+  color: var(--text-muted);
+}
+
+.heroCompare b {
+  color: var(--text);
+  font-weight: var(--fw-semibold);
+}
+
+/* ---------- stat card row ---------- */
+
+/* Fixed at four. auto-fit let a fifth card wrap to its own row and leave a
+   ragged gap; four is also as many numbers as anyone reads at a glance. */
+.statRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-3);
+  /* A band owns the space beneath it. Every screen that followed a stat row
+     with a `SectionHeader` looked right only because that header carries a
+     large top margin — put a card grid or a table there instead and the two
+     bands touch. Block margins collapse, so this changes nothing where a
+     header already separated them. */
+  margin-bottom: var(--s-5);
+}
+
+@media (max-width: 1439px) {
+  .statRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .statRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-height: 104px;
+  padding: var(--s-4);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.statWide {
+  grid-column: span 2;
+}
+
+.statLabel {
+  font-size: var(--t-caption);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.statFoot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.statSub {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.statAvatar {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 9px;
+  font-weight: var(--fw-bold);
+}
+
+/* the single black card per screen */
+.statDark {
+  background: var(--dark);
+  border-color: var(--dark);
+}
+.statDark .statLabel {
+  color: var(--on-dark-dim);
+}
+.statDark .statValue {
+  color: #fff;
+}
+.statDark .statSub {
+  color: var(--on-dark-dim);
+}
+
+/* the single outlined-green card per screen */
+.statAccent {
+  border-color: var(--brand);
+  border-width: var(--bw-emphasis);
+  padding: calc(var(--s-4) - 1px);
+}
+
+.statChevron {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+}
+.statDark .statChevron {
+  background: var(--dark-3);
+  color: #fff;
+}
+
+/* ---------- distribution bar ---------- */
+
+.dist {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.distSeg {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: 48px;
+  padding: 0 var(--s-4);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  min-width: 0;
+}
+
+.distDot {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+
+.distLabel {
+  font-size: var(--t-label);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.distPct {
+  margin-left: auto;
+  font-size: var(--t-label);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- ranked list ---------- */
+
+.ranked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.rankRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: 46px;
+  padding: 0 var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: var(--bw) solid var(--border);
+}
+
+.rankTag {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  height: 26px;
+  padding: 0 var(--s-2);
+  border-radius: var(--r-xs);
+  background: var(--surface-sunken);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+}
+
+.rankLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-label);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rankValue {
+  font-size: var(--t-label);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.rankPct {
+  min-width: 42px;
+  text-align: right;
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- bar chart ---------- */
+
+.chartWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.chart {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s-3);
+  height: 200px;
+  padding-top: var(--s-6);
+}
+
+.chartCol {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--s-2);
+  height: 100%;
+}
+
+.chartBar {
+  width: 100%;
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  background: var(--surface-sunken);
+}
+
+.chartBarOn {
+  background: var(--brand);
+}
+
+.chartBarDark {
+  background: var(--dark);
+}
+
+/* Hatched fill marks a projected or comparison series — no gradient. */
+.chartBarGhost {
+  background-color: var(--surface-sunken);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 5px,
+    rgba(14, 21, 18, 0.07) 5px 10px
+  );
+}
+
+/* Floats above its bar. `top: 0` used to win over the inline `bottom`, which
+   parked the value inside the tallest bar instead of over it. */
+.chartTag {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px var(--s-3);
+  border-radius: var(--r-pill);
+  background: var(--dark);
+  color: #fff;
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.chartTagBrand {
+  background: var(--brand);
+}
+
+.chartTagPass {
+  background: var(--pass);
+}
+
+.chartAxis {
+  display: flex;
+  gap: var(--s-3);
+}
+
+/* One line, clipped. Two-line labels made neighbouring columns different
+   heights and pushed long names into each other. */
+.chartAxisLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+/* ---------- trend / area chart ---------- */
+
+.trend {
+  position: relative;
+  width: 100%;
+}
+
+.trendSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.trendFoot {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  margin-top: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.trendKeys {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.trendKey {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+}
+
+.keyLine {
+  width: 18px;
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+}
+
+.keyDash {
+  width: 18px;
+  height: 0;
+  border-top: 2px dashed var(--text-disabled);
+}
+
+.trendGrid {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-4);
+  margin-left: auto;
+  font-size: var(--t-caption);
+  font-weight: var(--fw-semibold);
+  color: var(--text-disabled);
+}
+
+.trendCaption {
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: var(--bw) solid var(--divider);
+  font-size: var(--t-caption);
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* Below two real points there is no trend to draw, so the caption is the
+   panel rather than a footnote under a line that means nothing. */
+.trendEmpty {
+  display: flex;
+  align-items: center;
+  min-height: 108px;
+  padding: var(--s-4) var(--s-5);
+  border: var(--bw) dashed var(--divider);
+  border-radius: var(--r-md);
+  font-size: var(--t-caption);
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* ---------- expandable row ---------- */
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.rowHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, 1fr)) 40px;
+  gap: var(--s-3);
+  padding: 0 var(--s-4) var(--s-2);
+  font-size: var(--t-overline);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.rowHead span:not(:first-child) {
+  text-align: right;
+}
+
+.row {
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color var(--m-fast) var(--ease-out);
+}
+
+.rowOpen {
+  border-color: var(--brand-border);
+  background: var(--brand-surface);
+}
+
+.rowTrigger {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, 1fr)) 40px;
+  gap: var(--s-3);
+  align-items: center;
+  width: 100%;
+  padding: var(--s-3) var(--s-4);
+  text-align: left;
+  cursor: pointer;
+}
+
+.rowName {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.rowAvatar {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+}
+
+.rowAvatarOn {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.rowLabel {
+  min-width: 0;
+  font-size: var(--t-label);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowCell {
+  text-align: right;
+  font-size: var(--t-label);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.pill {
+  display: inline-grid;
+  place-items: center;
+  min-width: 30px;
+  height: 24px;
+  padding: 0 var(--s-2);
+  border-radius: var(--r-pill);
+  background: var(--dark);
+  color: #fff;
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.pillMuted {
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+
+.pillPass {
+  background: var(--pass);
+  color: #fff;
+}
+
+.pillWarn {
+  background: var(--warn);
+  color: #fff;
+}
+
+.pillFail {
+  background: var(--fail);
+  color: #fff;
+}
+
+.rowToggle {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--surface-sunken);
+  color: var(--text);
+}
+
+.rowOpen .rowToggle {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.rowBody {
+  padding: 0 var(--s-4) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.chips {
+  display: flex;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 30px;
+  padding: 0 var(--s-3);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+.chipIcon {
+  width: 13px;
+  height: 13px;
+  color: var(--brand);
+}
+
+.subHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.subTitle {
+  font-size: var(--t-label);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+}
+
+.subMeta {
+  margin-left: auto;
+  display: flex;
+  gap: var(--s-2);
+}
+
+/* Every cell is the same shape and aligns on the same two baselines: label
+   top, value bottom. An earlier version let the first cell span two rows,
+   which left a tall empty box and broke the grid. */
+.breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: var(--s-3);
+  align-items: stretch;
+}
+
+.breakCell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-height: 92px;
+  padding: var(--s-4);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.breakLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  min-height: 32px;
+  font-size: var(--t-caption);
+  line-height: 1.35;
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+}
+
+.breakValue {
+  margin-top: auto;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.breakValueDim {
+  color: var(--text-disabled);
+  font-size: 20px;
+}
+
+@media (max-width: 1023px) {
+  .rowHead {
+    display: none;
+  }
+  .rowTrigger {
+    grid-template-columns: minmax(0, 1fr) 40px;
+    row-gap: var(--s-2);
+  }
+  .rowCell {
+    text-align: left;
+  }
+}

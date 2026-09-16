@@ -1,0 +1,295 @@
+/* ---------- filter bar ----------
+   One search row, then all four facets on a single band. The previous version
+   gave every facet its own labelled row, which put six rows of chrome above a
+   catalogue of six cases. */
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  margin-bottom: var(--s-6);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.searchWrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: var(--s-4);
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 var(--s-9) 0 var(--s-8);
+  font: inherit;
+  font-size: var(--t-body);
+  color: var(--text);
+  background: var(--surface-sunken);
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    border-color var(--m-fast) var(--ease-out);
+}
+
+.search::placeholder {
+  color: var(--text-disabled);
+}
+
+.search:hover {
+  border-color: var(--border);
+}
+
+.search:focus {
+  background: var(--surface);
+  border-color: var(--border-strong);
+}
+
+.search:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Inside the field's border, so the pair still reads as one object. */
+.searchClear {
+  position: absolute;
+  right: var(--s-2);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.searchClear:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.count {
+  flex: 0 0 auto;
+  font-size: var(--t-label);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.count b {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.clear {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 34px;
+  padding: 0 var(--s-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--t-caption);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    border-color var(--m-fast) var(--ease-out);
+}
+
+.clear:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-sunken);
+}
+
+/* ---------- facets ----------
+   One axis per row, banded. Rows stack rather than sharing a line so a facet
+   that gains values later grows downwards into its own band instead of pushing
+   the next axis onto a second line — the layout holds however many pathologies
+   the catalogue ends up with. */
+
+.facets {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--s-1);
+  border: 1px solid var(--divider);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.facet {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  background: var(--surface);
+}
+
+/* Alternating bands, the palest tint the brand ramp has. The chips sit on
+   white, so every row keeps its objects legible against its ground. */
+.facet:nth-child(odd) {
+  background: var(--brand-surface);
+}
+
+.facetLabel {
+  font-size: var(--t-overline);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.facetChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* Selecting this would empty the grid. Shown, not hidden — a facet value that
+   disappears as you filter makes the catalogue feel unstable. */
+.chipEmpty {
+  color: var(--text-disabled);
+  border-style: dashed;
+}
+
+/* ---------- card grid ---------- */
+
+/* Four columns, matching the dashboards' stat row */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-4);
+  list-style: none;
+}
+
+.card {
+  height: 100%;
+  overflow: hidden;
+}
+
+.cardLink {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.cardLink:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+
+.thumb {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  color: var(--text-disabled);
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--border);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  flex: 1;
+  padding: var(--s-4);
+}
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.cardTitle {
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.cardChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.cardSummary {
+  font-size: var(--t-caption);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-top: auto;
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--border);
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.cardCta {
+  font-weight: 700;
+  color: var(--brand);
+  white-space: nowrap;
+}
+
+@media (max-width: 1439px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .searchRow {
+    flex-wrap: wrap;
+  }
+
+  .searchWrap {
+    flex: 1 0 100%;
+  }
+
+  .facet {
+    align-items: flex-start;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-2);
+  }
+}

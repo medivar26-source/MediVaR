@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mediver-frontend
+  labels:
+    app: mediver-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mediver-frontend
+  template:
+    metadata:
+      labels:
+        app: mediver-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: mediver-frontend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_API_URL
+          value: "http://mediver-backend/api/v1"

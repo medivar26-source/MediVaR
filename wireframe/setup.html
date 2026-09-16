@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session setup — MediVeR XR</title>
+<link rel="stylesheet" href="wire.css">
+</head>
+<body data-nav="simulations">
+<div class="app">
+  <aside class="side" data-side></aside>
+  <div class="main">
+    <header class="topbar" data-topbar data-crumb="Home / Session setup"></header>
+    <div class="canvas narrow">
+
+      <div class="page-head">
+        <div class="grow">
+          <div class="eyebrow">Step 1 of 2</div>
+          <h1>Session setup</h1>
+          <p class="sub">Everything below is defaulted from your account. Most users change nothing and press Continue.</p>
+        </div>
+      </div>
+
+      <div class="card" style="padding:28px">
+        <div class="stack lg">
+
+          <div class="grid g2">
+            <div class="field">
+              <label>Procedure</label>
+              <div class="inp">Total Knee Replacement<span class="caret">▾</span></div>
+              <span class="hint">Other procedures are not yet published.</span>
+            </div>
+            <div class="field">
+              <label>User role</label>
+              <div class="inp">Surgeon<span class="caret">▾</span></div>
+              <span class="hint">From your account. Controls default difficulty and mandatory parts.</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Mode</label>
+            <div class="grid g2">
+              <div class="radio-card on">
+                <div class="row between" style="margin-bottom:6px">
+                  <div class="t">Training</div>
+                  <span class="badge live"><span class="dot"></span>Selected</span>
+                </div>
+                <div class="d">Ghost guides, directional arrows, safe corridors, live numeric readouts. Retry without penalty; hints appear after inactivity.</div>
+              </div>
+              <div class="radio-card">
+                <div class="t">Assessment</div>
+                <div class="d">No guides, no readouts, no hints. Errors are logged, not announced. One attempt per step unless the scene allows a redo.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Difficulty</label>
+            <div class="seg">
+              <span>Beginner</span>
+              <span class="on">Intermediate</span>
+              <span>Expert</span>
+            </div>
+            <span class="hint">Scales every tolerance band. Intermediate = authored values ×1.0, pass mark 70.</span>
+          </div>
+
+          <div style="border-top:1px solid var(--soft);padding-top:20px">
+            <div class="row between" style="cursor:pointer">
+              <div>
+                <div style="font-weight:700;color:var(--ink);font-size:14px">Advanced — implant variant</div>
+                <div class="tiny">CR · Cemented · Patella decided intra-operatively</div>
+              </div>
+              <span class="chip mut">Collapse ▴</span>
+            </div>
+
+            <div class="grid g2" style="margin-top:18px">
+              <div class="field">
+                <label>Implant design</label>
+                <div class="seg"><span class="on">CR</span><span>PS</span></div>
+                <span class="hint">PS resects the PCL at 5.1b and adds Part 8 (box cut).</span>
+              </div>
+              <div class="field">
+                <label>Fixation</label>
+                <div class="seg"><span class="on">Cemented</span><span>Cementless</span></div>
+                <span class="hint">Cementless replaces 7.2 with the 7.2b broach and skips Part 10.</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="footbar">
+          <a class="btn" href="home.html">Cancel</a>
+          <span class="spacer"></span>
+          <span class="tiny">11 parts · ~14 min estimated</span>
+          <a class="btn primary lg" href="cases.html">Continue to case selection</a>
+        </div>
+      </div>
+
+      <div class="note" style="margin-top:20px">
+        Every scene must behave correctly under all six axes: mode, difficulty, implant design, fixation, patella and user role (<code>the spec</code>). Choices made here propagate into the plan JSON and are restated on the headset confirmation card before anything is committed.
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="wire.js"></script>
+</body>
+</html>

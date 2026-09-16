@@ -1,0 +1,168 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  height: var(--h-md);
+  padding: 0 var(--s-5);
+  border: var(--bw) solid transparent;
+  border-radius: var(--r-pill);
+  font-family: var(--font-ui);
+  font-size: var(--t-label);
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    border-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out);
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  background: var(--surface-sunken);
+  border-color: var(--border);
+  color: var(--text-disabled);
+}
+
+/* ---------- variants ---------- */
+
+.primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+  font-weight: var(--fw-bold);
+}
+.primary:hover:not(:disabled) {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+}
+.primary:active:not(:disabled) {
+  background: var(--brand-pressed);
+  border-color: var(--brand-pressed);
+}
+
+.secondary {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+.secondary:hover:not(:disabled) {
+  background: var(--surface-sunken);
+  border-color: var(--border-strong);
+}
+.secondary:active:not(:disabled) {
+  background: var(--divider);
+}
+
+.tonal {
+  background: var(--brand-surface);
+  border-color: var(--brand-border);
+  color: var(--brand);
+  font-weight: var(--fw-bold);
+}
+.tonal:hover:not(:disabled) {
+  background: var(--brand-surface-hover);
+}
+
+.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--brand);
+}
+.ghost:hover:not(:disabled) {
+  background: var(--brand-surface);
+}
+
+.danger {
+  background: transparent;
+  border-color: var(--fail-border);
+  color: var(--fail);
+}
+.danger:hover:not(:disabled) {
+  background: var(--fail-surface);
+}
+
+/* ---------- sizes ---------- */
+
+.sm {
+  height: var(--h-sm);
+  padding: 0 var(--s-4);
+  font-size: var(--t-caption);
+}
+
+.lg {
+  height: var(--h-lg);
+  padding: 0 var(--s-7);
+  font-size: var(--t-body);
+}
+
+/* ---------- modifiers ---------- */
+
+.block {
+  width: 100%;
+}
+
+.iconOnly {
+  width: var(--h-md);
+  padding: 0;
+}
+.iconOnly.sm {
+  width: var(--h-sm);
+}
+.iconOnly.lg {
+  width: var(--h-lg);
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+}
+.sm .icon {
+  width: 16px;
+  height: 16px;
+}
+.lg .icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* `.btn` sets `line-height: 1`, which makes the line box exactly the em-box —
+   and descenders live *below* that. Combined with the `overflow: hidden` here
+   (which the ellipsis needs) every g, p, y, j and q was clipped along the
+   bottom: "Proceed to imaging review" lost the tail of its g on every button in
+   the product.
+
+   The fix is the line-height, not the clip. The button's height is fixed by
+   `height: var(--h-md)` and the label is centred in it, so giving the label a
+   line box tall enough to hold its own descenders changes nothing about the
+   button's size — it only stops the box being shorter than the text it
+   contains. */
+.label {
+  min-width: 0;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- loading ---------- */
+
+.spinner {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  opacity: 0.85;
+  animation: spin 640ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

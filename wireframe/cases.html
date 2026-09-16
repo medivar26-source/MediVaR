@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cases — MediVeR XR</title>
+<link rel="stylesheet" href="wire.css">
+</head>
+<body data-nav="cases">
+<div class="app">
+  <aside class="side" data-side></aside>
+  <div class="main">
+    <header class="topbar" data-topbar data-crumb="Cases"></header>
+    <div class="canvas">
+
+      <div class="page-head">
+        <div class="grow">
+          <h1>Cases</h1>
+          <p class="sub">Every case is synthetic. No patient data is stored anywhere in the product.</p>
+        </div>
+        <a class="btn primary" href="setup.html">Start simulation</a>
+      </div>
+
+      <div class="card pad-sm" style="margin-bottom:24px">
+        <div class="row">
+          <div class="inp ph-text" style="flex:1;min-width:220px">Search by case name or ID…</div>
+          <span class="chip on">All pathologies ▾</span>
+          <span class="chip">Side ▾</span>
+          <span class="chip">Difficulty ▾</span>
+          <span class="chip">Attempted ▾</span>
+          <span class="spacer"></span>
+          <span class="tiny">8 cases</span>
+        </div>
+      </div>
+
+      <div class="grid auto">
+
+        <a class="card flush" href="case-detail.html">
+          <div class="ph wide" style="border:none;border-radius:0">Case thumbnail 16:9</div>
+          <div style="padding:16px">
+            <div class="row between" style="margin-bottom:8px">
+              <h3>Case 1 — Varus OA</h3>
+              <span class="badge pass">92%</span>
+            </div>
+            <div class="row" style="gap:6px;margin-bottom:14px">
+              <span class="chip mut">Osteoarthritis</span>
+              <span class="chip mut">Right</span>
+              <span class="chip mut">Intermediate</span>
+            </div>
+            <p class="tiny" style="margin-bottom:14px">68 y, medial compartment collapse, 8.2° varus. The reference case for the full 11-part walkthrough.</p>
+            <span class="btn ghost sm" style="padding-left:0">Start planning →</span>
+          </div>
+        </a>
+
+        <a class="card flush" href="case-detail.html">
+          <div class="ph wide" style="border:none;border-radius:0">Case thumbnail 16:9</div>
+          <div style="padding:16px">
+            <div class="row between" style="margin-bottom:8px">
+              <h3>Case 2 — Valgus OA</h3>
+              <span class="badge warn">64%</span>
+            </div>
+            <div class="row" style="gap:6px;margin-bottom:14px">
+              <span class="chip mut">Osteoarthritis</span>
+              <span class="chip mut">Left</span>
+              <span class="chip mut">Expert</span>
+            </div>
+            <p class="tiny" style="margin-bottom:14px">Lateral compartment wear with a tight lateral sleeve. PS variant recommended.</p>
+            <span class="btn ghost sm" style="padding-left:0">Start planning →</span>
+          </div>
+        </a>
+
+        <a class="card flush" href="case-detail.html">
+          <div class="ph wide" style="border:none;border-radius:0">Case thumbnail 16:9</div>
+          <div style="padding:16px">
+            <div class="row between" style="margin-bottom:8px">
+              <h3>Case 3 — Post-traumatic</h3>
+              <span class="badge">Not attempted</span>
+            </div>
+            <div class="row" style="gap:6px;margin-bottom:14px">
+              <span class="chip mut">Post-traumatic</span>
+              <span class="chip mut">Right</span>
+              <span class="chip mut">Expert</span>
+            </div>
+            <p class="tiny" style="margin-bottom:14px">Old plateau fracture, AORI type 2A defect. Augment likely required before keel.</p>
+            <span class="btn ghost sm" style="padding-left:0">Start planning →</span>
+          </div>
+        </a>
+
+        <a class="card flush" href="case-detail.html">
+          <div class="ph wide" style="border:none;border-radius:0">Case thumbnail 16:9</div>
+          <div style="padding:16px">
+            <div class="row between" style="margin-bottom:8px">
+              <h3>Case 4 — Rheumatoid</h3>
+              <span class="badge">Not attempted</span>
+            </div>
+            <div class="row" style="gap:6px;margin-bottom:14px">
+              <span class="chip mut">Inflammatory</span>
+              <span class="chip mut">Left</span>
+              <span class="chip mut">Beginner</span>
+            </div>
+            <p class="tiny" style="margin-bottom:14px">Soft bone, balanced deformity. Introductory case for residents.</p>
+            <span class="btn ghost sm" style="padding-left:0">Start planning →</span>
+          </div>
+        </a>
+
+        <a class="card flush" href="case-detail.html">
+          <div class="ph wide" style="border:none;border-radius:0">Case thumbnail 16:9</div>
+          <div style="padding:16px">
+            <div class="row between" style="margin-bottom:8px">
+              <h3>Case 5 — Severe varus</h3>
+              <span class="badge fail">51%</span>
+            </div>
+            <div class="row" style="gap:6px;margin-bottom:14px">
+              <span class="chip mut">Osteoarthritis</span>
+              <span class="chip mut">Right</span>
+              <span class="chip mut">Expert</span>
+            </div>
+            <p class="tiny" style="margin-bottom:14px">18° varus with a fixed flexion contracture. Staged medial release required.</p>
+            <span class="btn ghost sm" style="padding-left:0">Start planning →</span>
+          </div>
+        </a>
+
+        <div class="card sunken" style="display:grid;place-items:center;min-height:240px;text-align:center">
+          <div>
+            <div class="tiny" style="margin-bottom:8px">3 more cases match no active filter</div>
+            <span class="btn sm">Clear filters</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="note" style="margin-top:28px">
+        Selecting a card opens a summary drawer with <b>Start planning</b> (<code>the spec</code> B2). Shown here as a full page — <a href="case-detail.html" style="color:var(--accent);font-weight:600">case detail</a>.
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="wire.js"></script>
+</body>
+</html>

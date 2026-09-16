@@ -1,0 +1,137 @@
+.grid {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.heroHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+
+.eyebrow {
+  font-size: var(--t-overline);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.heroTitle {
+  margin-top: var(--s-2);
+  font-family: var(--font-display);
+  font-size: var(--t-h1);
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.heroSummary {
+  max-width: 68ch;
+  font-size: var(--t-body);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+/* Four columns, matching the stat row on the dashboards */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-3);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-sunken);
+}
+
+.metric dt {
+  font-size: var(--t-caption);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.metric dd {
+  font-family: var(--font-display);
+  font-size: var(--t-h2);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+
+.sectionTitle {
+  margin-top: var(--s-7);
+  margin-bottom: var(--s-4);
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.upcoming {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-4);
+}
+
+.upcomingCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.upcomingText {
+  font-size: var(--t-caption);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.note {
+  margin-top: var(--s-6);
+  font-size: var(--t-caption);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.note a {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+@media (max-width: 1100px) {
+  .metrics,
+  .upcoming {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .metrics,
+  .upcoming {
+    grid-template-columns: 1fr;
+  }
+}

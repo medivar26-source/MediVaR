@@ -1,0 +1,57 @@
+/* Status only. Never used for interactive elements — see tokens.css.
+ *
+ * Badges are SOLID fills with white text. A status is a verdict and should
+ * read as one at a glance; a pale tint reads as decoration. Light tints are
+ * reserved for large surfaces (an expanded row, a callout panel), never for
+ * the small pill that carries the judgement. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: 26px;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-pill);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+}
+
+.pass {
+  background: var(--pass);
+}
+
+.warn {
+  background: var(--warn);
+}
+
+.fail {
+  background: var(--fail);
+}
+
+.neutral {
+  background: var(--text-muted);
+}
+
+/* Live / in-progress is black with a static white dot — it is a state, not a
+   verdict, so it stays out of the semantic hues entirely. The dot does not
+   pulse: no blinking on a clinical screen. */
+.active {
+  background: var(--dark);
+}
+
+.dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}

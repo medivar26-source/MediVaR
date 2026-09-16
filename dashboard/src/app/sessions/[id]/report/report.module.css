@@ -1,0 +1,389 @@
+/* ---------- the verdict band ---------- */
+
+.verdict {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: var(--s-6);
+  margin-bottom: var(--s-6);
+  padding: var(--s-6);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+}
+
+@media (max-width: 900px) {
+  .verdict {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The one near-black block on the screen keeps `--dark` as a
+   sparing accent, and the total is the single figure the page exists to state. */
+.scoreBlock {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--s-5);
+  border-radius: var(--r-lg);
+  background: var(--dark);
+  color: var(--surface);
+}
+
+.scoreLabel {
+  font-size: var(--t-caption);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.score {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+}
+
+.scoreValue {
+  font-family: var(--font-display);
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.scoreMax {
+  font-size: var(--t-h3);
+  font-weight: 600;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.scoreMeta {
+  margin-top: var(--s-2);
+  font-size: var(--t-caption);
+  opacity: 0.7;
+}
+
+.verdictBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  justify-content: center;
+}
+
+.verdictHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.percentile {
+  font-size: var(--t-label);
+  color: var(--text-muted);
+}
+
+/* Solid, because it is a verdict on the whole session and the most serious one
+   the report can carry */
+.capped {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--fail);
+  color: var(--on-brand);
+  font-size: var(--t-label);
+  line-height: 1.55;
+}
+
+.capIcon {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+}
+
+.runFacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--s-4);
+}
+
+.runFact dt {
+  font-size: var(--t-caption);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.runFact dd {
+  margin-top: 2px;
+  font-size: var(--t-label);
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- layout ---------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: var(--s-5);
+  align-items: start;
+}
+
+@media (max-width: 1200px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  min-width: 0;
+}
+
+.emptyWrap {
+  padding: var(--s-7) var(--s-5);
+}
+
+/* ---------- planned versus achieved ---------- */
+
+.params {
+  display: flex;
+  flex-direction: column;
+}
+
+.paramHead,
+.param {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) 70px 70px minmax(60px, 1fr) 120px;
+  gap: var(--s-3);
+  align-items: center;
+}
+
+.paramHead {
+  padding-bottom: var(--s-2);
+  border-bottom: var(--bw) solid var(--border);
+  font-size: var(--t-caption);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.paramHead > span:nth-child(2),
+.paramHead > span:nth-child(3) {
+  text-align: right;
+}
+
+.param {
+  padding: var(--s-3) 0;
+  border-bottom: var(--bw) solid var(--border);
+}
+
+.param:last-of-type {
+  border-bottom: none;
+}
+
+.paramLabel {
+  font-size: var(--t-label);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.paramNum {
+  text-align: right;
+  font-size: var(--t-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.paramTrack {
+  position: relative;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.paramFillPass,
+.paramFillWarn,
+.paramFillFail {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--r-pill);
+}
+
+.paramFillPass {
+  background: var(--pass);
+}
+.paramFillWarn {
+  background: var(--warn);
+}
+.paramFillFail {
+  background: var(--fail);
+}
+
+.paramNote {
+  margin-top: var(--s-4);
+  font-size: var(--t-caption);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+/* ---------- deductions ---------- */
+
+.feedback,
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.feedbackRow,
+.timelineRow,
+.timelineSkipped {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-3) var(--s-5);
+  border-bottom: var(--bw) solid var(--border);
+}
+
+.feedbackRow:last-child,
+.timelineRow:last-child,
+.timelineSkipped:last-child {
+  border-bottom: none;
+}
+
+.timelineSkipped {
+  background: var(--surface-sunken);
+}
+
+.sceneTag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 var(--s-2);
+  border-radius: var(--r-sm);
+  background: var(--surface-sunken);
+  font-size: var(--t-caption);
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.feedbackBody,
+.timelineBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.feedbackText,
+.timelineLabel {
+  font-size: var(--t-label);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.feedbackMeta,
+.timelineMeta {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.lostFail,
+.lostWarn {
+  font-size: var(--t-label);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.lostFail {
+  color: var(--fail);
+}
+.lostWarn {
+  color: var(--warn);
+}
+
+/* ---------- categories ---------- */
+
+.categories {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.categoryRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(80px, 1.1fr) 64px;
+  gap: var(--s-3);
+  align-items: center;
+}
+
+.categoryLabel {
+  font-size: var(--t-label);
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The ghost is the category's *maximum* relative to the largest category, so
+   the row shows both what was earned and what was available. A bar scaled only
+   to its own max makes a 5-mark category look like a 25-mark one. */
+.categoryTrack {
+  position: relative;
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: transparent;
+}
+
+.categoryGhost {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+  z-index: 0;
+}
+
+.categoryFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+  z-index: 1;
+}
+
+.categoryScore {
+  text-align: right;
+  font-size: var(--t-label);
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.categoryMax {
+  font-weight: 500;
+  color: var(--text-disabled);
+}
+
+.weakest {
+  margin-top: var(--s-5);
+  padding-top: var(--s-4);
+  border-top: var(--bw) solid var(--border);
+  font-size: var(--t-caption);
+  line-height: 1.55;
+  color: var(--text-muted);
+}

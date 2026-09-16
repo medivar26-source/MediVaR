@@ -1,0 +1,210 @@
+/* ---------- the live band ---------- */
+
+.banner,
+.bannerIdle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-4) var(--s-6);
+  margin-bottom: var(--s-5);
+  padding: var(--s-5);
+  border-radius: var(--r-xl);
+}
+
+/* Near-black while it is running: this is the one thing on the screen that is
+   happening now, and `--dark` is the sparing accent reserved for
+   exactly that. No pulsing dot — the clock already says it is live, and a
+   blinking light on a clinical screen reads as an alarm. */
+.banner {
+  background: var(--dark);
+  color: var(--surface);
+}
+
+.bannerIdle {
+  border: var(--bw) solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.bannerLabel {
+  font-size: var(--t-caption);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.bannerScene {
+  margin-top: var(--s-1);
+  font-family: var(--font-display);
+  font-size: var(--t-h2);
+  font-weight: 700;
+}
+
+.bannerStats {
+  display: flex;
+  gap: var(--s-6);
+  align-items: flex-start;
+}
+
+.bannerStat {
+  display: flex;
+  flex-direction: column;
+}
+
+.bannerStatLabel {
+  font-size: var(--t-caption);
+  font-weight: 600;
+  opacity: 0.65;
+}
+
+.bannerStatValue {
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bannerTrack {
+  grid-column: 1 / -1;
+  position: relative;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: rgb(255 255 255 / 0.18);
+  overflow: hidden;
+}
+
+.bannerIdle .bannerTrack {
+  background: var(--surface-sunken);
+}
+
+.bannerFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+  transition: width var(--m-base) var(--ease-out);
+}
+
+/* ---------- the running order ---------- */
+
+.scenes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.scene {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-3) var(--s-5);
+  border-bottom: var(--bw) solid var(--border);
+}
+
+.scene:last-child {
+  border-bottom: none;
+}
+
+/* Set by the mirror as the headset moves, so the marker follows without this
+   list re-rendering. */
+.scene[data-current="true"] {
+  background: var(--brand-surface);
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+
+.sceneTag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 var(--s-2);
+  border-radius: var(--r-sm);
+  background: var(--surface-sunken);
+  font-size: var(--t-caption);
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sceneBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sceneLabel {
+  font-size: var(--t-label);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sceneMeta {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+/* A pill that states its own meaning in text, not colour alone
+   The content comes from CSS because the element is server-rendered empty and
+   the client only ever changes `data-state`. */
+.sceneState {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-pill);
+  font-size: var(--t-caption);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sceneState[data-state="pending"] {
+  color: var(--text-disabled);
+}
+
+.sceneState[data-state="pending"]::after {
+  content: "Not reached";
+}
+
+.sceneState[data-state="pass"] {
+  background: var(--pass);
+  color: var(--on-brand);
+}
+
+.sceneState[data-state="pass"]::after {
+  content: "Pass";
+}
+
+.sceneState[data-state="borderline"] {
+  background: var(--warn);
+  color: var(--on-brand);
+}
+
+.sceneState[data-state="borderline"]::after {
+  content: "Borderline";
+}
+
+.sceneState[data-state="fail"] {
+  background: var(--fail);
+  color: var(--on-brand);
+}
+
+.sceneState[data-state="fail"]::after {
+  content: "Fail";
+}
+
+.sceneState[data-state="done"] {
+  background: var(--text-muted);
+  color: var(--on-brand);
+}
+
+.sceneState[data-state="done"]::after {
+  content: "Recorded";
+}
+
+.footActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+}

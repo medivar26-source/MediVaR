@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login — MediVeR XR</title>
+<link rel="stylesheet" href="wire.css">
+</head>
+<body>
+<div class="center-page">
+  <div class="center-box">
+
+    <div class="row" style="justify-content:center;margin-bottom:28px">
+      <span class="ph solid" style="width:44px;height:44px;border-radius:14px;min-height:0;background:var(--accent);color:#fff;font-size:15px">M</span>
+    </div>
+
+    <div class="card" style="padding:28px;border-radius:var(--r-lg)">
+      <div style="text-align:center;margin-bottom:24px">
+        <h1 style="font-size:22px;margin-bottom:6px">Sign in to MediVeR XR</h1>
+        <p class="sub" style="font-size:13.5px">Surgical simulation dashboard</p>
+      </div>
+
+      <div class="stack">
+        <div class="field">
+          <label>Email</label>
+          <div class="inp ph-text">name@hospital.nhs.uk</div>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <div class="inp ph-text">••••••••<span class="caret">show</span></div>
+        </div>
+        <button class="btn primary block lg" style="margin-top:4px">Sign in</button>
+      </div>
+
+      <p class="hint" style="text-align:center;margin-top:18px">Accounts are created by your administrator.</p>
+    </div>
+
+    <div class="note" style="margin-top:18px">
+      <b>Phase 1:</b> no “Create account”, no “Forgot password”. Both are additive once Resend lands — the auth guard is built to accept them without a layout change (<code>the spec</code> Flow A).
+    </div>
+
+    <div class="sec"><h2>Failure states</h2><span class="line"></span></div>
+
+    <div class="stack">
+      <div class="card pad-sm">
+        <div class="field">
+          <label>Password</label>
+          <div class="inp" style="border-color:var(--fail)">••••••••</div>
+          <span class="hint err">Email or password is incorrect. Check both and try again.</span>
+        </div>
+      </div>
+      <div class="banner warn" style="margin:0">
+        <span class="ic">!</span>
+        <div class="grow">
+          <div class="bt">Cannot reach the server</div>
+          <div class="bd">Sign-in is unavailable until the connection returns.</div>
+        </div>
+        <button class="btn sm">Retry</button>
+      </div>
+    </div>
+
+    <p class="tiny" style="text-align:center;margin-top:28px"><a href="index.html" style="color:var(--accent);font-weight:600">← Wireframe index</a></p>
+
+  </div>
+</div>
+</body>
+</html>

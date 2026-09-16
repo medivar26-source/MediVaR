@@ -1,0 +1,271 @@
+/* The procedure launcher. Full-bleed, low-density, one obvious action.
+   Deliberately unlike the workspace shell — this screen is a doorway. */
+
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--s-6);
+  background: var(--canvas);
+}
+
+.frame {
+  width: 100%;
+  max-width: 1320px;
+  overflow: hidden;
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+}
+
+.top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+}
+
+/* ---------- left ---------- */
+
+.left {
+  display: flex;
+  flex-direction: column;
+  padding: var(--s-11) var(--s-9);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin-bottom: var(--s-10);
+}
+
+.mark {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border: var(--bw) solid var(--brand-border);
+  border-radius: 50%;
+  background: var(--brand-surface);
+  color: var(--brand);
+}
+
+.markGlyph {
+  width: 28px;
+  height: 28px;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 1;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.tagline {
+  margin-top: var(--s-2);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(34px, 4vw, 52px);
+  line-height: 1.02;
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.subtitle {
+  margin-top: var(--s-3);
+  font-size: 19px;
+  font-weight: var(--fw-semibold);
+  color: var(--brand);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin-top: var(--s-9);
+}
+
+/* ---------- launch action ---------- */
+
+.action {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  width: 100%;
+  min-height: 64px;
+  padding: 0 var(--s-6);
+  border: var(--bw) solid transparent;
+  border-radius: var(--r-pill);
+  background: var(--brand-surface);
+  color: var(--ink);
+  text-align: left;
+  transition:
+    background-color var(--m-base) var(--ease-out),
+    border-color var(--m-base) var(--ease-out);
+}
+
+.action:hover {
+  background: var(--brand-surface-hover);
+  border-color: var(--brand-border);
+}
+
+.actionPrimary {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+.actionPrimary:hover {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+}
+
+.actionIcon {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  color: var(--brand);
+}
+.actionPrimary .actionIcon {
+  color: var(--on-brand);
+}
+
+.actionLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-body);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.actionChevron {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  color: var(--text-disabled);
+}
+.actionPrimary .actionChevron {
+  color: var(--on-brand);
+  opacity: 0.85;
+}
+
+.actionDisabled {
+  background: var(--surface-sunken);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+.actionDisabled .actionIcon,
+.actionDisabled .actionChevron {
+  color: var(--text-disabled);
+}
+
+/* ---------- right: hero ---------- */
+
+.visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 520px;
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.visualFallback {
+  display: grid;
+  place-items: center;
+  gap: var(--s-3);
+  padding: var(--s-7);
+  color: var(--text-disabled);
+  text-align: center;
+}
+
+.visualFallbackIcon {
+  width: 52px;
+  height: 52px;
+  opacity: 0.7;
+}
+
+.visualFallbackText {
+  font-size: var(--t-caption);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---------- utility bar ---------- */
+
+.utility {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--s-4);
+  padding: var(--s-6) var(--s-9);
+  background: var(--brand-surface);
+  border-top: var(--bw) solid var(--brand-border);
+}
+
+.utilityItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 84px;
+  padding: var(--s-4);
+  border: var(--bw) solid transparent;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text-muted);
+  transition:
+    border-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out);
+}
+
+.utilityItem:hover {
+  border-color: var(--brand-border);
+  color: var(--brand);
+}
+
+.utilityIcon {
+  width: 22px;
+  height: 22px;
+  color: var(--brand);
+}
+
+.utilityLabel {
+  font-size: var(--t-caption);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 1023px) {
+  .top {
+    grid-template-columns: 1fr;
+  }
+  .visual {
+    order: -1;
+    min-height: 300px;
+  }
+  .left {
+    padding: var(--s-9) var(--s-6);
+  }
+  .utility {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    padding: var(--s-5);
+  }
+}

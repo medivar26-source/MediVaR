@@ -1,0 +1,101 @@
+/* Filters, facets and metadata. Never a status — that is Badge. */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 34px;
+  padding: 0 var(--s-4);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.interactive {
+  cursor: pointer;
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    border-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out);
+}
+.interactive:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-sunken);
+}
+
+/* Selected is a solid fill. A pale tint reads as decoration rather than as
+   "this filter is on". */
+.selected {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+  font-weight: var(--fw-bold);
+}
+.selected.interactive:hover {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+}
+
+.muted {
+  background: var(--surface-sunken);
+  border-color: transparent;
+  color: var(--text-muted);
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+}
+
+.count {
+  padding: 0 var(--s-2);
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+}
+.selected .count {
+  background: rgba(255, 255, 255, 0.22);
+  color: var(--on-brand);
+}
+
+/* ---------- segmented control ---------- */
+
+.segmented {
+  display: inline-flex;
+  gap: var(--s-1);
+  padding: var(--s-1);
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+}
+
+.segment {
+  height: 34px;
+  padding: 0 var(--s-4);
+  border: var(--bw) solid transparent;
+  border-radius: var(--r-pill);
+  color: var(--text-muted);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out);
+}
+.segment:hover:not(.segmentOn) {
+  color: var(--text);
+}
+
+.segmentOn {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--ink);
+  font-weight: var(--fw-bold);
+}

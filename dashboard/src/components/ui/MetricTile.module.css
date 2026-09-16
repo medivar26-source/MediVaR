@@ -1,0 +1,75 @@
+/* Displays one clinical number. The value stays --ink; only the badge is
+   coloured. That keeps a wall of tiles calm instead of alarming. */
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.label {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-overline);
+  line-height: var(--t-overline-lh);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.info {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  color: var(--text-disabled);
+}
+
+.valueRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-1);
+}
+
+.value {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1;
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.compact .value {
+  font-size: 22px;
+}
+
+.unit {
+  font-size: var(--t-body);
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.caption {
+  font-size: var(--t-caption);
+  line-height: var(--t-caption-lh);
+  color: var(--text-muted);
+}

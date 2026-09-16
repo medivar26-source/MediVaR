@@ -1,0 +1,62 @@
+/* ---------- filter band ---------- */
+
+.filterWrap {
+  margin-bottom: var(--s-5);
+}
+
+/* One band, not one row per facet. The filter should never be taller than the
+   thing it filters — the same correction `/cases` took. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3) var(--s-5);
+  padding: var(--s-4) var(--s-5);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.facet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.facetLabel {
+  font-size: var(--t-caption);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+/* An anchor, not a button — it navigates — and at least 44px
+   tall like every other control. */
+.clear {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  border-radius: var(--r-pill);
+  font-size: var(--t-caption);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.clear:hover {
+  color: var(--ink);
+  background: var(--surface-sunken);
+}
+
+.clear:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.emptyWrap {
+  padding: var(--s-8) var(--s-5);
+}

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sessions — MediVeR XR</title>
+<link rel="stylesheet" href="wire.css">
+</head>
+<body data-nav="simulations">
+<div class="app">
+  <aside class="side" data-side></aside>
+  <div class="main">
+    <header class="topbar" data-topbar data-crumb="Sessions"></header>
+    <div class="canvas">
+
+      <div class="page-head">
+        <div class="grow">
+          <h1>Sessions</h1>
+          <p class="sub">One session is one run of the operative phase against one plan.</p>
+        </div>
+        <a class="btn primary" href="setup.html">Start simulation</a>
+      </div>
+
+      <div class="banner" style="margin-bottom:20px">
+        <span class="ic">●</span>
+        <div class="grow">
+          <div class="bt">A session is running now</div>
+          <div class="bd">Case 1 — Varus OA · Part 6 Balancing &amp; trialling · 9 min 14 s elapsed.</div>
+        </div>
+        <a class="btn sm primary" href="session-live.html">Watch progress</a>
+      </div>
+
+      <div class="card pad-sm" style="margin-bottom:20px">
+        <div class="row">
+          <div class="inp ph-text" style="flex:1;min-width:200px">Search sessions…</div>
+          <span class="chip on">All modes ▾</span>
+          <span class="chip">Difficulty ▾</span>
+          <span class="chip">Status ▾</span>
+          <span class="chip">Last 90 days ▾</span>
+          <span class="spacer"></span>
+          <span class="tiny">24 sessions</span>
+        </div>
+      </div>
+
+      <div class="card flush">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Date</th><th>Case</th><th>Mode</th><th>Difficulty</th><th>Variant</th>
+              <th class="n">Duration</th><th class="n">Score</th><th>Status</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="k">Now</td><td>Case 1 — Varus OA</td><td>Training</td><td>Intermediate</td><td>CR · Cemented</td>
+              <td class="n">9:14</td><td class="n u">—</td><td><span class="badge live"><span class="dot"></span>Live</span></td>
+              <td><a class="btn ghost sm" href="session-live.html">Watch</a></td>
+            </tr>
+            <tr>
+              <td class="k">20 May 2025</td><td>Case 1 — Varus OA</td><td>Assessment</td><td>Intermediate</td><td>CR · Cemented</td>
+              <td class="n">14:22</td><td class="n k">92</td><td><span class="badge pass">Passed</span></td>
+              <td><a class="btn ghost sm" href="report.html">Report</a></td>
+            </tr>
+            <tr>
+              <td class="k">18 May 2025</td><td>Case 2 — Valgus OA</td><td>Training</td><td>Expert</td><td>PS · Cemented</td>
+              <td class="n">23:51</td><td class="n k">74</td><td><span class="badge pass">Passed</span></td>
+              <td><a class="btn ghost sm" href="report.html">Report</a></td>
+            </tr>
+            <tr>
+              <td class="k">14 May 2025</td><td>Case 5 — Severe varus</td><td>Assessment</td><td>Expert</td><td>CR · Cementless</td>
+              <td class="n">31:07</td><td class="n k">51</td><td><span class="badge fail">Not passed</span></td>
+              <td><a class="btn ghost sm" href="report.html">Report</a></td>
+            </tr>
+            <tr style="background:var(--warn-bg)">
+              <td class="k">12 May 2025</td><td>Case 1 — Varus OA</td><td>Training</td><td>Intermediate</td><td>CR · Cemented</td>
+              <td class="n">6:40</td><td class="n u">—</td><td><span class="badge warn">Interrupted · P6</span></td>
+              <td><a class="btn ghost sm" href="#resume">Resume</a></td>
+            </tr>
+            <tr>
+              <td class="k">06 May 2025</td><td>Case 1 — Varus OA</td><td>Training</td><td>Intermediate</td><td>CR · Cemented</td>
+              <td class="n">21:07</td><td class="n k">81</td><td><span class="badge pass">Passed</span></td>
+              <td><a class="btn ghost sm" href="report.html">Report</a></td>
+            </tr>
+            <tr>
+              <td class="k">28 Apr 2025</td><td>Case 1 — Varus OA</td><td>Training</td><td>Intermediate</td><td>PS · Cemented</td>
+              <td class="n">26:44</td><td class="n k">64</td><td><span class="badge warn">Below pass mark</span></td>
+              <td><a class="btn ghost sm" href="report.html">Report</a></td>
+            </tr>
+            <tr>
+              <td class="k">21 Apr 2025</td><td>Case 4 — Rheumatoid</td><td>Training</td><td>Beginner</td><td>CR · Cemented</td>
+              <td class="n">28:12</td><td class="n k">88</td><td><span class="badge pass">Passed</span></td>
+              <td><a class="btn ghost sm" href="report.html">Report</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sec"><h2>Resume detail — Flow E</h2><span class="line"></span></div>
+      <div class="card" id="resume">
+        <div class="row between" style="margin-bottom:18px">
+          <div>
+            <h3>Case 1 — Varus OA, right knee</h3>
+            <p class="tiny" style="margin-top:4px">Training · Intermediate · CR · Cemented · started 12 May 2025, 14:02</p>
+          </div>
+          <span class="badge warn">Interrupted</span>
+        </div>
+
+        <div class="hsteps">
+          <div class="hstep done"><span class="dot">✓</span><span class="l">P0 Time Out</span></div><span class="hline"></span>
+          <div class="hstep done"><span class="dot">✓</span><span class="l">P1 Positioning</span></div><span class="hline"></span>
+          <div class="hstep done"><span class="dot">✓</span><span class="l">P2 Approach</span></div><span class="hline"></span>
+          <div class="hstep done"><span class="dot">✓</span><span class="l">P3 Joint prep</span></div><span class="hline"></span>
+          <div class="hstep done"><span class="dot">✓</span><span class="l">P4 Tibial</span></div><span class="hline"></span>
+          <div class="hstep done"><span class="dot">✓</span><span class="l">P5 Femoral</span></div><span class="hline"></span>
+          <div class="hstep on"><span class="dot">6</span><span class="l">P6 Balancing</span></div><span class="hline"></span>
+          <div class="hstep"><span class="dot">7</span><span class="l">P7 Tibial final</span></div><span class="hline"></span>
+          <div class="hstep"><span class="dot">9</span><span class="l">P9 Patella</span></div><span class="hline"></span>
+          <div class="hstep"><span class="dot">10</span><span class="l">P10 Cement</span></div><span class="hline"></span>
+          <div class="hstep"><span class="dot">11</span><span class="l">P11 Closure</span></div>
+        </div>
+
+        <div class="grid g3" style="margin:20px 0">
+          <div class="metric"><span class="lab">Stopped at</span><span class="val" style="font-size:20px">Scene 6.1</span><span class="tiny">Flexion/extension gaps</span></div>
+          <div class="metric"><span class="lab">Elapsed</span><span class="val">6:40</span><span class="tiny">Checkpointed at scene boundary</span></div>
+          <div class="metric"><span class="lab">Parts complete</span><span class="val">6<small>/ 11</small></span><span class="tiny">No data lost</span></div>
+        </div>
+
+        <div class="note">Assessment-mode sessions resume with the clock still running. Resuming issues a <b>new PIN bound to the existing session</b>, not a new one.</div>
+
+        <div class="footbar">
+          <button class="btn danger">Discard</button>
+          <span class="spacer"></span>
+          <button class="btn">Restart from the beginning</button>
+          <button class="btn primary">Resume &amp; issue PIN</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="wire.js"></script>
+</body>
+</html>

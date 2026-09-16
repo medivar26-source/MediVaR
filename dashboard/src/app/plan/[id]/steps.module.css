@@ -1,0 +1,431 @@
+/* Controls the seven planning steps share. */
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+/* A choice is a whole card, not a dot beside a label: at four options with a
+   line of reasoning each, the card is the hit target the reasoning deserves. */
+.choice {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--s-3);
+  padding: var(--s-4);
+  text-align: left;
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color var(--m-fast) var(--ease-out),
+    background-color var(--m-fast) var(--ease-out);
+}
+
+.choice:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-sunken);
+}
+
+.choiceOn,
+.choiceOn:hover {
+  border-color: var(--brand);
+  background: var(--brand-surface);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+
+.mark {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  border: var(--bw-emphasis) solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.choiceOn .mark {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.markGlyph {
+  width: 12px;
+  height: 12px;
+}
+
+/* Both are `<span>`s, and a span is inline — so `margin-top` on the detail did
+   nothing at all and the two ran together with no break and no space:
+   "…osteoarthritis with varus deformityAge, insidious onset, medial pain…".
+   The answer and the reasoning for it read as one run-on sentence, which is the
+   opposite of what a differential list is for.
+
+   `display: block` is the whole fix. The label takes its own line, the detail
+   sits under it, and the margin it was already asking for starts applying. */
+.choiceLabel {
+  display: block;
+  font-size: var(--t-label);
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.choiceDetail {
+  display: block;
+  margin-top: var(--s-1);
+  font-size: var(--t-caption);
+  line-height: 1.5;
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+/* ---------- measurement table ---------- */
+
+.measures {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.measureHead,
+.measure {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px 108px 96px;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.measureHead {
+  padding: 0 var(--s-3) var(--s-2);
+  font-size: var(--t-overline);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.measure {
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+}
+
+.measure:nth-child(odd) {
+  background: var(--surface-sunken);
+}
+
+.measureName {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.measureShort {
+  font-size: var(--t-label);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.measureFull {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.numberWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.number {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--s-6) 0 var(--s-3);
+  font: inherit;
+  font-size: var(--t-body);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  text-align: right;
+  background: var(--surface);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-xs);
+}
+
+.number:focus-visible {
+  outline: var(--bw-emphasis) solid var(--brand);
+  outline-offset: 1px;
+}
+
+.unit {
+  position: absolute;
+  right: var(--s-3);
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.range {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Only ever "in the published normal range" or not — never "correct". The
+   normal range is public knowledge; the case's true value is not. */
+.flag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 2px var(--s-2);
+  border-radius: var(--r-pill);
+  font-size: var(--t-caption);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.flagIn {
+  background: var(--pass-surface);
+  color: var(--pass);
+}
+
+.flagOut {
+  background: var(--warn-surface);
+  color: var(--warn);
+}
+
+.flagNone {
+  color: var(--text-disabled);
+}
+
+/* Critical is not high. The risk list ranks its rows and the pill has to
+   carry that ranking, or the popliteal bundle and a raised BMI arrive looking
+   the same. Tinted rather than solid because these sit inside a large row that
+   is itself the grouping surface, the same reading as .flagOut
+   directly above. */
+.flagCritical {
+  background: var(--fail-surface);
+  color: var(--fail);
+}
+
+/* ---------- sliders ---------- */
+
+.sliders {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.sliderHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.sliderLabel {
+  font-size: var(--t-label);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sliderValue {
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.sliderInput {
+  width: 100%;
+  accent-color: var(--brand);
+}
+
+.sliderScale {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--t-caption);
+  color: var(--text-disabled);
+}
+
+.sliderHint {
+  font-size: var(--t-caption);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* ---------- discrete catalogue values ---------- */
+
+.scale {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.scaleRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.scaleStop {
+  flex: 1 1 0;
+  min-width: 64px;
+  min-height: 44px;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  font: inherit;
+  font-size: var(--t-label);
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background var(--m-fast), border-color var(--m-fast);
+}
+
+.scaleStop:hover {
+  border-color: var(--brand);
+  background: var(--brand-surface);
+}
+
+.scaleStop:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Solid brand, because this is a selection and not a verdict — the same
+   treatment as a selected Chip. */
+.scaleStopOn {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.scaleStopOn:hover {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+}
+
+/* ---------- risk checklist ---------- */
+
+.risks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.risk {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  text-align: left;
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.risk:hover {
+  border-color: var(--border-strong);
+}
+
+.riskOn {
+  border-color: var(--brand-border);
+  background: var(--brand-surface);
+}
+
+.riskBox {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  border: var(--bw-emphasis) solid var(--border-strong);
+  border-radius: var(--r-xs);
+  background: var(--surface);
+}
+
+.riskOn .riskBox {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.riskLabel {
+  font-size: var(--t-label);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.riskDetail {
+  margin-top: 2px;
+  font-size: var(--t-caption);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* ---------- summary ---------- */
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4);
+  align-items: start;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-3) 0;
+  border-bottom: var(--bw) solid var(--divider);
+  font-size: var(--t-label);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.rowLabel {
+  color: var(--text-muted);
+}
+
+.rowValue {
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1279px) {
+  .summaryGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .measureHead,
+  .measure {
+    grid-template-columns: minmax(0, 1fr) 100px 92px 84px;
+  }
+}

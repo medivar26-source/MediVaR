@@ -1,0 +1,59 @@
+/* Empty / loading / error, specified once and used everywhere. */
+
+.empty {
+  display: grid;
+  place-items: center;
+  padding: var(--s-11) var(--s-6);
+  border: var(--bw) dashed var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface-sunken);
+  text-align: center;
+  /* Same rule as `.statRow` and the table wrap: a band owns the space beneath
+     it. An empty state is usually the last thing on a screen, which is why this
+     was never noticed — put a panel after one and they touch. Collapses to
+     nothing where a section header follows. */
+  margin-bottom: var(--s-5);
+}
+
+.emptyInner {
+  max-width: 40ch;
+}
+
+.emptyIcon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--s-4);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text-disabled);
+}
+
+.emptyTitle {
+  margin-bottom: var(--s-2);
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+}
+
+.emptyText {
+  margin-bottom: var(--s-5);
+  font-size: var(--t-label);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+/* ---------- skeleton ---------- */
+
+.skeleton {
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+}
+
+/* No shimmer: a still block is calmer and cheaper than an animated one. */
+.skeletonBlock {
+  border-radius: var(--r-md);
+}

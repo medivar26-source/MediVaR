@@ -1,0 +1,127 @@
+/* Used for the 7 planning steps (vertical rail) and the 11 operative
+   parts (horizontal rail). */
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border: var(--bw) solid transparent;
+  border-radius: var(--r-md);
+  text-align: left;
+  transition: background-color var(--m-fast) var(--ease-out);
+}
+
+.stepLink:hover {
+  background: var(--surface-sunken);
+}
+
+.dot {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: var(--bw) solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.glyph {
+  width: 14px;
+  height: 14px;
+}
+
+.body {
+  min-width: 0;
+  padding-top: 4px;
+}
+
+.label {
+  font-size: var(--t-label);
+  line-height: var(--t-label-lh);
+  color: var(--text-muted);
+}
+
+.meta {
+  margin-top: 2px;
+  font-size: var(--t-caption);
+  color: var(--text-disabled);
+}
+
+/* ---------- states ---------- */
+
+.done .dot {
+  background: var(--pass);
+  border-color: var(--pass);
+  color: var(--on-dark);
+}
+.done .label {
+  color: var(--text);
+}
+
+.current {
+  background: var(--brand-surface);
+  border-color: var(--brand-border);
+}
+.current .dot {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+.current .label {
+  color: var(--ink);
+  font-weight: var(--fw-bold);
+}
+
+.blocked .dot {
+  border-style: dashed;
+  border-color: var(--fail-border);
+  color: var(--fail);
+}
+
+/* ---------- horizontal ---------- */
+
+.horizontal {
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  padding-bottom: var(--s-2);
+}
+
+.horizontal .step {
+  flex: 0 0 auto;
+  align-items: center;
+  padding: var(--s-2) var(--s-3);
+}
+
+.horizontal .body {
+  padding-top: 0;
+}
+
+.horizontal .label {
+  white-space: nowrap;
+}
+
+.connector {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 2px;
+  border-radius: var(--r-pill);
+  background: var(--divider);
+}
+
+.connectorDone {
+  background: var(--pass);
+}

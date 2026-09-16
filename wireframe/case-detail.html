@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Case 1 — MediVeR XR</title>
+<link rel="stylesheet" href="wire.css">
+</head>
+<body data-nav="cases">
+<div class="app">
+  <aside class="side" data-side></aside>
+  <div class="main">
+    <header class="topbar" data-topbar data-crumb="Cases / Case 1 — Varus OA"></header>
+    <div class="canvas">
+
+      <div class="page-head">
+        <div class="grow">
+          <div class="eyebrow">Total Knee Replacement</div>
+          <h1>Case 1 — Varus osteoarthritis, right knee</h1>
+          <div class="row" style="gap:6px;margin-top:10px">
+            <span class="chip mut">Osteoarthritis</span>
+            <span class="chip mut">Right</span>
+            <span class="chip mut">Intermediate</span>
+            <span class="chip mut">3 attempts</span>
+          </div>
+        </div>
+        <button class="btn">Configure</button>
+        <a class="btn primary lg" href="plan-1.html">Start planning</a>
+      </div>
+
+      <div class="grid g12">
+
+        <!-- LEFT -->
+        <div class="c5 stack lg">
+
+          <div class="card">
+            <div class="card-head"><h3>Patient snapshot</h3></div>
+            <dl class="kv">
+              <dt>Age / sex</dt><dd>68 · Female</dd>
+              <dt>Side</dt><dd>Right</dd>
+              <dt>BMI</dt><dd>31.4</dd>
+              <dt>Chief complaint</dt><dd>Medial knee pain, 4 years</dd>
+              <dt>Walking distance</dt><dd>~200 m</dd>
+              <dt>Fixed flexion</dt><dd>5°</dd>
+              <dt>Range of motion</dt><dd>5°–115°</dd>
+              <dt>Deformity</dt><dd>8.2° varus, correctable</dd>
+            </dl>
+            <p class="tiny" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--soft)">Synthetic patient. No identifiable data is stored (<code>the spec</code>).</p>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>Imaging package</h3><span class="tiny">4 views</span></div>
+            <div class="grid g2">
+              <div><div class="ph thumb">AP standing</div><p class="tiny" style="margin-top:6px">AP standing</p></div>
+              <div><div class="ph thumb">Lateral</div><p class="tiny" style="margin-top:6px">Lateral</p></div>
+              <div><div class="ph thumb">Skyline</div><p class="tiny" style="margin-top:6px">Skyline</p></div>
+              <div><div class="ph thumb">Long-leg</div><p class="tiny" style="margin-top:6px">Full-length long-leg</p></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>Learning objectives</h3></div>
+            <div class="stack">
+              <div class="check"><span class="box on">✓</span><span>Recognise medial compartment OA with correctable varus on a long-leg film.</span></div>
+              <div class="check"><span class="box on">✓</span><span>Plan a neutral mechanical axis and justify the resection depths.</span></div>
+              <div class="check"><span class="box"></span><span>Execute a tibial cut within ±2 mm of the planned 8 mm.</span></div>
+              <div class="check"><span class="box"></span><span>Balance flexion and extension gaps to within 2 mm.</span></div>
+              <div class="check"><span class="box"></span><span>Identify and stage a medial release without over-releasing.</span></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT -->
+        <div class="c7 stack lg">
+
+          <div class="card flush">
+            <div class="card-head" style="padding:20px 22px 14px;margin:0">
+              <h3>Attempt history</h3>
+              <a class="btn ghost sm" href="sessions.html">All sessions</a>
+            </div>
+            <table class="tbl">
+              <thead>
+                <tr><th>Date</th><th>Mode</th><th>Variant</th><th class="n">Duration</th><th class="n">Score</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="k">20 May 2025</td><td>Assessment</td><td>CR · Cemented</td><td class="n">14:22</td><td class="n k">92</td><td><span class="badge pass">Passed</span></td></tr>
+                <tr><td class="k">06 May 2025</td><td>Training</td><td>CR · Cemented</td><td class="n">21:07</td><td class="n k">81</td><td><span class="badge pass">Passed</span></td></tr>
+                <tr><td class="k">28 Apr 2025</td><td>Training</td><td>PS · Cemented</td><td class="n">26:44</td><td class="n k">64</td><td><span class="badge warn">Below pass mark</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card accent">
+            <div class="card-head" style="border-color:var(--accent-line)">
+              <h3>Instructor configuration</h3>
+              <span class="badge live">Instructor only</span>
+            </div>
+            <p class="sub" style="margin-bottom:18px">Per-scene overrides. A configured session carries a <b>Custom configuration</b> badge on its report, so results are never compared against a different rule set without the reader knowing.</p>
+
+            <div class="stack">
+              <div class="lrow" style="background:var(--card);border-radius:var(--r-sm);border:1px solid var(--accent-line)">
+                <div class="grow"><div class="lt">Tolerance bands</div><div class="ld">Scale factor applied to every authored value</div></div>
+                <div class="seg"><span>×0.7</span><span class="on">×1.0</span><span>×1.5</span></div>
+              </div>
+              <div class="lrow" style="background:var(--card);border-radius:var(--r-sm);border:1px solid var(--accent-line)">
+                <div class="grow"><div class="lt">Cartilage grade (9.1)</div><div class="ld">Gates the resurfacing decision</div></div>
+                <div class="chip">Grade III ▾</div>
+              </div>
+              <div class="lrow" style="background:var(--card);border-radius:var(--r-sm);border:1px solid var(--accent-line)">
+                <div class="grow"><div class="lt">Adhesion count (2.3)</div><div class="ld">Bands to release before subluxation unlocks</div></div>
+                <div class="chip">3 ▾</div>
+              </div>
+              <div class="lrow" style="background:var(--card);border-radius:var(--r-sm);border:1px solid var(--accent-line)">
+                <div class="grow"><div class="lt">Guides in Training</div><div class="ld">Ghosts, corridors, arrows, target dots</div></div>
+                <div class="seg"><span class="on">On</span><span>Off</span></div>
+              </div>
+              <div class="lrow" style="background:var(--card);border-radius:var(--r-sm);border:1px solid var(--accent-line)">
+                <div class="grow"><div class="lt">Mandatory parts</div><div class="ld">Parts a learner may not skip</div></div>
+                <div class="chip">P0–P11 (all) ▾</div>
+              </div>
+            </div>
+
+            <div class="footbar" style="border-color:var(--accent-line)">
+              <span class="tiny">Presets are named and assignable to a cohort.</span>
+              <span class="spacer"></span>
+              <button class="btn">Reset to authored</button>
+              <button class="btn primary">Save as preset</button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="wire.js"></script>
+</body>
+</html>

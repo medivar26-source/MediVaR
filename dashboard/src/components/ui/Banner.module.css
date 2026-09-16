@@ -1,0 +1,162 @@
+/* Solid fills, never tints.
+ *
+ * A banner announces a state — live session, interrupted run, failed upload —
+ * and should read as decisively as the badge that carries the same verdict
+ * elsewhere. The pale-tint version sat back far enough to be mistaken for
+ * decoration. Tints are now reserved for grouping surfaces only. */
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  width: 100%;
+  padding: var(--s-4) var(--s-4) var(--s-4) var(--s-5);
+  border-radius: var(--r-lg);
+  background: var(--dark);
+  color: #fff;
+}
+
+.icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.glyph {
+  width: 15px;
+  height: 15px;
+}
+
+/* Live state swaps the glyph for a pulsing dot. */
+.pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fff;
+  animation: bannerPulse 1.8s var(--ease-out) infinite;
+}
+
+@keyframes bannerPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--t-label);
+  line-height: var(--t-label-lh);
+  font-weight: var(--fw-bold);
+  color: #fff;
+}
+
+.text {
+  margin-top: 2px;
+  font-size: var(--t-label);
+  line-height: 1.5;
+  color: var(--on-dark-dim);
+}
+
+.action {
+  flex: 0 0 auto;
+}
+
+.dismiss {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--on-dark-dim);
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out);
+}
+
+.dismiss:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+/* ---------- tones: the accent moves to the icon and the rule, not the fill ---------- */
+
+.brand {
+  background: var(--dark);
+}
+.brand .icon {
+  background: var(--brand);
+}
+
+.pass {
+  background: var(--pass);
+}
+.pass .icon {
+  background: rgba(255, 255, 255, 0.18);
+}
+.pass .text {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.warn {
+  background: var(--warn);
+}
+.warn .icon {
+  background: rgba(255, 255, 255, 0.18);
+}
+.warn .text {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.fail {
+  background: var(--fail);
+}
+.fail .icon {
+  background: rgba(255, 255, 255, 0.18);
+}
+.fail .text {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+@media (max-width: 767px) {
+  .banner {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .action {
+    width: 100%;
+  }
+}
+
+/* Action buttons inside a banner.
+   On the dark (brand) banner the green primary reads well as-is. On the three
+   already-coloured tones a green button would clash, so the action becomes a
+   solid white pill. */
+
+.pass .action :global(button),
+.warn .action :global(button),
+.fail .action :global(button) {
+  background: #fff;
+  border-color: #fff;
+  color: var(--ink);
+}
+
+.pass .action :global(button:hover),
+.warn .action :global(button:hover),
+.fail .action :global(button:hover) {
+  background: rgba(255, 255, 255, 0.86);
+  border-color: rgba(255, 255, 255, 0.86);
+}

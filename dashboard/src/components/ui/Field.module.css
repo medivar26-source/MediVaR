@@ -1,0 +1,210 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-size: var(--t-label);
+  line-height: var(--t-label-lh);
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+}
+
+.required {
+  color: var(--fail);
+  font-weight: var(--fw-bold);
+}
+
+.optional {
+  margin-left: auto;
+  font-size: var(--t-caption);
+  font-weight: var(--fw-regular);
+  color: var(--text-disabled);
+}
+
+/* ---------- control ---------- */
+
+/* Holds a trailing control inside the field's border. */
+.controlWrap {
+  position: relative;
+  display: block;
+}
+
+.controlTrailing {
+  padding-right: 92px;
+}
+
+.trailing {
+  position: absolute;
+  top: 50%;
+  right: var(--s-2);
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+}
+
+
+.control {
+  width: 100%;
+  height: var(--h-md);
+  padding: 0 var(--s-4);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-body);
+  transition:
+    border-color var(--m-fast) var(--ease-out),
+    background-color var(--m-fast) var(--ease-out);
+}
+
+.control::placeholder {
+  color: var(--text-disabled);
+}
+
+.control:hover:not(:disabled):not(:read-only) {
+  border-color: var(--border-strong);
+}
+
+.control:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-surface);
+}
+
+.control:disabled {
+  background: var(--surface-sunken);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+/* Read-only is visually distinct from disabled: it holds real data. */
+.control:read-only:not(select) {
+  background: var(--surface-sunken);
+  border-style: dashed;
+  color: var(--text);
+}
+
+.invalid,
+.invalid:hover {
+  border-color: var(--fail);
+}
+.invalid:focus {
+  border-color: var(--fail);
+  box-shadow: 0 0 0 3px var(--fail-surface);
+}
+
+.textarea {
+  height: auto;
+  min-height: 108px;
+  padding: var(--s-3) var(--s-4);
+  line-height: var(--t-body-lh);
+  resize: vertical;
+}
+
+.select {
+  appearance: none;
+  padding-right: var(--s-9);
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 20px) calc(50% + 2px),
+    calc(100% - 15px) calc(50% + 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+/* ---------- messages ---------- */
+
+.helper {
+  font-size: var(--t-caption);
+  line-height: var(--t-caption-lh);
+  color: var(--text-muted);
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  font-size: var(--t-caption);
+  line-height: var(--t-caption-lh);
+  font-weight: var(--fw-medium);
+  color: var(--fail);
+}
+
+.errorIcon {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+}
+
+/* ---------- checkbox ---------- */
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  min-height: var(--h-md);
+  padding: var(--s-2) 0;
+  cursor: pointer;
+}
+
+.checkInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.checkBox {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border: var(--bw) solid var(--border-strong);
+  border-radius: var(--r-xs);
+  background: var(--surface);
+  color: transparent;
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    border-color var(--m-fast) var(--ease-out);
+}
+
+.checkInput:checked + .checkBox {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+
+.checkInput:focus-visible + .checkBox {
+  outline: var(--bw-emphasis) solid var(--brand);
+  outline-offset: 2px;
+}
+
+.checkIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.checkBody {
+  min-width: 0;
+}
+
+.checkLabel {
+  font-size: var(--t-body);
+  color: var(--ink);
+}
+
+.checkHelper {
+  margin-top: 2px;
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}

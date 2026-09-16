@@ -1,0 +1,111 @@
+/* The single ambient status control.
+ *
+ * Replaces the banners entirely: a running or interrupted session is a state,
+ * not an announcement. No pulsing dot — the ring already says the session is
+ * open, and a blinking light on a clinical dashboard reads as an alarm.
+ * Hovering reveals the action glyph. */
+
+.dial {
+  position: relative;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--dark);
+  color: #fff;
+  transition:
+    transform var(--m-fast) var(--ease-out),
+    background-color var(--m-fast) var(--ease-out);
+}
+
+.dial:hover {
+  transform: scale(1.05);
+}
+
+.warnDial {
+  background: var(--warn);
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 3;
+}
+
+.progress {
+  fill: none;
+  stroke: var(--brand);
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--m-slow) var(--ease-out);
+}
+
+.warnDial .progress {
+  stroke: #fff;
+}
+
+/* ---------- the two swapping faces ---------- */
+
+.face {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+  transition: opacity var(--m-fast) var(--ease-out);
+}
+
+.dial:hover .face {
+  opacity: 0;
+}
+
+.time {
+  font-size: 14px;
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.02em;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.caption {
+  font-size: 8px;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.action {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity var(--m-fast) var(--ease-out);
+}
+
+.dial:hover .action,
+.dial:focus-visible .action {
+  opacity: 1;
+}
+
+.dial:focus-visible .face {
+  opacity: 0;
+}
+
+.actionGlyph {
+  width: 24px;
+  height: 24px;
+  color: #fff;
+}

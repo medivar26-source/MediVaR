@@ -1,0 +1,115 @@
+/* The most important component in the product — the report lives in one. */
+
+.wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--r-lg);
+  border: var(--bw) solid var(--border);
+  background: var(--surface);
+  /* Same reasoning as `.statRow`: collapses to nothing where a section header
+     already follows, and stops the next panel touching the header row where
+     one does not. */
+  margin-bottom: var(--s-5);
+}
+
+/* Inside a padding="none" Card the wrapper must not double the border. */
+.bare {
+  border: none;
+  border-radius: 0;
+}
+
+.table {
+  width: 100%;
+  min-width: 640px;
+  font-size: var(--t-label);
+  border-collapse: collapse;
+}
+
+.th {
+  padding: var(--s-3) var(--s-4);
+  background: var(--surface-sunken);
+  border-bottom: var(--bw) solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--t-overline);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.td {
+  padding: var(--s-4);
+  border-bottom: var(--bw) solid var(--divider);
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.row:last-child .td {
+  border-bottom: none;
+}
+
+.row {
+  transition: background-color var(--m-fast) var(--ease-out);
+}
+.row:hover .td {
+  background: var(--canvas);
+}
+
+/* Numeric columns right-aligned with tabular figures so digits stack. */
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.key {
+  color: var(--ink);
+  font-weight: var(--fw-semibold);
+}
+
+.unit {
+  color: var(--text-muted);
+  font-size: var(--t-caption);
+}
+
+/* Row-level state. Kept subtle: the badge in the row carries the meaning. */
+.rowPass .td {
+  background: color-mix(in srgb, var(--pass-surface) 45%, transparent);
+}
+.rowWarn .td {
+  background: color-mix(in srgb, var(--warn-surface) 55%, transparent);
+}
+.rowFail .td {
+  background: color-mix(in srgb, var(--fail-surface) 55%, transparent);
+}
+
+.sortable {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.sortable:hover {
+  color: var(--text);
+}
+
+.sortIcon {
+  width: 13px;
+  height: 13px;
+  opacity: 0.5;
+}
+.sortActive .sortIcon {
+  opacity: 1;
+}
+
+.caption {
+  padding: var(--s-3) var(--s-4);
+  border-top: var(--bw) solid var(--divider);
+  color: var(--text-muted);
+  font-size: var(--t-caption);
+  text-align: left;
+}

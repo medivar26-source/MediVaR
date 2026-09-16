@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Home — MediVeR XR</title>
+<link rel="stylesheet" href="wire.css">
+</head>
+<body data-nav="home">
+<div class="app">
+  <aside class="side" data-side></aside>
+  <div class="main">
+    <header class="topbar" data-topbar data-crumb="Home"></header>
+    <div class="canvas">
+
+      <div class="banner">
+        <span class="ic">i</span>
+        <div class="grow">
+          <div class="bt">Session complete on the headset</div>
+          <div class="bd">Case 1 — Varus OA, right knee · Assessment · finished 4 minutes ago.</div>
+        </div>
+        <button class="btn sm primary">View report</button>
+      </div>
+
+      <div class="page-head">
+        <div class="grow">
+          <h1>Welcome back, Dr Arjun Mehta</h1>
+          <p class="sub">Surgeon · Resident level</p>
+        </div>
+        <button class="btn">Take the tour</button>
+      </div>
+
+      <div class="grid g12">
+
+        <div class="c8 card" style="display:flex;flex-direction:column;gap:18px">
+          <div>
+            <div class="eyebrow">Start a simulation</div>
+            <h2 style="margin:8px 0 6px">Plan a case, send it to the headset</h2>
+            <p class="sub">Seven pre-operative steps produce a saved plan and a 4-digit pairing PIN. The headset scores you against that plan.</p>
+          </div>
+          <div class="row" style="gap:10px">
+            <a class="btn primary lg" href="setup.html">Start simulation</a>
+            <a class="btn lg" href="cases.html">Browse cases</a>
+          </div>
+          <div class="row" style="gap:8px;margin-top:2px">
+            <span class="chip mut">Total Knee Replacement</span>
+            <span class="chip mut">Training · Intermediate</span>
+            <span class="chip mut">CR · Cemented</span>
+            <span class="tiny">defaults from your role</span>
+          </div>
+        </div>
+
+        <div class="c4 card">
+          <div class="eyebrow grey">My performance</div>
+          <div class="row" style="align-items:baseline;gap:8px;margin:14px 0 10px">
+            <span class="num">78<small style="font-size:20px;color:var(--muted)">%</small></span>
+            <span class="badge pass">Above pass mark</span>
+          </div>
+          <div class="bar"><i style="width:78%"></i></div>
+          <dl class="kv" style="margin-top:20px">
+            <dt>Sessions</dt><dd>24</dd>
+            <dt>Assessments</dt><dd>12</dd>
+            <dt>Average score</dt><dd>78%</dd>
+            <dt>Last active</dt><dd>12 May 2025</dd>
+          </dl>
+          <a class="btn ghost sm" href="performance.html" style="margin-top:16px;padding-left:0">View all →</a>
+        </div>
+
+      </div>
+
+      <div class="sec"><h2>Continue</h2><span class="line"></span><a class="act" href="sessions.html">All sessions</a></div>
+      <div class="grid g3">
+
+        <div class="card">
+          <div class="row between" style="margin-bottom:12px">
+            <h3>Total Knee Replacement</h3>
+            <span class="badge live"><span class="dot"></span>In progress</span>
+          </div>
+          <p class="tiny" style="margin-bottom:14px">Training · Intermediate · CR · Cemented</p>
+          <div class="bar"><i style="width:65%"></i></div>
+          <div class="row between" style="margin-top:8px">
+            <span class="tiny">Part 6 of 11 · Balancing</span>
+            <span class="tiny">65%</span>
+          </div>
+          <div class="row" style="margin-top:16px;gap:8px">
+            <button class="btn sm primary">Resume</button>
+            <button class="btn sm">Details</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row between" style="margin-bottom:12px">
+            <h3>Total Knee Replacement</h3>
+            <span class="badge">Planning</span>
+          </div>
+          <p class="tiny" style="margin-bottom:14px">Assessment · Expert · PS · Cementless</p>
+          <div class="bar"><i style="width:42%"></i></div>
+          <div class="row between" style="margin-top:8px">
+            <span class="tiny">Step 3 of 7 · Deformity</span>
+            <span class="tiny">42%</span>
+          </div>
+          <div class="row" style="margin-top:16px;gap:8px">
+            <a class="btn sm primary" href="plan-3.html">Resume</a>
+            <button class="btn sm">Discard</button>
+          </div>
+        </div>
+
+        <div class="card sunken" style="display:grid;place-items:center;text-align:center">
+          <div>
+            <div class="tiny" style="margin-bottom:10px">Nothing else in progress</div>
+            <a class="btn sm" href="cases.html">Browse cases</a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="sec"><h2>Quick access</h2><span class="line"></span></div>
+      <div class="grid g4">
+        <a class="card pad-sm" href="sessions.html"><h3>Saved sessions</h3><p class="tiny" style="margin-top:4px">24 total · 3 resumable</p></a>
+        <a class="card pad-sm" href="cases.html"><h3>My cases</h3><p class="tiny" style="margin-top:4px">8 available · 5 attempted</p></a>
+        <a class="card pad-sm" href="library.html"><h3>Learning resources</h3><p class="tiny" style="margin-top:4px">Guides, videos, references</p></a>
+        <a class="card pad-sm" href="help.html"><h3>Help</h3><p class="tiny" style="margin-top:4px">Pairing &amp; troubleshooting</p></a>
+      </div>
+
+      <div class="note" style="margin-top:32px">
+        Contextual banners replace the photographic hero from the source mockups: <b>session finished</b> (info), <b>session live now</b> (brand, with Watch progress), <b>headset unreachable</b> (warning, with Troubleshoot pairing). One at a time, above the fold.
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="wire.js"></script>
+</body>
+</html>

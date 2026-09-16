@@ -1,0 +1,364 @@
+.chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-bottom: var(--s-5);
+}
+
+/* The identifier people quote to each other, and what the search box matches. */
+.caseId {
+  margin-left: auto;
+  padding: 0 var(--s-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-caption);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  user-select: all;
+}
+
+.readiness {
+  margin-bottom: var(--s-6);
+}
+
+/* Wide column: the patient, and what this viewer has already done about them.
+   Narrow column: the material the case ships with. */
+.layout {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  gap: var(--s-4);
+  align-items: start;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+/* ---------- patient snapshot ---------- */
+
+/* Readings tile two-up; an eighteen-word history does not belong in a 150px
+   column, which is what made the old single-column list 600px tall. */
+.vitals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2);
+  margin-top: var(--s-4);
+}
+
+.vital {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-sm);
+  background: var(--surface-sunken);
+}
+
+.vital dt {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.vital dd {
+  font-size: var(--t-body);
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.notes {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--s-5);
+  border-top: 1px solid var(--divider);
+}
+
+.note {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: var(--s-4);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--divider);
+  font-size: var(--t-label);
+  line-height: 1.55;
+}
+
+.note:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.note dt {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.note dd {
+  color: var(--text);
+}
+
+.foot {
+  margin-top: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--divider);
+  font-size: var(--t-caption);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.count {
+  font-size: var(--t-caption);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ---------- imaging ---------- */
+
+.views {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+  list-style: none;
+}
+
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.plate {
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--s-1);
+  aspect-ratio: 4 / 5;
+  color: var(--text-disabled);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+}
+
+.viewLabel {
+  font-size: var(--t-caption);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.viewNote {
+  font-size: var(--t-caption);
+  color: var(--text-disabled);
+}
+
+/* ---------- how this case is scored ---------- */
+
+.scoring {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+  list-style: none;
+}
+
+.scoreRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px 28px;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--t-label);
+}
+
+.scoreLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+/* Share of the available marks. Neutral black, not brand — brand is for
+   things you press, and this is data. */
+.scoreTrack {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.scoreFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--dark);
+}
+
+.scoreMax {
+  text-align: right;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- objectives ---------- */
+
+.objectives {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+  list-style: none;
+}
+
+.objective {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: var(--s-3);
+  font-size: var(--t-label);
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.objectiveIcon {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--brand);
+}
+
+.emptyWrap {
+  padding: var(--s-5);
+}
+
+/* ---------- instructor configuration ---------- */
+
+/* Full width beneath both columns: it is a form, and a form squeezed into a
+   five-twelfths column wraps every one of its rows. */
+.configureWrap {
+  margin-top: var(--s-4);
+}
+
+.configure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.configForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.configRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-sunken);
+}
+
+.configLabel {
+  font-size: var(--t-label);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.configHint {
+  margin-top: 2px;
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.configFoot {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s-3);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--border);
+}
+
+.presetName {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  flex: 1;
+}
+
+.presetInput {
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  font: inherit;
+  font-size: var(--t-body);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+}
+
+.presetInput:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.presetList {
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--border);
+}
+
+.presets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+  list-style: none;
+}
+
+.preset {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-size: var(--t-label);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.presetMeta {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+@media (max-width: 1279px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .views {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .vitals,
+  .views {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .note {
+    grid-template-columns: 1fr;
+    gap: var(--s-1);
+  }
+
+  .configRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

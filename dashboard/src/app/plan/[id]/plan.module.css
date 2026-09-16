@@ -1,0 +1,467 @@
+/* The planning shell.
+   Planning is a focused mode: the two-tier product nav is replaced by the
+   stepper rail, and the global nav is one click away on the back link. Desktop only, by design */
+
+.page {
+  display: flex;
+  min-height: 100dvh;
+  background: var(--rail);
+}
+
+/* ---------- rail ---------- */
+
+.rail {
+  position: sticky;
+  top: 0;
+  flex: 0 0 288px;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  padding: var(--s-5) var(--s-4) var(--s-5) var(--s-5);
+  overflow-y: auto;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 34px;
+  font-size: var(--t-caption);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.back:hover {
+  color: var(--ink);
+}
+
+.railCase {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.railEyebrow {
+  font-size: var(--t-overline);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+.railTitle {
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.railMeta {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  transition: background-color var(--m-fast) var(--ease-out);
+}
+
+.step:hover {
+  background: rgba(14, 21, 18, 0.045);
+}
+
+.stepOn,
+.stepOn:hover {
+  background: var(--surface);
+}
+
+/* A step you cannot reach yet is not a link — it states why in its title. */
+.stepLocked {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.stepDot {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: var(--bw) solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: var(--t-caption);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.stepDone .stepDot {
+  background: var(--pass);
+  border-color: var(--pass);
+  color: #fff;
+}
+
+.stepOn .stepDot {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.stepLocked .stepDot {
+  border-style: dashed;
+  color: var(--text-disabled);
+}
+
+.stepGlyph {
+  width: 14px;
+  height: 14px;
+}
+
+.stepBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding-top: 3px;
+}
+
+.stepTitle {
+  font-size: var(--t-label);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.stepOn .stepTitle {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.stepMeta {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.railFoot {
+  margin-top: auto;
+  padding-top: var(--s-4);
+  border-top: var(--bw) solid var(--border);
+  font-size: var(--t-caption);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* ---------- content ---------- */
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--s-4) var(--s-4) var(--s-4) 0;
+}
+
+.surface {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--s-7);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-5);
+  margin-bottom: var(--s-6);
+}
+
+.headText {
+  flex: 1;
+  min-width: 0;
+}
+
+.eyebrow {
+  margin-bottom: var(--s-2);
+  font-size: var(--t-overline);
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+.title {
+  font-size: var(--t-h1);
+  line-height: var(--t-h1-lh);
+}
+
+.lede {
+  margin-top: var(--s-2);
+  max-width: 74ch;
+  font-size: var(--t-body);
+  line-height: var(--t-body-lh);
+  color: var(--text-muted);
+}
+
+.headSide {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex: 0 0 auto;
+}
+
+.budget {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 34px;
+  padding: 0 var(--s-4);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-pill);
+  font-size: var(--t-caption);
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ---------- step body ---------- */
+
+.body {
+  display: grid;
+  gap: var(--s-4);
+  align-items: start;
+}
+
+.split {
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+}
+
+.wide {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.thirds {
+  grid-template-columns: minmax(0, 4fr) minmax(0, 5fr);
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.cardTitle {
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.cardSub {
+  margin-top: 2px;
+  font-size: var(--t-caption);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+
+/* key/value rows shared by several steps */
+
+.kv {
+  display: flex;
+  flex-direction: column;
+}
+
+.kvRow {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: var(--s-4);
+  padding: var(--s-3) 0;
+  border-bottom: var(--bw) solid var(--divider);
+  font-size: var(--t-label);
+  line-height: 1.55;
+}
+
+.kvRow:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.kvRow dt {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.kvRow dd {
+  color: var(--text);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2);
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-sm);
+  background: var(--surface-sunken);
+}
+
+.tileLabel {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.tileValue {
+  font-size: var(--t-body);
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* the radiograph well — the plate is honest until assets are authored */
+
+.plate {
+  display: grid;
+  place-items: center;
+  gap: var(--s-2);
+  min-height: 300px;
+  padding: var(--s-6);
+  color: var(--text-disabled);
+  background: var(--surface-sunken);
+  border: var(--bw) solid var(--border);
+}
+
+.plateText {
+  font-size: var(--t-caption);
+  font-weight: 600;
+  text-align: center;
+  max-width: 42ch;
+  line-height: 1.5;
+}
+
+.plateNote {
+  font-size: var(--t-caption);
+  text-align: center;
+  max-width: 46ch;
+  line-height: 1.5;
+  color: var(--text-disabled);
+}
+
+.viewList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* ---------- footer: the gate ---------- */
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin-top: var(--s-6);
+  padding-top: var(--s-5);
+  border-top: var(--bw) solid var(--border);
+}
+
+.gate {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  font-size: var(--t-caption);
+  line-height: 1.5;
+}
+
+.gateIcon {
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+}
+
+.gateOpen .gateIcon {
+  color: var(--warn);
+}
+
+.gatePass .gateIcon {
+  color: var(--pass);
+}
+
+.gateText {
+  color: var(--text-muted);
+}
+
+.gatePass .gateText {
+  color: var(--text);
+}
+
+.saveState {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 1279px) {
+  .split,
+  .thirds {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Planning needs precision on a radiograph, so it is desktop-only
+   rather than shipping a measurement tool nobody can hit accurately. */
+.tooSmall {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .rail,
+  .surface > *:not(.tooSmall) {
+    display: none;
+  }
+
+  .tooSmall {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+    align-items: flex-start;
+    max-width: 52ch;
+  }
+}

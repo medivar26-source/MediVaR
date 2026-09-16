@@ -1,0 +1,173 @@
+/* ============================================================
+   MediVeR XR — Design tokens
+   Single source of truth. No component may hard-code a value.
+
+   Two greens, strictly separated by job:
+     --brand  is INTERACTIVE only  (buttons, active nav, links, focus)
+     --pass   is STATUS only       (badges, bars, verdicts)
+   Neither is ever used for the other's job. That separation, plus the
+   rule that every status also carries an icon and a text label, is what
+   keeps a "Pass" badge from reading as a brand chip.
+   ============================================================ */
+
+:root {
+  /* ---------- brand: deep forest. interactive surfaces only ---------- */
+  --brand: #0f7a46;
+  --brand-hover: #0c6339;
+  --brand-pressed: #094e2d;
+  --brand-surface: #e8f3ec;
+  --brand-surface-hover: #dceade;
+  --brand-border: #c2ddcd;
+  --on-brand: #ffffff;
+
+  /* ---------- semantic: status only ---------- */
+  --pass: #0b7a5a; /* emerald, cooler than brand */
+  --pass-surface: #dff3ec;
+  --pass-border: #b6e0d1;
+
+  --warn: #9a6212;
+  --warn-surface: #faf0df;
+  --warn-border: #ecd8b2;
+
+  --fail: #b0322a;
+  --fail-surface: #fbecea;
+  --fail-border: #edc9c5;
+
+  --info: #1f5f8b;
+  --info-surface: #e6f0f7;
+  --info-border: #c2d9e8;
+
+  /* ---------- neutrals: warm-cast greys so they sit under green ---------- */
+  --ink: #0e1512;
+  --text: #37423c;
+  --text-muted: #5e6b64;
+  --text-disabled: #9aa5a0;
+  --on-dark: #ffffff;
+  --on-dark-muted: #93a29a;
+
+  --border: #dee4e0;
+  --border-strong: #c3ccc7;
+  --divider: #ebefec;
+
+  --canvas: #f4f7f5;
+  --surface: #ffffff;
+  --surface-sunken: #eff3f0;
+  --surface-raised: #ffffff;
+
+  --forest: #0d1f18; /* deep green fill: launch chrome */
+  --forest-2: #163024;
+  --forest-3: #1f4030;
+
+  /* Near-black. The third colour in the green/black/white system — used for
+     the single focal card per screen and for dark pills. Never a large area. */
+  --dark: #121613;
+  --dark-2: #1e2421;
+  --dark-3: #2b332e;
+  --on-dark-dim: #7d8a83;
+
+  /* Navigation chrome sits on a warm light grey, not on the dark green. */
+  --rail: #f0f2f0;
+  --panel: #f6f8f6;
+
+  --scrim: rgba(14, 21, 18, 0.55);
+
+  /* ---------- radius: curved language ---------- */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --r-pill: 999px;
+
+  /* ---------- borders ---------- */
+  --bw: 1px;
+  --bw-emphasis: 2px;
+
+  /* ---------- spacing: 4px scale ---------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 40px;
+  --s-9: 48px;
+  --s-10: 64px;
+  --s-11: 80px;
+
+  /* ---------- control heights (>=44px meets touch target minimum) ---------- */
+  --h-sm: 36px;
+  --h-md: 44px;
+  --h-lg: 56px;
+
+  /* ---------- type ----------
+     One family — Plus Jakarta Sans, a rounded geometric sans, the closest
+     licensable stand-in for the PayPal Sans the brief asked for. The two
+     variables are kept distinct so a separate display face can return without
+     touching a component; today they resolve to the same family and hierarchy
+     comes from weight, as the design direction always intended.
+
+     The scale is the original 15 / 13 / 12 ladder. It was stepped up a notch
+     when Jakarta landed, on the theory that Jakarta sets smaller than Inter at
+     the same nominal size; on screen that read as oversized, so it is back
+     where it was. Jakarta's larger apertures carry the small sizes without the
+     extra pixel. */
+  --font-display: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-ui: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  --t-display: 44px;
+  --t-display-lh: 1.05;
+  --t-h1: 32px;
+  --t-h1-lh: 1.15;
+  --t-h2: 22px;
+  --t-h2-lh: 1.25;
+  --t-h3: 17px;
+  --t-h3-lh: 1.35;
+  --t-body: 15px;
+  --t-body-lh: 1.55;
+  --t-label: 13px;
+  --t-label-lh: 1.4;
+  --t-caption: 12px;
+  --t-caption-lh: 1.4;
+  --t-overline: 11px;
+  --t-overline-lh: 1.3;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* ---------- layout ---------- */
+  --rail-w: 78px;
+  --panel-w: 234px;
+  --side-w: 248px;
+  --side-w-collapsed: 76px;
+  --top-h: 72px;
+  --content-max: 1560px;
+
+  /* ---------- motion ---------- */
+  --m-fast: 140ms;
+  --m-base: 220ms;
+  --m-slow: 320ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+
+  /* ---------- elevation: soft and low, never dramatic ---------- */
+  --e-0: none;
+  --e-1: 0 1px 2px rgba(14, 21, 18, 0.04);
+  --e-2: 0 2px 8px rgba(14, 21, 18, 0.06);
+  --e-3: 0 8px 24px rgba(14, 21, 18, 0.08);
+
+  /* ---------- z-index scale ---------- */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-nav: 20;
+  --z-overlay: 40;
+  --z-modal: 100;
+  --z-toast: 1000;
+}
+
+/* Dark theme is planned, not built. Recorded so nothing above blocks it:
+   every surface reads a token, no component assumes white is "light". */
