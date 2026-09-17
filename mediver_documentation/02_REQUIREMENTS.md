@@ -101,3 +101,9 @@ Authentication is intended to be addressed first during implementation. This doc
 - Review shall expose plan vs execution, match/adherence information, deviations and mistakes.
 - Instructor feedback may be attached to specific mistakes or procedural steps.
 - Residents shall be able to revisit instructor feedback before a subsequent practice attempt.
+
+### Instructor Cohort Management
+- Instructors directly provision Learner accounts and enroll them in Cohorts, replacing self-registration or invite-links.
+- A single permanent learner account (Learner ID) supports many-to-many cohort memberships across different programs.
+- Duplicate membership within the same cohort is prevented.
+- A learner cannot simultaneously belong to multiple active cohorts within the same program.

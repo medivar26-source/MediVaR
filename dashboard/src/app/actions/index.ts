@@ -211,38 +211,109 @@ export async function createCohort(
     return { error: "Give the cohort a name of at least two characters." };
   }
 
-  return { error: NOT_PERSISTED };
+  const cookieStore = await cookies();
+  const token = cookieStore.get("mediver-token")?.value;
+
+  try {
+    const res = await fetch(`${API_BASE}/cohorts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      return { error: data.detail || "Failed to create cohort." };
+    }
+  } catch {
+    return { error: "Failed to connect to the server." };
+  }
+
+  // Reload the page to reflect the new cohort
+  redirect("/cohorts");
 }
 
-export type InviteState = {
+export type LearnerProvisionState = {
   error?: string;
-  /** Returned once. There is no query that fetches it back. */
-  link?: string;
-  expiresAt?: string;
-  revoked?: string;
+  learnerId?: string;
+  tempPassword?: string;
+  success?: boolean;
 };
 
-export async function createInvite(
-  _prev: InviteState,
+export async function createLearner(
+  _prev: LearnerProvisionState,
   formData: FormData,
-): Promise<InviteState> {
+): Promise<LearnerProvisionState> {
   const cohortId = String(formData.get("cohortId") ?? "");
-  if (!cohortId) return { error: "This form is missing its cohort." };
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
 
-  return {
-    error:
-      "Join links are minted and redeemed by a service that is not running yet.",
-  };
+  if (!cohortId || !firstName || !lastName) {
+    return { error: "All fields are required." };
+  }
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get("mediver-token")?.value;
+
+  try {
+    const res = await fetch(`${API_BASE}/cohorts/${cohortId}/learners/new`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ first_name: firstName, last_name: lastName, role: "resident" }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      return { error: data.detail || "Failed to create learner." };
+    }
+    return { 
+      success: true, 
+      learnerId: data.learner_id, 
+      tempPassword: data.temporary_password 
+    };
+  } catch {
+    return { error: "Connection error." };
+  }
 }
 
-export async function revokeInvite(
-  _prev: InviteState,
+export async function addExistingLearner(
+  _prev: LearnerProvisionState,
   formData: FormData,
-): Promise<InviteState> {
-  const inviteId = String(formData.get("inviteId") ?? "");
-  if (!inviteId) return { error: "This form is missing its invite." };
+): Promise<LearnerProvisionState> {
+  const cohortId = String(formData.get("cohortId") ?? "");
+  const learnerId = String(formData.get("learnerId") ?? "").trim();
 
-  return { error: NOT_PERSISTED };
+  if (!cohortId || !learnerId) {
+    return { error: "Cohort ID and Learner ID are required." };
+  }
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get("mediver-token")?.value;
+
+  try {
+    const res = await fetch(`${API_BASE}/cohorts/${cohortId}/learners/existing`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ learner_id: learnerId }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      return { error: data.detail || "Failed to add learner." };
+    }
+    return { success: true };
+  } catch {
+    return { error: "Connection error." };
+  }
 }
 
 /* ---------------------------------- cases --------------------------------- */

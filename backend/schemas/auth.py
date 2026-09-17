@@ -30,7 +30,6 @@ class UserProfile(BaseModel):
     status: str
     default_difficulty: str
     level: Optional[str] = None
-    cohort_id: Optional[str] = None
 
 
 class LoginResponse(BaseModel):

@@ -16,12 +16,12 @@ import {
   Tr,
 } from "@/components/ui";
 import { RankedList, StatCard, StatRow } from "@/components/viz";
-import { getCohort, getInvites } from "@/lib/data/cohorts";
+import { AssignPreset } from "../AssignPreset";
+import { ManageLearnersPanel } from "../ManageLearnersPanel";
+import { getCohort } from "@/lib/data/cohorts";
 import { relativeTime, shortDate } from "@/lib/format";
 import { personaFor, ROLE_LABEL } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
-import { AssignPreset } from "../AssignPreset";
-import { InvitePanel } from "../InvitePanel";
 import p from "../../panels.module.css";
 
 export const metadata: Metadata = { title: "Cohort" };
@@ -45,7 +45,6 @@ export default async function CohortPage({
   if (!detail) redirect("/cohorts");
 
   const { cohort, learners, categories, hotspots, presets } = detail;
-  const invites = await getInvites(id);
   const now = new Date().toISOString();
   const scored = learners.filter((l) => l.meanScore !== undefined);
 
@@ -108,8 +107,7 @@ export default async function CohortPage({
       <SectionHeader title="Learners" />
       {learners.length === 0 ? (
         <EmptyState icon={Users} title="Nobody has joined yet">
-          Issue an invite link below and send it to them, or ask an
-          administrator to assign an account to this cohort.
+          Create new learner accounts or enroll existing learners from the Enrollment panel below.
         </EmptyState>
       ) : (
         <Table label={`Learners in ${cohort.name}`}>
@@ -218,17 +216,15 @@ export default async function CohortPage({
       </div>
 
       <SectionHeader title="Enrolment" />
-      <section className={p.panel} aria-label="Invite links">
+      <section className={p.panel} aria-label="Manage Learners">
         <div>
-          <p className={p.panelTitle}>Invite links</p>
+          <p className={p.panelTitle}>Manage Learners</p>
           <p className={p.panelSub}>
-            {invites.length === 0
-              ? "Nothing has been issued for this cohort. A link enrols an existing account; it does not create one."
-              : `${invites.filter((i) => i.state === "open").length} of ${invites.length} still work. A link is shown once when it is created and stored only as a hash, so it cannot be read back.`}
+            Directly provision new learner accounts or add existing learners using their Learner ID.
           </p>
         </div>
 
-        <InvitePanel cohortId={cohort.id} invites={invites} />
+        <ManageLearnersPanel cohortId={cohort.id} />
       </section>
 
       <SectionHeader title="Configuration" />

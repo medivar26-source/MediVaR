@@ -48,10 +48,7 @@ updated_at TIMESTAMP
 id UUID PK
 program_id UUID FK
 name TEXT
-year INTEGER
-status TEXT
-start_date DATE
-end_date DATE
+owner_id UUID FK -> users.id
 created_at TIMESTAMP
 updated_at TIMESTAMP
 ```
@@ -60,11 +57,9 @@ updated_at TIMESTAMP
 ```text
 id UUID PK
 cohort_id UUID FK
-resident_id UUID FK -> users.id
-status TEXT
+user_id UUID FK -> users.id
 joined_at TIMESTAMP
-completed_at TIMESTAMP
-UNIQUE(cohort_id, resident_id)
+UNIQUE(cohort_id, user_id)
 ```
 
 ## Cases and procedures

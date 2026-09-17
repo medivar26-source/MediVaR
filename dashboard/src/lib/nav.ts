@@ -5,7 +5,6 @@ import {
   Compass,
   GraduationCap,
   Settings,
-  TrendingUp,
 } from "lucide-react";
 import type { BadgeKey, NavData } from "./data/nav";
 import type { Persona } from "./roles";
@@ -24,7 +23,7 @@ import type { Persona } from "./roles";
  * badge — a zero is not news, and an invented count is worse than no count.
  */
 
-export type SectionId = "overview" | "practice" | "insights" | "teaching";
+export type SectionId = "overview" | "cohort" | "contents";
 
 export type PanelItem = {
   label: string;
@@ -53,7 +52,7 @@ export type NavSection = {
 export const SECTIONS: NavSection[] = [
   {
     id: "overview",
-    label: "Overview",
+    label: "Dashboard",
     icon: Compass,
     personas: ["learner", "instructor", "admin"],
     groups: [
@@ -61,40 +60,31 @@ export const SECTIONS: NavSection[] = [
         items: [
           { label: "Dashboard", href: "/" },
           { label: "Activity", href: "/activity" },
+          { label: "Performance", href: "/performance" },
+          { label: "Reports", href: "/reports" },
         ],
       },
-      // The Pinned group is injected by sectionsForPersona from the user's own
-      // recent rows. It used to be two hardcoded ids that pointed at a case
-      // and a session the signed-in user might never have touched.
+      {
+        label: "By skill",
+        items: [
+          { label: "Bone cuts & alignment", href: "/performance/bone-cuts" },
+          { label: "Gap assessment", href: "/performance/gaps" },
+          { label: "Trialling & stability", href: "/performance/trialling" },
+          { label: "Implantation", href: "/performance/implantation" },
+        ],
+      },
     ],
   },
   {
-    id: "practice",
-    label: "Practice",
-    icon: Boxes,
+    id: "cohort",
+    label: "Cohort",
+    icon: GraduationCap,
     personas: ["learner", "instructor", "admin"],
     groups: [
       {
         items: [
-          { label: "Simulations", href: "/simulations" },
-          { label: "Case library", href: "/cases" },
-        ],
-      },
-      {
-        label: "Planning",
-        items: [
-          {
-            label: "My plans",
-            href: "/plans",
-            children: [
-              {
-                label: "Ready for VR",
-                href: "/plans?state=ready",
-                badgeKey: "plans.ready",
-              },
-              { label: "PIN issued", href: "/plans?state=paired" },
-            ],
-          },
+          { label: "Cohorts", href: "/cohorts" },
+          { label: "Learners", href: "/cohorts/learners" },
         ],
       },
       {
@@ -119,51 +109,36 @@ export const SECTIONS: NavSection[] = [
           },
         ],
       },
+      {
+        label: "Planning",
+        items: [
+          {
+            label: "My plans",
+            href: "/plans",
+            children: [
+              {
+                label: "Ready for VR",
+                href: "/plans?state=ready",
+                badgeKey: "plans.ready",
+              },
+              { label: "PIN issued", href: "/plans?state=paired" },
+            ],
+          },
+        ],
+      },
     ],
   },
   {
-    id: "insights",
-    label: "Insights",
-    icon: TrendingUp,
+    id: "contents",
+    label: "Contents",
+    icon: Boxes,
     personas: ["learner", "instructor", "admin"],
     groups: [
       {
         items: [
-          { label: "Performance", href: "/performance" },
-          { label: "Reports", href: "/reports" },
-        ],
-      },
-      {
-        label: "By skill",
-        items: [
-          { label: "Bone cuts & alignment", href: "/performance/bone-cuts" },
-          { label: "Gap assessment", href: "/performance/gaps" },
-          { label: "Trialling & stability", href: "/performance/trialling" },
-          { label: "Implantation", href: "/performance/implantation" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "teaching",
-    label: "Teaching",
-    icon: GraduationCap,
-    personas: ["instructor", "admin"],
-    groups: [
-      {
-        items: [
-          { label: "Cohorts", href: "/cohorts" },
-          // A flat attention list across every cohort the viewer owns, ordered
-          // below-pass-first. With one cohort it is the same rows in a different
-          // order, which is still a different question.
-          { label: "Learners", href: "/cohorts/learners" },
-        ],
-      },
-      {
-        label: "Resources",
-        items: [
+          { label: "Simulations", href: "/simulations" },
+          { label: "Case library", href: "/cases" },
           { label: "Library", href: "/library" },
-          { label: "Help", href: "/help" },
         ],
       },
     ],

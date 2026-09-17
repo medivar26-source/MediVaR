@@ -43,8 +43,7 @@ export default async function CohortsPage() {
         <EmptyState icon={Users} title="No cohorts yet">
           A cohort is what scopes an instructor&rsquo;s reach: you can read the
           work of the learners in cohorts you own, and nobody else&rsquo;s.
-          Create one, then invite learners into it with a link — or ask an
-          administrator to assign them.
+          Create one, then add learners to it directly.
         </EmptyState>
       ) : (
         <>
@@ -142,8 +141,8 @@ export default async function CohortsPage() {
           <p className={p.panelTitle}>New cohort</p>
           <p className={p.panelSub}>
             You own what you create, and ownership is what lets you read the work
-            of the people in it. Learners join through an invite link issued on
-            the cohort&rsquo;s own page.
+            of the people in it. Once created, you can generate accounts for new 
+            learners or add existing learners by their Learner ID.
           </p>
         </div>
         <NewCohort />

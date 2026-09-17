@@ -47,7 +47,6 @@ def _row_to_profile(row: dict) -> UserProfile:
         status=row["status"],
         default_difficulty=row.get("default_difficulty", "intermediate"),
         level=row.get("level"),
-        cohort_id=str(row["cohort_id"]) if row.get("cohort_id") else None,
     )
 
 
@@ -268,7 +267,6 @@ def provision_learner(
     last_name: str,
     institution_id: str,
     temp_password: str,
-    cohort_id: Optional[str] = None,
     role: str = "resident",
 ) -> tuple[UserProfile, str]:
     """
@@ -301,11 +299,11 @@ def provision_learner(
         cur = conn.cursor()
         cur.execute(
             """
-            INSERT INTO users (id, institution_id, first_name, last_name, learner_id, role, status, default_difficulty, cohort_id)
-            VALUES (%s, %s, %s, %s, %s, %s, 'active', 'intermediate', %s)
+            INSERT INTO users (id, institution_id, first_name, last_name, learner_id, role, status, default_difficulty)
+            VALUES (%s, %s, %s, %s, %s, %s, 'active', 'intermediate')
             RETURNING *
             """,
-            (auth_user_id, institution_id, first_name, last_name, learner_id, role, cohort_id),
+            (auth_user_id, institution_id, first_name, last_name, learner_id, role),
         )
         row = dict(cur.fetchone())
         conn.commit()
