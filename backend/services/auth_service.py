@@ -16,7 +16,7 @@ import string
 from typing import Optional
 
 from core.config import settings
-from db.session import get_db_conn, get_service_client
+from db.session import get_db_conn, get_anon_client, get_service_client
 from schemas.auth import UserProfile
 
 logger = logging.getLogger(__name__)
@@ -94,7 +94,7 @@ def authenticate_instructor(email: str, password: str) -> dict:
     Returns a dict with 'access_token' and 'user' UserProfile on success.
     Raises ValueError with a safe error message on failure.
     """
-    client = get_service_client()
+    client = get_anon_client()
     try:
         response = client.auth.sign_in_with_password(
             {"email": email, "password": password}
@@ -138,7 +138,7 @@ def authenticate_learner(learner_id: str, password: str) -> dict:
         raise ValueError("Invalid Learner ID or password. Check both and try again.")
 
     synthetic_email = _learner_id_to_email(learner_id)
-    client = get_service_client()
+    client = get_anon_client()
     try:
         response = client.auth.sign_in_with_password(
             {"email": synthetic_email, "password": password}

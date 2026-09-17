@@ -12,7 +12,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/forgot-password", "/request-access", "/support"];
 const PUBLIC_PREFIXES = ["/_next", "/favicon.ico", "/public"];
 
 function isPublicPath(pathname: string): boolean {

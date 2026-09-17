@@ -172,7 +172,7 @@
 }
 
 .item:hover {
-  background: rgba(14, 21, 18, 0.045);
+  background: var(--surface-sunken);
 }
 
 .itemOn,

@@ -1,0 +1,119 @@
+.container {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: var(--color-brand-green-deep);
+  color: white;
+  padding: 4rem;
+}
+
+@media (min-width: 768px) {
+  .container {
+    display: flex;
+  }
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logoIconWrapper {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.75rem;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.logoIcon {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-brand-green-deep);
+}
+
+.brandName {
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  letter-spacing: -0.025em;
+}
+
+.brandSubtitle {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.heroContent {
+  max-width: 480px;
+}
+
+.heading {
+  font-size: 2.25rem;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.description {
+  font-size: 1rem;
+  line-height: 1.625;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.featuresRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.featureItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.featureContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  max-width: 130px;
+}
+
+.featureIconWrapper {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.featureIcon {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: white;
+}
+
+.featureText {
+  font-size: 1rem;
+  line-height: 1.375;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.separator {
+  width: 1px;
+  height: 5rem;
+  background-color: rgba(255, 255, 255, 0.15);
+  margin-top: 0.25rem;
+}

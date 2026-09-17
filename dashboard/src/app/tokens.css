@@ -19,6 +19,29 @@
   --brand-surface-hover: #dceade;
   --brand-border: #c2ddcd;
   --on-brand: #ffffff;
+  
+  --color-brand-green: #1E7A4C;
+  --color-brand-green-deep: #0F4A2C;
+  --color-brand-green-soft: #E3F1E8;
+
+  /* Map generic component tokens to brand values so shared UI
+     components (e.g. Button variant-default) resolve correctly. */
+  --primary: var(--brand);
+  --primary-foreground: var(--on-brand);
+  --ring: var(--brand);
+  --background: var(--surface);
+  --foreground: var(--ink);
+  --muted: var(--surface-sunken);
+  --muted-foreground: var(--text-muted);
+  --secondary: var(--surface-sunken);
+  --secondary-foreground: var(--text);
+  --destructive: var(--fail);
+  --radius: var(--r-sm);
+  --color-muted-foreground: var(--text-muted);
+  --color-foreground: var(--ink);
+  --color-border: var(--border);
+  --color-destructive: var(--fail);
+  --color-muted: var(--surface-sunken);
 
   /* ---------- semantic: status only ---------- */
   --pass: #0b7a5a; /* emerald, cooler than brand */
