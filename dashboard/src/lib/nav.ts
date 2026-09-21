@@ -23,7 +23,7 @@ import type { Persona } from "./roles";
  * badge — a zero is not news, and an invented count is worse than no count.
  */
 
-export type SectionId = "overview" | "cohort" | "contents";
+export type SectionId = "overview" | "programs" | "cohort" | "contents";
 
 export type PanelItem = {
   label: string;
@@ -76,10 +76,62 @@ export const SECTIONS: NavSection[] = [
     ],
   },
   {
-    id: "cohort",
-    label: "Cohort",
+    id: "programs",
+    label: "Programs",
     icon: GraduationCap,
-    personas: ["learner", "instructor", "admin"],
+    personas: ["learner"],
+    groups: [
+      {
+        items: [
+          { label: "Programs", href: "/programs" },
+        ],
+      },
+      {
+        label: "Sessions",
+        items: [
+          {
+            label: "All sessions",
+            href: "/sessions",
+            children: [
+              {
+                label: "Live now",
+                href: "/sessions?status=live",
+                badgeKey: "sessions.live",
+              },
+              {
+                label: "Interrupted",
+                href: "/sessions?status=aborted",
+                badgeKey: "sessions.aborted",
+              },
+              { label: "Completed", href: "/sessions?status=completed" },
+            ],
+          },
+        ],
+      },
+      {
+        label: "Planning",
+        items: [
+          {
+            label: "My plans",
+            href: "/plans",
+            children: [
+              {
+                label: "Ready for VR",
+                href: "/plans?state=ready",
+                badgeKey: "plans.ready",
+              },
+              { label: "PIN issued", href: "/plans?state=paired" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "cohort",
+    label: "Cohorts",
+    icon: GraduationCap,
+    personas: ["instructor", "admin"],
     groups: [
       {
         items: [
@@ -128,6 +180,7 @@ export const SECTIONS: NavSection[] = [
       },
     ],
   },
+
   {
     id: "contents",
     label: "Contents",

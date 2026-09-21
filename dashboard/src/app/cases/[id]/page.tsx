@@ -18,6 +18,7 @@ import {
 } from "@/components/ui";
 import { StatCard, StatRow } from "@/components/viz";
 import { getCase, getCaseTitle, getInstructorConfigs } from "@/lib/data/cases";
+import { getPrograms } from "@/lib/data/programs";
 import { clock, longDuration, shortDate, titleCase } from "@/lib/format";
 import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
@@ -65,6 +66,7 @@ export default async function CaseDetailPage({
   const persona = personaFor(user.role);
   const canConfigure = persona === "instructor" || persona === "admin";
   const presets = canConfigure ? await getInstructorConfigs(detail.id) : [];
+  const programs = persona === "learner" ? await getPrograms().catch(() => []) : [];
 
   const passMark = PASS_MARK[detail.difficulty];
   const attempts = detail.attempts.length;
@@ -91,8 +93,12 @@ export default async function CaseDetailPage({
         <Chip tone="muted">{detail.pathologyLabel}</Chip>
         <Chip tone="muted">{titleCase(detail.side)} knee</Chip>
         <Chip tone="muted">{titleCase(detail.difficulty)}</Chip>
+        {programs.length > 0 && programs[0].cohort_name && (
+          <Chip tone="muted">Cohort: {programs[0].cohort_name}</Chip>
+        )}
         <span className={s.caseId}>{detail.id}</span>
       </div>
+
 
       {/* Where this viewer stands on this case. Every figure is derived from
           their own sessions, and only ever their own.

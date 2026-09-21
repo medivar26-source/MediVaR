@@ -9,6 +9,8 @@ export type ProgramSummary = {
   status: string;
   created_at: string;
   updated_at: string;
+  cohort_id?: string;
+  cohort_name?: string;
 };
 
 export type ProgramDetail = ProgramSummary;
@@ -29,7 +31,9 @@ async function getToken() {
 }
 
 /**
- * Fetch all programs for the current institution.
+ * Fetch all programs accessible to the authenticated user.
+ * For instructors/admins, returns all programs for the institution.
+ * For learners, returns their enrolled programs with associated cohort metadata.
  */
 export async function getPrograms(): Promise<ProgramSummary[]> {
   const token = await getToken();
@@ -44,11 +48,33 @@ export async function getPrograms(): Promise<ProgramSummary[]> {
   if (!res.ok) {
     const errorText = await res.text();
     console.error(`[programs.ts] Failed to fetch programs (${res.status}): ${errorText}`);
-    throw new Error(`Failed to fetch programs: ${res.status} ${errorText}`);
+    return [];
   }
 
   return res.json();
 }
+
+/**
+ * Fetch programs that the signed-in learner is enrolled in, with associated cohort metadata.
+ */
+export async function getEnrolledPrograms(): Promise<ProgramSummary[]> {
+  const token = await getToken();
+
+  const res = await fetch(`${API_BASE}/programs/enrolled`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    console.error(`[programs.ts] Failed to fetch enrolled programs (${res.status})`);
+    return [];
+  }
+
+  return res.json();
+}
+
 
 /**
  * Fetch details for a specific program.

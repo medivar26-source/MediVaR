@@ -17,27 +17,35 @@ import { clock, shortDate, titleCase } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { PASS_MARK } from "@/lib/types";
 
+import { personaFor } from "@/lib/roles";
+
 export const metadata: Metadata = { title: "Reports" };
 
 export default async function ReportsPage() {
   const user = await getCurrentUser();
-  const reports = await getReportsList();
+  const persona = personaFor(user.role);
+  const reports = await getReportsList(user);
 
   // The scope decides whose reports are in the list; a name column only earns its
-  // width when the list can actually contain somebody else.
-  const showLearner = reports.some((r) => r.userId !== user.id);
+  // width when the viewer is an instructor/admin looking at multiple residents.
+  const showLearner = persona !== "learner" && reports.some((r) => r.userId !== user.id);
 
   return (
     <AppShell user={user} searchHint='Try searching "reports"'>
       <PageHeader
-        title="Reports"
-        lede="Every generated surgical case report you may read. A report exists once its session completes and the database scores it."
+        title={persona === "learner" ? "Your Assessment Reports" : "Reports"}
+        lede={
+          persona === "learner"
+            ? "Every generated surgical case evaluation report for your completed simulation sessions. Review detailed scores, errors, and surgical accuracy."
+            : "Every generated surgical case report you may read. A report exists once its session completes and the database scores it."
+        }
       />
 
       {reports.length === 0 ? (
         <EmptyState icon={FileText} title="No reports yet">
-          A report is generated the moment a session completes. Finish a
-          session and its report appears here.
+          {persona === "learner"
+            ? "An assessment report is generated the moment you complete a simulation session in the headset. Finish an attempt to review your evaluation here."
+            : "A report is generated the moment a session completes. Finish a session and its report appears here."}
         </EmptyState>
       ) : (
         <Table label="Generated reports">

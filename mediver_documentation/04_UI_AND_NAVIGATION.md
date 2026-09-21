@@ -57,7 +57,35 @@
 - User management
 - Institution settings
 
+## Learner Environment
+
+### Navigation Model
+- **Primary Unit**: Programs (`/programs`). Learners navigate through their enrolled Programs rather than Cohorts.
+- **Contextual Cohort Metadata**: The associated cohort name (e.g., `Cohort: March 2026`) is displayed strictly as secondary, read-only contextual metadata inside the program listing (`/programs`), program detail (`/programs/[id]`), and main dashboard (`/`).
+- **No Cohort Administration**: Learners never see cohort-selection, cohort-switching, or administrative controls.
+- **Program Detail** (`/programs/[id]`): Shows the learner's own curriculum cases, readiness, session history, and assessment records. Excludes instructor cohort analytics (cohort mean, below pass, other learners, hotspots).
+
+### Learner Training Dashboard (`/`)
+The learner dashboard is structured as an action-first personal training cockpit answering: *"What do I do next, and where am I weak?"*.
+1. **Welcome & Context Header**: Personalized greeting, learner level, pass mark threshold, session completion count, and enrolled program name with secondary cohort metadata (`Cohort: <Name>`).
+2. **Next Action Hero Banner**: Dynamically resolves the highest-priority next clinical action based on real persisted state:
+   - Priority 1: Active live headset simulation (`/sessions/[id]`)
+   - Priority 2: Interrupted session ready to resume (`/sessions/[id]`)
+   - Priority 3: Draft pre-operative plan in progress (`/plan/[id]`)
+   - Priority 4: Sealed/paired plan ready for VR headset transfer (`/plan/[id]/review`)
+   - Priority 5: Assigned unattempted curriculum case (`/cases/[id]`)
+   - Priority 6: Latest assessment report review (`/sessions/[id]/report`)
+   - Priority 7: Case catalogue exploration fallback (`/cases`)
+3. **Your Programs**: Enrolled program cards displaying title, description, cohort metadata, and real curriculum progress metrics (`X of Y cases completed`, `% complete`).
+4. **Assigned Cases**: Clinical cases in the active program curriculum displaying accurate individual lifecycle status chips (`Not started`, `In planning`, `Ready for VR`, `Completed`, `Needs retry`) and contextual direct planning action links.
+5. **Active Simulation & Latest Assessment**: 2-column operational status displaying active headset state (`LiveDial`) alongside the learner's most recent score, duration, and direct debrief link.
+6. **Personal Progress**: Overall readiness score (/100), pass rate %, best score, completed sessions count, total training time, and critical error penalties.
+7. **Focus Area**: Targeted recommendation highlighting the learner's lowest-scoring clinical competency domain (e.g., Bone cuts & alignment) with average mark percentage and direct practice link.
+8. **Recent Activity**: Chronological list of completed attempts with scores, mode, date, duration, and report access.
+9. **Detailed Analytics**: Secondary supporting analytics drawer containing historical score dynamics vs. cohort benchmark, points/time lost rankings, and weekly training cadence.
+
 ## Dashboard example data
+
 
 - Residents: 24
 - Active cases: 8

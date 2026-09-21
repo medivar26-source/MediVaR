@@ -35,7 +35,7 @@ export default async function LearnersPage() {
   const user = await getCurrentUser();
   const persona = personaFor(user.role);
 
-  if (persona === "learner") redirect("/");
+  if (persona === "learner") redirect("/programs");
 
   const learners = await getSupervisedLearners();
   const now = new Date().toISOString();

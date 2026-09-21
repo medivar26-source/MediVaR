@@ -15,12 +15,14 @@ These are the application-level authentication contracts. The underlying authent
 
 ## Programs
 ```text
-GET    /programs
-POST   /programs
-GET    /programs/{id}
+GET    /programs            (Instructors: institution programs; Learners: enrolled programs with cohort metadata)
+GET    /programs/enrolled   (Learner's enrolled programs with associated cohort metadata)
+POST   /programs            (Instructor/Admin only)
+GET    /programs/{id}       (Program detail; for learners, verified against active enrollment with cohort metadata)
 PATCH  /programs/{id}
 DELETE /programs/{id}
 ```
+
 
 ## Cohorts
 ```text

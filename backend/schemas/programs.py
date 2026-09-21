@@ -19,9 +19,12 @@ class ProgramSummary(ProgramBase):
     institution_id: UUID
     created_at: datetime
     updated_at: datetime
+    cohort_id: Optional[UUID] = None
+    cohort_name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class ProgramDetail(ProgramSummary):
     pass
+
