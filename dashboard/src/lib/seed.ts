@@ -397,14 +397,16 @@ export type CaseRow = CaseSummary & {
   summary: string;
   patient: Record<string, string | number>;
   /**
-   * `ap` and `long_leg` views point at the two generic radiograph plates in
-   * `public/` (`knee_xray_ap.jpg`, `full_leg_xray.jpg`) — shared placeholder
-   * imagery, the same file across every case, not a unique scan per patient.
-   * `lateral`/`skyline` have no asset yet and render as pending. The two
-   * SYNTH- cases are the exception: they carry their own generated FLAP/KLAT
-   * pair and must keep it.
+   * `ap` and `long_leg` carry their own matching generic plate from
+   * `public/` (`knee_xray_ap.jpg`, `full_leg_xray.jpg`). `lateral` and
+   * `skyline` have no distinct asset in the repo at all, so rather than
+   * leave them pending they reuse those same two plates with
+   * `placeholder: true` — visibly flagged in the UI as a stand-in, never
+   * presented as a real lateral or skyline film. The two SYNTH- cases are
+   * the exception: they carry their own generated FLAP/KLAT pair and are
+   * never placeholders.
    */
-  imaging: { view: string; label: string; src?: string }[];
+  imaging: { view: string; label: string; src?: string; placeholder?: boolean }[];
   objectives: string[];
   createdAt: string;
 };
@@ -440,8 +442,8 @@ export const CASES: CaseRow[] = [
     },
     imaging: [
       { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
-      { view: "lateral", label: "Lateral" },
-      { view: "skyline", label: "Skyline" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
+      { view: "skyline", label: "Skyline", src: "/full_leg_xray.jpg", placeholder: true },
       { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
@@ -481,7 +483,7 @@ export const CASES: CaseRow[] = [
     },
     imaging: [
       { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
-      { view: "lateral", label: "Lateral" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
       { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
@@ -520,7 +522,7 @@ export const CASES: CaseRow[] = [
     },
     imaging: [
       { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
-      { view: "lateral", label: "Lateral" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
       { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
@@ -557,8 +559,8 @@ export const CASES: CaseRow[] = [
     },
     imaging: [
       { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
-      { view: "lateral", label: "Lateral" },
-      { view: "skyline", label: "Skyline" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
+      { view: "skyline", label: "Skyline", src: "/full_leg_xray.jpg", placeholder: true },
     ],
     objectives: [
       "Adapt cutting technique to soft, osteopenic bone.",
@@ -594,7 +596,7 @@ export const CASES: CaseRow[] = [
     },
     imaging: [
       { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
-      { view: "lateral", label: "Lateral" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
       { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
@@ -662,7 +664,7 @@ export const CASES: CaseRow[] = [
     },
     imaging: [
       { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
-      { view: "lateral", label: "Lateral" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
       { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
@@ -701,8 +703,8 @@ export const CASES: CaseRow[] = [
     },
     imaging: [
       { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
-      { view: "lateral", label: "Lateral" },
-      { view: "skyline", label: "Skyline" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
+      { view: "skyline", label: "Skyline", src: "/full_leg_xray.jpg", placeholder: true },
       { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
@@ -741,7 +743,7 @@ export const CASES: CaseRow[] = [
     },
     imaging: [
       { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
-      { view: "lateral", label: "Lateral" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
       { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
@@ -779,7 +781,7 @@ export const CASES: CaseRow[] = [
     },
     imaging: [
       { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
-      { view: "lateral", label: "Lateral" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
     ],
     objectives: [
       "Adapt cutting and impaction technique to osteopenic bone.",
@@ -816,7 +818,7 @@ export const CASES: CaseRow[] = [
     },
     imaging: [
       { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
-      { view: "lateral", label: "Lateral" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
       { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [

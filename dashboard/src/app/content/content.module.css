@@ -143,6 +143,7 @@
 }
 
 .imgThumb {
+  position: relative;
   aspect-ratio: 4 / 3;
   border-radius: var(--r-md);
   border: var(--bw) solid var(--border);
@@ -152,6 +153,20 @@
   align-items: center;
   justify-content: center;
   color: var(--text-disabled);
+}
+
+.imgPlaceholderTag {
+  position: absolute;
+  top: var(--s-2);
+  right: var(--s-2);
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  background: var(--warn-surface, rgba(0, 0, 0, 0.6));
+  color: var(--warn, #fff);
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .imgThumb img {

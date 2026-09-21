@@ -145,13 +145,20 @@ export default async function CaseAuthoringPage({
                   <div key={view.view} className={s.imgCard}>
                     <div className={s.imgThumb}>
                       {view.src ? (
-                        <img src={view.src} alt={view.label} />
+                        <img
+                          src={view.src}
+                          alt={view.placeholder ? `${view.label} (placeholder image)` : view.label}
+                        />
                       ) : (
                         <ImageOff width={20} height={20} strokeWidth={1.5} aria-hidden="true" />
                       )}
+                      {view.placeholder && <span className={s.imgPlaceholderTag}>Placeholder</span>}
                     </div>
                     <span className={s.imgLabel}>{view.label}</span>
                     {!view.src && <span className={s.imgPending}>Asset pending</span>}
+                    {view.placeholder && (
+                      <span className={s.imgPending}>Reused stand-in — not a real {view.label.toLowerCase()} film</span>
+                    )}
                   </div>
                 ))}
               </div>

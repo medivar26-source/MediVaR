@@ -89,21 +89,31 @@ describe("Content / Case Library — case detail", () => {
     assert.strictEqual(detail, null);
   });
 
-  it("resolves a real image for AP and long-leg views, and leaves the rest pending", async () => {
+  it("resolves a real image for every view, flagging the reused stand-ins", async () => {
     const detail = await getCaseForAuthoring("CASE_001");
     assert.ok(detail);
     const ap = detail!.imaging.find((v) => v.view === "ap");
     const longLeg = detail!.imaging.find((v) => v.view === "long_leg");
+    const lateral = detail!.imaging.find((v) => v.view === "lateral");
     const skyline = detail!.imaging.find((v) => v.view === "skyline");
+
     assert.strictEqual(ap?.src, "/knee_xray_ap.jpg");
+    assert.ok(!ap?.placeholder, "AP has its own matching asset, not a stand-in");
     assert.strictEqual(longLeg?.src, "/full_leg_xray.jpg");
-    assert.strictEqual(skyline?.src, undefined, "no asset exists for skyline yet");
+    assert.ok(!longLeg?.placeholder);
+
+    assert.ok(lateral?.src, "lateral is filled in rather than left pending");
+    assert.strictEqual(lateral?.placeholder, true, "lateral has no real asset, so it must be flagged");
+    assert.ok(skyline?.src);
+    assert.strictEqual(skyline?.placeholder, true, "skyline has no real asset, so it must be flagged");
+    assert.notStrictEqual(lateral?.src, skyline?.src, "the two stand-ins are at least visually distinct from each other");
   });
 
   it("keeps the synthetic cases' own generated imaging untouched", async () => {
     const varus = await getCaseForAuthoring("SYNTH-VARUS-001");
     const flap = varus!.imaging.find((v) => v.view === "flap");
     assert.strictEqual(flap?.src, "/synth_varus_flap.jpg");
+    assert.ok(!flap?.placeholder, "the synthetic case's own generated image is never a reused stand-in");
   });
 
   it("marks the synthetic demo cases as synthetic and never as ordinary content", async () => {

@@ -199,7 +199,7 @@ export type CaseAuthoringUsageRow = {
 export type CaseAuthoringDetail = CaseCatalogueRow & {
   summary?: string;
   objectives: string[];
-  imaging: { view: string; label: string; src?: string }[];
+  imaging: { view: string; label: string; src?: string; placeholder?: boolean }[];
   usage: CaseAuthoringUsageRow[];
   scoring: { key: string; label: string; max: number }[];
   criticalScenes: { scene: string; name: string; part: string }[];
