@@ -33,6 +33,8 @@ export type PanelItem = {
   /** Set only by `sectionsForPersona`, after resolving `badgeKey`. */
   badge?: number;
   children?: PanelItem[];
+  /** Restricts an item within a shared section to a subset of its personas. Absent → visible to every persona the section allows. */
+  personas?: Persona[];
 };
 
 export type PanelGroup = {
@@ -141,6 +143,16 @@ export const SECTIONS: NavSection[] = [
           { label: "Library", href: "/library" },
         ],
       },
+      {
+        label: "Authoring",
+        items: [
+          {
+            label: "Manage content",
+            href: "/content",
+            personas: ["instructor", "admin"],
+          },
+        ],
+      },
     ],
   },
 ];
@@ -165,21 +177,26 @@ export function sectionsForPersona(
 ): NavSection[] {
   const counts = data?.counts ?? {};
 
+  const visibleTo = (item: PanelItem) =>
+    !item.personas || item.personas.includes(persona);
+
   const withBadge = (item: PanelItem): PanelItem => {
     const count = item.badgeKey ? counts[item.badgeKey] : undefined;
     return {
       ...item,
       badge: count && count > 0 ? count : undefined,
-      children: item.children?.map(withBadge),
+      children: item.children?.filter(visibleTo).map(withBadge),
     };
   };
 
   return SECTIONS.filter((section) => section.personas.includes(persona)).map(
     (section) => {
-      const groups = section.groups.map((group) => ({
-        ...group,
-        items: group.items.map(withBadge),
-      }));
+      const groups = section.groups
+        .map((group) => ({
+          ...group,
+          items: group.items.filter(visibleTo).map(withBadge),
+        }))
+        .filter((group) => group.items.length > 0);
 
       // Pinned is the user's own last case and last report, or nothing.
       if (section.id === "overview" && data?.pinned.length) {

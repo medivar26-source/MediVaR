@@ -70,6 +70,13 @@ Clinical content that can affect assessment should be versioned:
 
 A completed attempt references the versions used at execution time.
 
+**Confirmed (2026-09-21):** the Instructor Content / Case Library UI
+(`/content`) reads `cases.version` as reported by the data layer and defaults
+every row to `1` — the schema's own default — rather than tracking edit
+history itself. Real version increments belong to the backend once the
+`cases` table and its update path exist; the frontend must not invent that
+bookkeeping locally.
+
 ## Multi-tenancy
 
 Institution scope must be enforced on backend queries. Client-provided IDs must never bypass tenant authorization.

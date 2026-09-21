@@ -87,3 +87,13 @@ The deterministic demo should include at least one TKR case whose seed scenario 
 - instructor feedback tied to that mistake and visible to the resident on later review
 
 Existing pass/fail, critical error, incomplete, duplicate-event and reconnect fixtures remain unchanged.
+
+## Confirmed Content / Case Library demo handling (2026-09-21)
+
+`SYNTH-VARUS-001` and `SYNTH-VALGUS-001` appear in `/content`'s case
+catalogue like any other authored case — searchable, filterable, openable —
+but every surface carries a `DEMO / SYNTHETIC` badge and the case detail
+screen adds a standing "not for clinical use" notice. Their TKR planning
+data and image references are untouched; the Content page only adds an
+authoring projection on top of the same seed rows `/cases` and `/plan`
+already read.

@@ -76,3 +76,15 @@ A TKR planning feature is not complete until:
 - The final plan can be locked and transferred to VR.
 - Post-operative plan-vs-execution review is available to both resident and instructor.
 - Instructor step/error-specific feedback can be stored and later viewed by the resident.
+
+## Confirmed Content / Case Library implementation status (2026-09-21)
+
+The Instructor Contents / Case Library screen (`/content`) is implemented against the frontend's existing seed-backed read model, per the "Frontend" gate above:
+- UI implemented, with loading/empty/error/unauthorized states and inline validation.
+- Instructor/admin authorization enforced server-side on `/content` and `/content/[id]` (persona redirect), not just hidden from navigation.
+- Tests cover listing, search/filter, case/procedure/criteria detail reads, and every write action's validation.
+
+It does **not** yet clear the "Backend" or "Database" gates for writes:
+- No `cases`, `procedures`, `procedure_steps`, `skills`, `skill_items`, `assessment_settings` or `assessment_criteria` migration exists (see 06_DATABASE_SCHEMA.md). That work belongs to the database owner, not to this change.
+- Create/edit/status actions validate fully but report — honestly, not silently — that nothing is persisted, the same pattern already used by `saveAccount` and `saveInstructorConfig` elsewhere in the app.
+- Once the migration lands, these actions are the place to wire real persistence; the read model in `lib/data/content.ts` documents exactly which schema columns it is standing in for.

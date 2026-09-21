@@ -23,6 +23,17 @@ Examples:
 
 Enforce institution scope on the backend and, where Supabase/Postgres access is exposed to clients, use appropriate database authorization such as Row Level Security. Never rely only on frontend visibility.
 
+## Confirmed Content / Case Library authorization (2026-09-21)
+
+`/content` (Instructor Content / Case Library) redirects a `learner` persona
+server-side before rendering — the navigation entry being hidden from that
+persona is a convenience, not the boundary, matching the rule above. The
+real boundary is still owed to the backend: `cases.program_id` does not
+exist yet (06_DATABASE_SCHEMA.md), so once the `/cases` API is implemented it
+must scope every list/read/write to the caller's institution (and program,
+once that relationship exists) the same way `programs`/`cohorts` already do,
+rather than trusting a client-supplied id.
+
 ## Audit
 
 Audit user/role changes, assessment configuration changes, case/procedure changes, skill weight changes, deletion/archive actions, finalized assessments, and report exports.

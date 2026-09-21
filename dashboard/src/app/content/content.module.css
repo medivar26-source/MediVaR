@@ -1,0 +1,130 @@
+/* Content / Case Library — layout specific to this screen. Shared shapes
+   (panel, tabs, formRow, cards) come from ../panels.module.css. */
+
+.objective {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 32ch;
+  color: var(--text-muted);
+}
+
+.title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.titleId {
+  color: var(--text-disabled);
+  font-size: var(--t-overline);
+  font-family: var(--font-mono);
+}
+
+.usage {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--t-caption);
+}
+
+.usageMain {
+  font-weight: var(--fw-medium);
+}
+
+.usageSub {
+  color: var(--text-muted);
+}
+
+.demoBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.actionsCell {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  justify-content: flex-end;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-4);
+}
+
+@media (max-width: 640px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.criteriaWeight {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.weightTrack {
+  position: relative;
+  width: 120px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--shade);
+  overflow: hidden;
+}
+
+.weightFill {
+  position: absolute;
+  inset: 0;
+  width: var(--w, 0%);
+  background: var(--brand);
+  border-radius: var(--r-pill);
+}
+
+.stepList {
+  display: flex;
+  flex-direction: column;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) 0;
+  border-bottom: var(--bw) solid var(--divider);
+}
+
+.step:last-child {
+  border-bottom: none;
+}
+
+.stepIndex {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--shade);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-semibold);
+}
+
+.stepBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.stepName {
+  font-weight: var(--fw-medium);
+}
+
+.stepMeta {
+  color: var(--text-muted);
+  font-size: var(--t-caption);
+}

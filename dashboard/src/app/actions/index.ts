@@ -490,3 +490,161 @@ export async function saveInstructorConfig(
 
   return { error: NOT_PERSISTED };
 }
+
+/* ------------------------- content / case library ------------------------- */
+
+/**
+ * `cases`, `procedures`, `procedure_steps` and `assessment_criteria` are
+ * documented in 06_DATABASE_SCHEMA.md but have no migration yet — the
+ * database work belongs to the teammate who owns that layer. Until those
+ * tables exist there is nowhere honest to write these forms to, so — exactly
+ * like `saveAccount`, `savePlanStep` and `saveInstructorConfig` above —
+ * every action here validates for real and then reports, plainly, that
+ * nothing was persisted. What it does not do is invent a local store: a case
+ * "saved" into an in-memory array would look live to one instructor and
+ * vanish for the next, which is worse than an honest failure.
+ */
+const CONTENT_NOT_PERSISTED =
+  "Content storage is not connected yet — the cases/procedures/assessment_criteria tables are pending the database migration, so this will not survive a reload.";
+
+export type CaseFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+function readCaseForm(formData: FormData): {
+  values: {
+    title: string;
+    procedureId: string;
+    difficulty: string;
+    side: string;
+    summary: string;
+    learningObjective: string;
+  };
+  fieldErrors: Record<string, string>;
+} {
+  const title = String(formData.get("title") ?? "").trim();
+  const procedureId = String(formData.get("procedureId") ?? "").trim();
+  const difficulty = String(formData.get("difficulty") ?? "").trim();
+  const side = String(formData.get("side") ?? "").trim();
+  const summary = String(formData.get("summary") ?? "").trim();
+  const learningObjective = String(formData.get("learningObjective") ?? "").trim();
+
+  const fieldErrors: Record<string, string> = {};
+  if (title.length < 3) {
+    fieldErrors.title = "Give the case a name of at least three characters.";
+  }
+  if (!procedureId) {
+    fieldErrors.procedureId = "Choose the procedure this case belongs to.";
+  }
+  if (!["beginner", "intermediate", "expert"].includes(difficulty)) {
+    fieldErrors.difficulty = "Choose a difficulty.";
+  }
+  if (!["left", "right"].includes(side)) {
+    fieldErrors.side = "Choose a side.";
+  }
+  if (learningObjective.length < 10) {
+    fieldErrors.learningObjective =
+      "Describe what a resident should be able to do after this case, in at least 10 characters.";
+  }
+
+  return {
+    values: { title, procedureId, difficulty, side, summary, learningObjective },
+    fieldErrors,
+  };
+}
+
+export async function createCase(
+  _prev: CaseFormState,
+  formData: FormData,
+): Promise<CaseFormState> {
+  const { fieldErrors } = readCaseForm(formData);
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, error: "Fix the highlighted fields and try again." };
+  }
+
+  return { error: CONTENT_NOT_PERSISTED };
+}
+
+export async function updateCase(
+  _prev: CaseFormState,
+  formData: FormData,
+): Promise<CaseFormState> {
+  const caseId = String(formData.get("caseId") ?? "");
+  if (!caseId) return { error: "This form is missing its case." };
+
+  const { fieldErrors } = readCaseForm(formData);
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, error: "Fix the highlighted fields and try again." };
+  }
+
+  return { error: CONTENT_NOT_PERSISTED };
+}
+
+export type CaseStatusState = { error?: string; success?: boolean };
+
+export async function setCaseStatus(
+  _prev: CaseStatusState,
+  formData: FormData,
+): Promise<CaseStatusState> {
+  const caseId = String(formData.get("caseId") ?? "");
+  const nextStatus = String(formData.get("nextStatus") ?? "");
+
+  if (!caseId) return { error: "This form is missing its case." };
+  if (!["active", "inactive"].includes(nextStatus)) {
+    return { error: "Choose whether the case should be active or inactive." };
+  }
+
+  return { error: CONTENT_NOT_PERSISTED };
+}
+
+export type ProcedureStepFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+export async function saveProcedureStep(
+  _prev: ProcedureStepFormState,
+  formData: FormData,
+): Promise<ProcedureStepFormState> {
+  const procedureId = String(formData.get("procedureId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+
+  const fieldErrors: Record<string, string> = {};
+  if (!procedureId) fieldErrors.procedureId = "This form is missing its procedure.";
+  if (name.length < 3) fieldErrors.name = "Give the step a name of at least three characters.";
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, error: "Fix the highlighted fields and try again." };
+  }
+
+  return { error: CONTENT_NOT_PERSISTED };
+}
+
+export type AssessmentCriterionFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+export async function saveAssessmentCriterion(
+  _prev: AssessmentCriterionFormState,
+  formData: FormData,
+): Promise<AssessmentCriterionFormState> {
+  const key = String(formData.get("key") ?? "");
+  const weight = String(formData.get("weight") ?? "").trim();
+
+  const fieldErrors: Record<string, string> = {};
+  if (!key) fieldErrors.key = "This form is missing its skill.";
+  const weightNum = Number(weight);
+  if (!weight || Number.isNaN(weightNum) || weightNum < 0 || weightNum > 100) {
+    fieldErrors.weight = "Enter a weight between 0 and 100.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, error: "Fix the highlighted fields and try again." };
+  }
+
+  return { error: CONTENT_NOT_PERSISTED };
+}

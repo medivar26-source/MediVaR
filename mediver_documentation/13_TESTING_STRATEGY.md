@@ -79,3 +79,18 @@ Add test coverage for:
 - instructor feedback linked to a specific error or step and visible later to the resident
 
 Existing geometry, clinical calculation, assessment and VR contract tests remain required.
+
+## Confirmed Content / Case Library tests (2026-09-21)
+
+`dashboard/src/app/content/__tests__/content.test.ts` covers the authoring
+read model (list/search/filter, case/procedure/criteria detail, synthetic
+demo case flagging) and every write action's validation, success-shaped and
+failure-shaped, per `node:test`.
+
+While implementing this, `npm test` in `dashboard/` had no working runner —
+`node --test` on the existing `.test.ts` files failed on plain Node's ESM
+resolution (no file extensions). Added `tsx` as a dev dependency and a
+`"test": "tsx --test src/**/__tests__/*.test.ts"` script; both the
+pre-existing demo-case/V1-workflow tests and the new content tests pass
+under it (28/28 at the time of writing). This is a tooling fix, not a
+behavior change — no test's assertions were altered.

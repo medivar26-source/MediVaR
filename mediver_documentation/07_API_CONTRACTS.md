@@ -53,6 +53,21 @@ PATCH  /cases/{id}
 DELETE /cases/{id}
 ```
 
+**Implementation status (2026-09-21):** not yet implemented in `backend/`. The
+Instructor Content / Case Library UI (`/content`) is built and reads the
+frontend seed model; its create/edit/status actions validate input and then
+report that nothing is persisted, pending this contract and the `cases`
+migration (06_DATABASE_SCHEMA.md). `DELETE` is not planned for the instructor
+UI — case archival should go through `PATCH .../status` (active/inactive)
+per the "prefer archival/soft-delete" rule in 04_UI_AND_NAVIGATION.md.
+
+Procedures, procedure steps and assessment criteria have documented tables
+(`procedures`, `procedure_steps`, `skills`, `skill_items`,
+`assessment_settings`, `assessment_criteria` in 06_DATABASE_SCHEMA.md) but no
+API contract yet. That is an open dependency, not an oversight — the
+Content page currently reads them from the same seed model `/cases` and
+`/plan` already use, so nothing is fabricated, and nothing is persisted.
+
 ## Sessions
 ```text
 GET  /sessions
