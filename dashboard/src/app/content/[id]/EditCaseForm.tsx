@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { Save } from "lucide-react";
 import { Banner, Button, Input, Select, Textarea } from "@/components/ui";
 import { updateCase, type CaseFormState } from "@/app/actions";
-import type { CaseAuthoringDetail, ProcedureAuthoringRow } from "@/lib/data/content";
+import type { CaseAuthoringDetail, ProcedureOption } from "@/lib/data/content";
 import p from "../../panels.module.css";
 import c from "../content.module.css";
 
@@ -13,7 +13,7 @@ export function EditCaseForm({
   procedures,
 }: {
   detail: CaseAuthoringDetail;
-  procedures: ProcedureAuthoringRow[];
+  procedures: ProcedureOption[];
 }) {
   const [state, formAction, pending] = useActionState<CaseFormState, FormData>(
     updateCase,
@@ -25,6 +25,12 @@ export function EditCaseForm({
       {state.error && (
         <Banner tone="fail" title="Not saved">
           {state.error}
+        </Banner>
+      )}
+      {state.saved && !state.error && (
+        <Banner tone="pass" title="Saved">
+          Changes to a case start a new version; attempts already run keep the
+          version they were taken on.
         </Banner>
       )}
 
@@ -54,35 +60,24 @@ export function EditCaseForm({
         </Select>
       </div>
 
-      <div className={c.grid2}>
-        <Select
-          label="Difficulty"
-          name="difficulty"
-          defaultValue={detail.difficulty}
-          required
-          error={state.fieldErrors?.difficulty}
-        >
-          <option value="beginner">Beginner</option>
-          <option value="intermediate">Intermediate</option>
-          <option value="expert">Expert</option>
-        </Select>
-        <Select
-          label="Side"
-          name="side"
-          defaultValue={detail.side}
-          required
-          error={state.fieldErrors?.side}
-        >
-          <option value="left">Left</option>
-          <option value="right">Right</option>
-        </Select>
-      </div>
+      <Select
+        label="Difficulty"
+        name="difficulty"
+        defaultValue={detail.difficulty}
+        required
+        error={state.fieldErrors?.difficulty}
+      >
+        <option value="beginner">Beginner</option>
+        <option value="intermediate">Intermediate</option>
+        <option value="expert">Expert</option>
+      </Select>
 
       <Textarea
-        label="Summary"
-        name="summary"
-        defaultValue={detail.summary}
+        label="Description"
+        name="description"
+        defaultValue={detail.description}
         rows={2}
+        maxLength={1000}
         optional
       />
 
@@ -91,6 +86,7 @@ export function EditCaseForm({
         name="learningObjective"
         defaultValue={detail.learningObjective}
         rows={2}
+        maxLength={1000}
         required
         error={state.fieldErrors?.learningObjective}
       />

@@ -4,6 +4,7 @@ import { FolderOpen } from "lucide-react";
 import { SectionHeader } from "@/components/shell";
 import {
   Badge,
+  Banner,
   Button,
   Chip,
   EmptyState,
@@ -15,7 +16,8 @@ import {
   THead,
   Tr,
 } from "@/components/ui";
-import { listCasesForAuthoring, listProceduresForAuthoring } from "@/lib/data/content";
+import { listCasesForAuthoring, listProcedureOptions } from "@/lib/data/content";
+import { ContentApiError } from "@/lib/data/content-api";
 import { titleCase } from "@/lib/format";
 import { ContentCaseFilters } from "./ContentCaseFilters";
 import { NewCaseForm } from "./NewCaseForm";
@@ -31,15 +33,30 @@ export async function CasesSection({
     status?: string;
   };
 }) {
-  const [{ cases, facets, total }, procedures] = await Promise.all([
-    listCasesForAuthoring({
-      q: searchParams.q,
-      difficulty: searchParams.difficulty,
-      procedureId: searchParams.procedureId,
-      status: searchParams.status,
-    }),
-    listProceduresForAuthoring(),
-  ]);
+  let browse: Awaited<ReturnType<typeof listCasesForAuthoring>>;
+  let procedures: Awaited<ReturnType<typeof listProcedureOptions>>;
+  try {
+    [browse, procedures] = await Promise.all([
+      listCasesForAuthoring({
+        q: searchParams.q,
+        difficulty: searchParams.difficulty,
+        procedureId: searchParams.procedureId,
+        status: searchParams.status,
+      }),
+      listProcedureOptions(),
+    ]);
+  } catch (err) {
+    if (err instanceof ContentApiError) {
+      return (
+        <Banner tone="fail" title="The case library couldn't be loaded">
+          {err.message}
+        </Banner>
+      );
+    }
+    throw err;
+  }
+
+  const { cases, facets, total } = browse;
 
   return (
     <>
@@ -47,7 +64,12 @@ export async function CasesSection({
         <ContentCaseFilters facets={facets} matched={cases.length} total={total} />
       </Suspense>
 
-      {cases.length === 0 ? (
+      {total === 0 ? (
+        <EmptyState icon={FolderOpen} title="No cases have been authored yet">
+          Create the first one below. Residents only see a case once it is
+          active.
+        </EmptyState>
+      ) : cases.length === 0 ? (
         <EmptyState
           icon={FolderOpen}
           title="No cases match these filters"
@@ -82,19 +104,15 @@ export async function CasesSection({
                 <Td head>
                   <span className={s.title}>
                     <Link href={`/content/${item.id}`}>{item.title}</Link>
-                    <span className={s.titleId}>
-                      {item.id}
-                      {item.isSynthetic && (
-                        <>
-                          {" · "}
-                          <span className={s.demoBadge}>
-                            <Badge status="neutral" hideIcon>
-                              DEMO / SYNTHETIC
-                            </Badge>
-                          </span>
-                        </>
-                      )}
-                    </span>
+                    {item.isSynthetic && (
+                      <span className={s.titleId}>
+                        <span className={s.demoBadge}>
+                          <Badge status="neutral" hideIcon>
+                            DEMO / SYNTHETIC
+                          </Badge>
+                        </span>
+                      </span>
+                    )}
                   </span>
                 </Td>
                 <Td>{item.procedureName}</Td>
@@ -113,7 +131,9 @@ export async function CasesSection({
                 </Td>
                 <Td numeric>v{item.version}</Td>
                 <Td>
-                  {item.usedBySessions === 0 ? (
+                  {item.usedBySessions === undefined ? (
+                    <span className={s.usageSub}>Not tracked yet</span>
+                  ) : item.usedBySessions === 0 ? (
                     <span className={s.usageSub}>Not yet used</span>
                   ) : (
                     <span className={s.usage}>

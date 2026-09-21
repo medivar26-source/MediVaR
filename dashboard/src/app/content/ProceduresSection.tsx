@@ -51,7 +51,6 @@ async function ProcedureRow({ procedureId }: { procedureId: string }) {
       cells={[
         { value: titleCase(detail.status), pill: statusStatus === "pass" ? "pass" : "muted" },
         { value: `${detail.stepCount} steps` },
-        { value: `${detail.caseCount} case${detail.caseCount === 1 ? "" : "s"}` },
       ]}
     >
       <div>

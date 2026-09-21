@@ -4,6 +4,13 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { PLANS, PLAN_BY_ID } from "@/lib/data/plans";
+import {
+  apiCreateCase,
+  apiUpdateCase,
+  ContentApiError,
+  type ApiDifficulty,
+} from "@/lib/data/content-api";
+import { getSessionToken } from "@/lib/session";
 
 /**
  * The write surface.
@@ -494,31 +501,35 @@ export async function saveInstructorConfig(
 /* ------------------------- content / case library ------------------------- */
 
 /**
- * `cases`, `procedures`, `procedure_steps` and `assessment_criteria` are
- * documented in 06_DATABASE_SCHEMA.md but have no migration yet — the
- * database work belongs to the teammate who owns that layer. Until those
- * tables exist there is nowhere honest to write these forms to, so — exactly
- * like `saveAccount`, `savePlanStep` and `saveInstructorConfig` above —
- * every action here validates for real and then reports, plainly, that
- * nothing was persisted. What it does not do is invent a local store: a case
- * "saved" into an in-memory array would look live to one instructor and
- * vanish for the next, which is worse than an honest failure.
+ * Cases are persisted through the backend `/cases` API (migration 004). The
+ * remaining content forms — procedure steps, assessment criteria, imaging —
+ * have no table or storage behind them yet, so, like `saveAccount` and
+ * `saveInstructorConfig` above, they validate for real and then report
+ * plainly that nothing was saved. None of them invents a local store: an
+ * in-memory "save" would look live to one instructor and vanish for the next,
+ * which is worse than an honest failure.
  */
 const CONTENT_NOT_PERSISTED =
-  "Content storage is not connected yet — the cases/procedures/assessment_criteria tables are pending the database migration, so this will not survive a reload.";
+  "This part of the content library is not connected to storage yet, so it was validated but not saved.";
+
+function contentErrorMessage(err: unknown): string {
+  return err instanceof ContentApiError
+    ? err.message
+    : "Something went wrong. Try again in a moment.";
+}
 
 export type CaseFormState = {
   error?: string;
   fieldErrors?: Record<string, string>;
+  saved?: boolean;
 };
 
 function readCaseForm(formData: FormData): {
   values: {
     title: string;
     procedureId: string;
-    difficulty: string;
-    side: string;
-    summary: string;
+    difficulty: ApiDifficulty;
+    description: string;
     learningObjective: string;
   };
   fieldErrors: Record<string, string>;
@@ -526,8 +537,7 @@ function readCaseForm(formData: FormData): {
   const title = String(formData.get("title") ?? "").trim();
   const procedureId = String(formData.get("procedureId") ?? "").trim();
   const difficulty = String(formData.get("difficulty") ?? "").trim();
-  const side = String(formData.get("side") ?? "").trim();
-  const summary = String(formData.get("summary") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
   const learningObjective = String(formData.get("learningObjective") ?? "").trim();
 
   const fieldErrors: Record<string, string> = {};
@@ -540,16 +550,19 @@ function readCaseForm(formData: FormData): {
   if (!["beginner", "intermediate", "expert"].includes(difficulty)) {
     fieldErrors.difficulty = "Choose a difficulty.";
   }
-  if (!["left", "right"].includes(side)) {
-    fieldErrors.side = "Choose a side.";
-  }
   if (learningObjective.length < 10) {
     fieldErrors.learningObjective =
       "Describe what a resident should be able to do after this case, in at least 10 characters.";
   }
 
   return {
-    values: { title, procedureId, difficulty, side, summary, learningObjective },
+    values: {
+      title,
+      procedureId,
+      difficulty: difficulty as ApiDifficulty,
+      description,
+      learningObjective,
+    },
     fieldErrors,
   };
 }
@@ -558,13 +571,31 @@ export async function createCase(
   _prev: CaseFormState,
   formData: FormData,
 ): Promise<CaseFormState> {
-  const { fieldErrors } = readCaseForm(formData);
+  const { values, fieldErrors } = readCaseForm(formData);
 
   if (Object.keys(fieldErrors).length > 0) {
     return { fieldErrors, error: "Fix the highlighted fields and try again." };
   }
 
-  return { error: CONTENT_NOT_PERSISTED };
+  const token = await getSessionToken();
+  if (!token) return { error: "Your session has expired. Sign in again." };
+
+  let id: string;
+  try {
+    const created = await apiCreateCase(token, {
+      name: values.title,
+      procedure_id: values.procedureId,
+      difficulty: values.difficulty,
+      learning_objective: values.learningObjective,
+      ...(values.description ? { description: values.description } : {}),
+    });
+    id = created.id;
+  } catch (err) {
+    return { error: contentErrorMessage(err) };
+  }
+
+  revalidatePath("/content");
+  redirect(`/content/${id}`);
 }
 
 export async function updateCase(
@@ -574,13 +605,30 @@ export async function updateCase(
   const caseId = String(formData.get("caseId") ?? "");
   if (!caseId) return { error: "This form is missing its case." };
 
-  const { fieldErrors } = readCaseForm(formData);
+  const { values, fieldErrors } = readCaseForm(formData);
 
   if (Object.keys(fieldErrors).length > 0) {
     return { fieldErrors, error: "Fix the highlighted fields and try again." };
   }
 
-  return { error: CONTENT_NOT_PERSISTED };
+  const token = await getSessionToken();
+  if (!token) return { error: "Your session has expired. Sign in again." };
+
+  try {
+    await apiUpdateCase(token, caseId, {
+      name: values.title,
+      procedure_id: values.procedureId,
+      difficulty: values.difficulty,
+      description: values.description || null,
+      learning_objective: values.learningObjective,
+    });
+  } catch (err) {
+    return { error: contentErrorMessage(err) };
+  }
+
+  revalidatePath("/content");
+  revalidatePath(`/content/${caseId}`);
+  return { saved: true };
 }
 
 export type CaseStatusState = { error?: string; success?: boolean };
@@ -593,11 +641,22 @@ export async function setCaseStatus(
   const nextStatus = String(formData.get("nextStatus") ?? "");
 
   if (!caseId) return { error: "This form is missing its case." };
-  if (!["active", "inactive"].includes(nextStatus)) {
+  if (nextStatus !== "active" && nextStatus !== "inactive") {
     return { error: "Choose whether the case should be active or inactive." };
   }
 
-  return { error: CONTENT_NOT_PERSISTED };
+  const token = await getSessionToken();
+  if (!token) return { error: "Your session has expired. Sign in again." };
+
+  try {
+    await apiUpdateCase(token, caseId, { status: nextStatus });
+  } catch (err) {
+    return { error: contentErrorMessage(err) };
+  }
+
+  revalidatePath("/content");
+  revalidatePath(`/content/${caseId}`);
+  return { success: true };
 }
 
 export type ProcedureStepFormState = {

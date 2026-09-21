@@ -53,20 +53,33 @@ PATCH  /cases/{id}
 DELETE /cases/{id}
 ```
 
-**Implementation status (2026-09-21):** not yet implemented in `backend/`. The
-Instructor Content / Case Library UI (`/content`) is built and reads the
-frontend seed model; its create/edit/status actions validate input and then
-report that nothing is persisted, pending this contract and the `cases`
-migration (06_DATABASE_SCHEMA.md). `DELETE` is not planned for the instructor
-UI — case archival should go through `PATCH .../status` (active/inactive)
-per the "prefer archival/soft-delete" rule in 04_UI_AND_NAVIGATION.md.
+**Implementation status (2026-09-21):** `GET /cases`, `POST /cases`,
+`GET /cases/{id}` and `PATCH /cases/{id}` are implemented
+(`backend/api/v1/endpoints/cases.py`), plus `GET /procedures` for the case
+form's procedure picker. Instructor/admin only; every query joins
+`cases → programs` and filters on the caller's institution, so a
+client-supplied id is never trusted alone. `POST` without a `program_id`
+uses the institution's default program, as cohorts do.
 
-Procedures, procedure steps and assessment criteria have documented tables
-(`procedures`, `procedure_steps`, `skills`, `skill_items`,
-`assessment_settings`, `assessment_criteria` in 06_DATABASE_SCHEMA.md) but no
-API contract yet. That is an open dependency, not an oversight — the
-Content page currently reads them from the same seed model `/cases` and
-`/plan` already use, so nothing is fabricated, and nothing is persisted.
+**`DELETE /cases/{id}` is deliberately not implemented.** A case is retired
+with `PATCH { "status": "inactive" }` — the "prefer archival/soft-delete"
+rule in 04_UI_AND_NAVIGATION.md, and the reason `cases.program_id` /
+`assessment_criteria.case_id` are `ON DELETE RESTRICT`.
+
+Editing `name`, `procedure_id`, `difficulty`, `description` or
+`learning_objective` increments `version`; a no-op save or a status flip
+does not, so attempts already run keep the version they ran against.
+
+If migration `004_content_tables.sql` has not been applied, these endpoints
+answer `503` with a plain-language message rather than a database error.
+
+Procedure steps, skills and assessment criteria have tables in migration
+004 but no API yet. That is an open dependency, not an oversight — the
+Procedures and Assessment Criteria tabs still read the seed reference data
+`/plan` already uses, so nothing is fabricated, and nothing on them is
+persisted. Imaging and per-case usage have no table at all (there is no
+`case_images` and no `sessions` yet); the case detail page says so instead of
+showing zeros.
 
 ## Sessions
 ```text

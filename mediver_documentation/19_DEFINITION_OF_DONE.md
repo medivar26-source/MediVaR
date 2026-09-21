@@ -79,12 +79,12 @@ A TKR planning feature is not complete until:
 
 ## Confirmed Content / Case Library implementation status (2026-09-21)
 
-The Instructor Contents / Case Library screen (`/content`) is implemented against the frontend's existing seed-backed read model, per the "Frontend" gate above:
-- UI implemented, with loading/empty/error/unauthorized states and inline validation.
-- Instructor/admin authorization enforced server-side on `/content` and `/content/[id]` (persona redirect), not just hidden from navigation.
-- Tests cover listing, search/filter, case/procedure/criteria detail reads, and every write action's validation.
+The Instructor Contents / Case Library screen (`/content`):
 
-It does **not** yet clear the "Backend" or "Database" gates for writes:
-- No `cases`, `procedures`, `procedure_steps`, `skills`, `skill_items`, `assessment_settings` or `assessment_criteria` migration exists (see 06_DATABASE_SCHEMA.md). That work belongs to the database owner, not to this change.
-- Create/edit/status actions validate fully but report — honestly, not silently — that nothing is persisted, the same pattern already used by `saveAccount` and `saveInstructorConfig` elsewhere in the app.
-- Once the migration lands, these actions are the place to wire real persistence; the read model in `lib/data/content.ts` documents exactly which schema columns it is standing in for.
+**Frontend gate — met.** UI with loading/empty/error/unauthorized states and inline validation; instructor/admin authorization enforced server-side on `/content` and `/content/[id]` (persona redirect), not just hidden from navigation; 38 tests.
+
+**Backend gate — met for cases, not for the rest.** `/cases` (list, create, get, patch — no delete) and `/procedures` (list) are implemented with institution scoping, role checks, validation, structured errors and a plain-language `503` when the tables are missing. Verified with a stubbed database layer (17 checks); **not yet verified against real tables**. Procedure steps, skills and assessment criteria have no API yet, and their tabs still read seed reference data.
+
+**Database gate — not met.** `backend/migrations/004_content_tables.sql` is written and has not been applied. Applying it to the shared Supabase project waits for the database owner's sign-off, and a `procedures` seed row is needed before a case can be created.
+
+**Known gaps, stated on the page rather than papered over:** no imaging table (the imaging card is empty and its upload form reports it saves nothing), no sessions table (usage shows "not tracked yet", not zero), and the schema has no knee side.

@@ -42,6 +42,11 @@ export function CaseStatusForm({
           {state.error}
         </Banner>
       )}
+      {state.success && !state.error && (
+        <Banner tone="pass" title="Status updated">
+          The case is now {status}.
+        </Banner>
+      )}
 
       <input type="hidden" name="caseId" value={caseId} />
       <input type="hidden" name="nextStatus" value={nextStatus} />

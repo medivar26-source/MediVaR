@@ -1,13 +1,23 @@
-import { describe, it } from "node:test";
+import { afterEach, describe, it } from "node:test";
 import assert from "node:assert";
 import {
-  getCaseForAuthoring,
+  browseCases,
+  getAssessmentSettings,
   getProcedureForAuthoring,
-  isSyntheticCase,
+  isSyntheticName,
   listAssessmentCriteria,
-  listCasesForAuthoring,
   listProceduresForAuthoring,
+  toCaseDetail,
+  toCatalogueRow,
 } from "../../../lib/data/content";
+import {
+  apiCreateCase,
+  apiGetCase,
+  apiListCases,
+  apiUpdateCase,
+  ContentApiError,
+  type ApiCase,
+} from "../../../lib/data/content-api";
 import {
   createCase,
   saveAssessmentCriterion,
@@ -23,246 +33,293 @@ function formData(fields: Record<string, string>): FormData {
   return fd;
 }
 
-describe("Content / Case Library — list cases", () => {
-  it("lists every authored case, active and inactive alike", async () => {
-    const { cases, total } = await listCasesForAuthoring();
-    assert.ok(total >= 8, "expects at least the six authored cases plus two synthetic demos");
-    assert.ok(cases.some((c) => c.status === "inactive"), "draft cases must still be visible to an author");
-    assert.ok(cases.some((c) => c.status === "active"));
+function apiCase(over: Partial<ApiCase> = {}): ApiCase {
+  return {
+    id: "11111111-1111-4111-8111-111111111111",
+    program_id: "22222222-2222-4222-8222-222222222222",
+    procedure_id: "33333333-3333-4333-8333-333333333333",
+    procedure_name: "Total Knee Replacement",
+    name: "Varus OA — Right knee",
+    difficulty: "intermediate",
+    description: "Medial compartment collapse.",
+    learning_objective: "Plan a neutral mechanical axis.",
+    status: "active",
+    version: 1,
+    created_at: "2026-09-21T00:00:00Z",
+    updated_at: "2026-09-21T00:00:00Z",
+    ...over,
+  };
+}
+
+const ROWS = [
+  apiCase({ id: "a", name: "Varus OA — Right knee", difficulty: "intermediate", status: "active" }),
+  apiCase({ id: "b", name: "Valgus OA — Left knee", difficulty: "expert", status: "inactive" }),
+  apiCase({ id: "c", name: "Rheumatoid — Left knee", difficulty: "beginner", status: "active" }),
+  apiCase({
+    id: "d",
+    name: "DEMO: Synthetic Varus TKR (P-0247)",
+    difficulty: "intermediate",
+    status: "active",
+    procedure_id: "44444444-4444-4444-8444-444444444444",
+    procedure_name: "Total Hip Replacement",
+  }),
+].map(toCatalogueRow);
+
+describe("Content — list, search and filter cases", () => {
+  it("shows active and inactive cases alike, sorted by name", () => {
+    const { cases, total } = browseCases(ROWS);
+    assert.strictEqual(total, 4);
+    assert.ok(cases.some((c) => c.status === "inactive"), "an author must still see a retired case");
+    const names = cases.map((c) => c.title);
+    assert.deepStrictEqual(names, [...names].sort((a, b) => a.localeCompare(b)));
   });
 
-  it("searches by title and by id", async () => {
-    const byTitle = await listCasesForAuthoring({ q: "varus" });
-    assert.ok(byTitle.cases.length > 0);
-    assert.ok(byTitle.cases.every((c) => c.title.toLowerCase().includes("varus") || c.id.toLowerCase().includes("varus")));
-
-    const byId = await listCasesForAuthoring({ q: "CASE_003" });
-    assert.strictEqual(byId.cases.length, 1);
-    assert.strictEqual(byId.cases[0].id, "CASE_003");
+  it("searches by title and by id", () => {
+    assert.strictEqual(browseCases(ROWS, { q: "valgus" }).cases.length, 1);
+    assert.strictEqual(browseCases(ROWS, { q: "  RHEUMATOID " }).cases.length, 1);
+    assert.strictEqual(browseCases(ROWS, { q: "c" }).cases.some((c) => c.id === "c"), true);
   });
 
-  it("filters by difficulty, procedure and status independently", async () => {
-    const expertOnly = await listCasesForAuthoring({ difficulty: "expert" });
-    assert.ok(expertOnly.cases.length > 0);
-    assert.ok(expertOnly.cases.every((c) => c.difficulty === "expert"));
-
-    const tkrOnly = await listCasesForAuthoring({ procedureId: "tkr" });
-    assert.strictEqual(tkrOnly.cases.length, tkrOnly.total, "every seeded case is a TKR case");
-
-    const activeOnly = await listCasesForAuthoring({ status: "active" });
-    assert.ok(activeOnly.cases.every((c) => c.status === "active"));
-
-    const inactiveOnly = await listCasesForAuthoring({ status: "inactive" });
-    assert.ok(inactiveOnly.cases.every((c) => c.status === "inactive"));
+  it("filters by difficulty, procedure and status", () => {
+    assert.ok(browseCases(ROWS, { difficulty: "expert" }).cases.every((c) => c.difficulty === "expert"));
+    assert.strictEqual(
+      browseCases(ROWS, { procedureId: "44444444-4444-4444-8444-444444444444" }).cases.length,
+      1,
+    );
+    assert.ok(browseCases(ROWS, { status: "inactive" }).cases.every((c) => c.status === "inactive"));
   });
 
-  it("returns an empty result, not an error, for a filter combination with no matches", async () => {
-    const { cases, total } = await listCasesForAuthoring({ q: "no such case exists anywhere" });
-    assert.strictEqual(cases.length, 0);
-    assert.ok(total > 0, "total still reports the unfiltered catalogue size");
+  it("combines filters, and returns an empty list — not an error — when nothing matches", () => {
+    const none = browseCases(ROWS, { q: "no such case", status: "active" });
+    assert.strictEqual(none.cases.length, 0);
+    assert.strictEqual(none.total, 4, "total still reports the unfiltered catalogue");
   });
 
-  it("computes usage from real sessions, not a placeholder", async () => {
-    const { cases } = await listCasesForAuthoring();
-    const attempted = cases.find((c) => c.id === "CASE_001");
-    assert.ok(attempted);
-    assert.ok(attempted!.usedBySessions > 0);
-    assert.ok(attempted!.usedByLearners > 0);
-
-    const untouched = cases.find((c) => c.id === "SYNTH-VARUS-001");
-    assert.ok(untouched);
-    assert.strictEqual(untouched!.usedBySessions, 0, "a case with no sessions reports zero, not undefined or a guess");
-  });
-});
-
-describe("Content / Case Library — case detail", () => {
-  it("returns full authoring detail for a real case", async () => {
-    const detail = await getCaseForAuthoring("CASE_001");
-    assert.ok(detail);
-    assert.strictEqual(detail!.id, "CASE_001");
-    assert.ok(detail!.objectives.length > 0);
-    assert.ok(detail!.scoring.length > 0, "every case is assessed against the shared skill categories");
+  it("counts each facet against the OTHER filters, so a chip never leads to an empty result", () => {
+    const { facets } = browseCases(ROWS, { status: "inactive" });
+    const expert = facets.difficulties.find((f) => f.value === "expert");
+    const beginner = facets.difficulties.find((f) => f.value === "beginner");
+    assert.strictEqual(expert?.count, 1);
+    assert.strictEqual(beginner?.count, 0, "kept visible but counted as zero");
   });
 
-  it("returns null for a case that does not exist, rather than throwing", async () => {
-    const detail = await getCaseForAuthoring("NOT-A-REAL-CASE");
-    assert.strictEqual(detail, null);
+  it("labels procedure facets by name, from the rows themselves", () => {
+    const { facets } = browseCases(ROWS);
+    assert.deepStrictEqual(
+      facets.procedures.map((f) => f.label).sort(),
+      ["Total Hip Replacement", "Total Knee Replacement"],
+    );
   });
 
-  it("resolves a real image for every view, flagging the reused stand-ins", async () => {
-    const detail = await getCaseForAuthoring("CASE_001");
-    assert.ok(detail);
-    const ap = detail!.imaging.find((v) => v.view === "ap");
-    const longLeg = detail!.imaging.find((v) => v.view === "long_leg");
-    const lateral = detail!.imaging.find((v) => v.view === "lateral");
-    const skyline = detail!.imaging.find((v) => v.view === "skyline");
-
-    assert.strictEqual(ap?.src, "/knee_xray_ap.jpg");
-    assert.ok(!ap?.placeholder, "AP has its own matching asset, not a stand-in");
-    assert.strictEqual(longLeg?.src, "/full_leg_xray.jpg");
-    assert.ok(!longLeg?.placeholder);
-
-    assert.ok(lateral?.src, "lateral is filled in rather than left pending");
-    assert.strictEqual(lateral?.placeholder, true, "lateral has no real asset, so it must be flagged");
-    assert.ok(skyline?.src);
-    assert.strictEqual(skyline?.placeholder, true, "skyline has no real asset, so it must be flagged");
-    assert.notStrictEqual(lateral?.src, skyline?.src, "the two stand-ins are at least visually distinct from each other");
+  it("never invents usage — an untracked value stays undefined, not zero", () => {
+    assert.ok(ROWS.every((r) => r.usedBySessions === undefined && r.usedByLearners === undefined));
   });
 
-  it("keeps the synthetic cases' own generated imaging untouched", async () => {
-    const varus = await getCaseForAuthoring("SYNTH-VARUS-001");
-    const flap = varus!.imaging.find((v) => v.view === "flap");
-    assert.strictEqual(flap?.src, "/synth_varus_flap.jpg");
-    assert.ok(!flap?.placeholder, "the synthetic case's own generated image is never a reused stand-in");
-  });
-
-  it("marks the synthetic demo cases as synthetic and never as ordinary content", async () => {
-    assert.strictEqual(isSyntheticCase("SYNTH-VARUS-001"), true);
-    assert.strictEqual(isSyntheticCase("SYNTH-VALGUS-001"), true);
-    assert.strictEqual(isSyntheticCase("CASE_001"), false);
-
-    const varus = await getCaseForAuthoring("SYNTH-VARUS-001");
-    const valgus = await getCaseForAuthoring("SYNTH-VALGUS-001");
-    assert.ok(varus?.isSynthetic);
-    assert.ok(valgus?.isSynthetic);
+  it("flags demo fixtures by their DEMO: name", () => {
+    assert.strictEqual(isSyntheticName("DEMO: Synthetic Varus TKR (P-0247)"), true);
+    assert.strictEqual(isSyntheticName("Varus OA — Right knee"), false);
+    assert.strictEqual(ROWS.find((r) => r.id === "d")?.isSynthetic, true);
   });
 });
 
-describe("Content / Case Library — procedures", () => {
-  it("lists procedures with step and case counts derived from the seed data", async () => {
-    const procedures = await listProceduresForAuthoring();
-    const tkr = procedures.find((p) => p.id === "tkr");
+describe("Content — case detail mapping", () => {
+  it("maps an API case to the authoring detail", () => {
+    const detail = toCaseDetail(apiCase());
+    assert.strictEqual(detail.title, "Varus OA — Right knee");
+    assert.deepStrictEqual(detail.objectives, ["Plan a neutral mechanical axis."]);
+    assert.strictEqual(detail.version, 1);
+    assert.ok(detail.scoring.length > 0);
+  });
+
+  it("reports what the schema cannot hold as unavailable, not as empty-but-real", () => {
+    const detail = toCaseDetail(apiCase());
+    assert.strictEqual(detail.usage, null, "no sessions table yet");
+    assert.deepStrictEqual(detail.imaging, [], "no imaging table yet");
+  });
+
+  it("tolerates null description and objective from the database", () => {
+    const detail = toCaseDetail(apiCase({ description: null, learning_objective: null }));
+    assert.strictEqual(detail.description, undefined);
+    assert.deepStrictEqual(detail.objectives, []);
+  });
+});
+
+describe("Content — API client", () => {
+  const realFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  function stub(status: number, body: unknown) {
+    const calls: { url: string; init: RequestInit }[] = [];
+    globalThis.fetch = (async (url: string, init: RequestInit) => {
+      calls.push({ url: String(url), init });
+      return new Response(JSON.stringify(body), { status });
+    }) as typeof fetch;
+    return calls;
+  }
+
+  it("sends the bearer token and reads the list", async () => {
+    const calls = stub(200, [apiCase()]);
+    const cases = await apiListCases("tok-123");
+    assert.strictEqual(cases.length, 1);
+    assert.match(calls[0].url, /\/cases$/);
+    assert.strictEqual((calls[0].init.headers as Record<string, string>).Authorization, "Bearer tok-123");
+  });
+
+  it("creates with a JSON body", async () => {
+    const calls = stub(201, apiCase());
+    await apiCreateCase("t", {
+      name: "Varus OA",
+      procedure_id: "p",
+      difficulty: "intermediate",
+      learning_objective: "Plan a neutral mechanical axis.",
+    });
+    assert.strictEqual(calls[0].init.method, "POST");
+    assert.strictEqual(JSON.parse(String(calls[0].init.body)).difficulty, "intermediate");
+  });
+
+  it("patches only what it is given, and has no way to DELETE", async () => {
+    const calls = stub(200, apiCase({ status: "inactive" }));
+    await apiUpdateCase("t", "abc", { status: "inactive" });
+    assert.strictEqual(calls[0].init.method, "PATCH");
+    assert.deepStrictEqual(JSON.parse(String(calls[0].init.body)), { status: "inactive" });
+    assert.strictEqual("apiDeleteCase" in (await import("../../../lib/data/content-api")), false);
+  });
+
+  it("returns null for a case that does not exist", async () => {
+    stub(404, { detail: "Case not found." });
+    assert.strictEqual(await apiGetCase("t", "nope"), null);
+  });
+
+  it("surfaces the backend's user-facing 503 message, not a status code", async () => {
+    stub(503, { detail: "Content storage is not set up yet. Try again once the database migration has been applied." });
+    await assert.rejects(apiListCases("t"), (err: unknown) => {
+      assert.ok(err instanceof ContentApiError);
+      assert.strictEqual(err.status, 503);
+      assert.match(err.message, /not set up yet/);
+      return true;
+    });
+  });
+
+  it("explains a 403 and a dead session in plain words", async () => {
+    stub(403, { detail: "Not authorized to manage content." });
+    await assert.rejects(apiListCases("t"), /Not authorized to manage content/);
+    stub(401, { detail: "raw jwt error" });
+    await assert.rejects(apiListCases("t"), (err: unknown) => {
+      assert.ok(err instanceof ContentApiError);
+      assert.match(err.message, /Sign in again/);
+      assert.doesNotMatch(err.message, /jwt/i);
+      return true;
+    });
+  });
+
+  it("never leaks an unexpected server error's body", async () => {
+    stub(500, { detail: 'relation "cases" does not exist' });
+    await assert.rejects(apiListCases("t"), (err: unknown) => {
+      assert.ok(err instanceof ContentApiError);
+      assert.doesNotMatch(err.message, /relation|cases/);
+      return true;
+    });
+  });
+
+  it("turns an unreachable server into a friendly error", async () => {
+    globalThis.fetch = (async () => {
+      throw new TypeError("fetch failed");
+    }) as typeof fetch;
+    await assert.rejects(apiListCases("t"), /Cannot reach the server/);
+  });
+});
+
+describe("Content — procedures and assessment criteria (reference data)", () => {
+  it("lists procedures with a step count", async () => {
+    const tkr = (await listProceduresForAuthoring()).find((p) => p.id === "tkr");
     assert.ok(tkr);
     assert.strictEqual(tkr!.stepCount, 12, "the eleven TKR parts plus P0");
-    assert.ok(tkr!.caseCount >= 8);
   });
 
-  it("returns ordered steps for a procedure, each carrying a required/optional state", async () => {
+  it("returns ordered steps, each required or optional", async () => {
     const detail = await getProcedureForAuthoring("tkr");
-    assert.ok(detail);
-    assert.strictEqual(detail!.steps.length, detail!.stepCount);
     assert.strictEqual(detail!.steps[0].part, "P0");
-    assert.ok(detail!.steps.some((s) => s.required === false), "a variant-only part is optional");
+    assert.ok(detail!.steps.some((s) => s.required === false));
     assert.ok(detail!.steps.some((s) => s.required === true));
   });
 
   it("returns null for a procedure that does not exist", async () => {
-    const detail = await getProcedureForAuthoring("does-not-exist");
-    assert.strictEqual(detail, null);
-  });
-});
-
-describe("Content / Case Library — assessment criteria", () => {
-  it("lists one row per skill, weighted to the report categories", async () => {
-    const criteria = await listAssessmentCriteria();
-    assert.strictEqual(criteria.length, 7, "the seven report categories");
-    const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
-    assert.ok(totalWeight > 95 && totalWeight <= 100, `weights should sum close to 100, got ${totalWeight}`);
+    assert.strictEqual(await getProcedureForAuthoring("nope"), null);
   });
 
-  it("surfaces which skills carry a critical-error rule, without inventing a tolerance", async () => {
+  it("lists one criterion per skill category without inventing a tolerance", async () => {
     const criteria = await listAssessmentCriteria();
+    assert.strictEqual(criteria.length, 7);
+    const total = criteria.reduce((sum, c) => sum + c.weight, 0);
+    assert.ok(total > 95 && total <= 100);
     assert.ok(criteria.some((c) => c.criticalSceneCount > 0));
-    for (const c of criteria) {
-      assert.ok(Number.isInteger(c.criticalSceneCount));
-      assert.ok(c.caseCount >= 0);
-    }
+    assert.strictEqual((await getAssessmentSettings()).passingScore, 70);
   });
 });
 
-describe("Content / Case Library — server actions", () => {
-  it("createCase rejects a submission missing required fields", async () => {
+describe("Content — action validation", () => {
+  it("createCase rejects a submission missing required fields, before any network call", async () => {
     const state = await createCase({}, formData({ title: "AB" }));
-    assert.ok(state.error);
     assert.ok(state.fieldErrors?.title);
     assert.ok(state.fieldErrors?.procedureId);
     assert.ok(state.fieldErrors?.difficulty);
-    assert.ok(state.fieldErrors?.side);
     assert.ok(state.fieldErrors?.learningObjective);
+    assert.strictEqual(state.fieldErrors?.side, undefined, "the schema has no side column");
   });
 
-  it("createCase accepts a valid submission but reports honestly that it is not persisted", async () => {
+  it("createCase, given valid input but no session, asks the user to sign in", async () => {
     const state = await createCase(
       {},
       formData({
         title: "New varus case",
-        procedureId: "tkr",
+        procedureId: "p1",
         difficulty: "intermediate",
-        side: "right",
         learningObjective: "Plan a neutral mechanical axis for a correctable varus deformity.",
       }),
     );
     assert.strictEqual(state.fieldErrors, undefined);
-    assert.ok(state.error, "must not silently succeed while there is nowhere to persist to");
-    assert.match(state.error!, /not connected|database migration/i);
+    assert.match(state.error ?? "", /Sign in again/);
   });
 
-  it("updateCase requires a case id", async () => {
-    const state = await updateCase({}, formData({ title: "Whatever" }));
-    assert.ok(state.error);
+  it("updateCase requires a case id and validates like create", async () => {
+    assert.ok((await updateCase({}, formData({ title: "Whatever" }))).error);
+    const bad = await updateCase({}, formData({ caseId: "x", title: "AB" }));
+    assert.ok(bad.fieldErrors?.title);
   });
 
-  it("setCaseStatus validates the case id and the target status", async () => {
-    const missingCase = await setCaseStatus({}, formData({ nextStatus: "inactive" }));
-    assert.ok(missingCase.error);
-
-    const badStatus = await setCaseStatus({}, formData({ caseId: "CASE_001", nextStatus: "archived" }));
-    assert.ok(badStatus.error);
-
-    const valid = await setCaseStatus({}, formData({ caseId: "CASE_001", nextStatus: "inactive" }));
-    assert.ok(valid.error, "reports honestly that nothing was persisted");
-  });
-
-  it("saveProcedureStep validates its fields", async () => {
-    const state = await saveProcedureStep({}, formData({ procedureId: "tkr", name: "P" }));
-    assert.ok(state.fieldErrors?.name);
-  });
-
-  it("saveAssessmentCriterion rejects an out-of-range weight", async () => {
-    const state = await saveAssessmentCriterion(
-      {},
-      formData({ key: "bone_cuts", weight: "150" }),
+  it("setCaseStatus validates the id and the target status", async () => {
+    assert.ok((await setCaseStatus({}, formData({ nextStatus: "inactive" }))).error);
+    assert.ok((await setCaseStatus({}, formData({ caseId: "c", nextStatus: "archived" }))).error);
+    assert.match(
+      (await setCaseStatus({}, formData({ caseId: "c", nextStatus: "inactive" }))).error ?? "",
+      /Sign in again/,
     );
-    assert.ok(state.fieldErrors?.weight);
   });
 
-  it("saveAssessmentCriterion accepts a valid weight", async () => {
-    const state = await saveAssessmentCriterion(
-      {},
-      formData({ key: "bone_cuts", weight: "30" }),
-    );
-    assert.strictEqual(state.fieldErrors, undefined);
-    assert.ok(state.error);
+  it("procedure-step and criterion forms validate, then report nothing was saved", async () => {
+    assert.ok((await saveProcedureStep({}, formData({ procedureId: "tkr", name: "P" }))).fieldErrors?.name);
+    assert.ok((await saveAssessmentCriterion({}, formData({ key: "bone_cuts", weight: "150" }))).fieldErrors?.weight);
+    const ok = await saveAssessmentCriterion({}, formData({ key: "bone_cuts", weight: "30" }));
+    assert.strictEqual(ok.fieldErrors, undefined);
+    assert.match(ok.error ?? "", /not connected to storage/);
   });
 
-  it("saveCaseImaging rejects a submission with no file and an unknown view", async () => {
-    const state = await saveCaseImaging(
-      {},
-      formData({ caseId: "CASE_001", view: "mri", label: "MRI" }),
-    );
-    assert.ok(state.fieldErrors?.view);
-    assert.ok(state.fieldErrors?.file);
-  });
+  it("saveCaseImaging rejects a missing file, an unknown view and a non-image", async () => {
+    const none = await saveCaseImaging({}, formData({ caseId: "c", view: "mri", label: "MRI" }));
+    assert.ok(none.fieldErrors?.view && none.fieldErrors?.file);
 
-  it("saveCaseImaging rejects a non-image file", async () => {
-    const fd = new FormData();
-    fd.set("caseId", "CASE_001");
-    fd.set("view", "ap");
-    fd.set("label", "AP standing");
+    const fd = formData({ caseId: "c", view: "ap", label: "AP standing" });
     fd.set("file", new File(["not an image"], "notes.txt", { type: "text/plain" }));
-    const state = await saveCaseImaging({}, fd);
-    assert.ok(state.fieldErrors?.file);
+    assert.ok((await saveCaseImaging({}, fd)).fieldErrors?.file);
   });
 
-  it("saveCaseImaging accepts a valid image but reports it is not stored yet", async () => {
-    const fd = new FormData();
-    fd.set("caseId", "CASE_001");
-    fd.set("view", "ap");
-    fd.set("label", "AP standing");
-    fd.set("file", new File(["fake-bytes"], "ap.jpg", { type: "image/jpeg" }));
+  it("saveCaseImaging accepts a valid image but says it is not stored", async () => {
+    const fd = formData({ caseId: "c", view: "ap", label: "AP standing" });
+    fd.set("file", new File(["x"], "ap.jpg", { type: "image/jpeg" }));
     const state = await saveCaseImaging({}, fd);
     assert.strictEqual(state.fieldErrors, undefined);
-    assert.ok(state.error);
-    assert.match(state.error!, /storage/i);
+    assert.match(state.error ?? "", /storage/i);
   });
 });

@@ -37,7 +37,6 @@ export async function AssessmentCriteriaSection() {
               <Th>Skill</Th>
               <Th>Procedure</Th>
               <Th numeric>Weight</Th>
-              <Th numeric>Cases</Th>
               <Th numeric>Critical scenes</Th>
             </Tr>
           </THead>
@@ -57,7 +56,6 @@ export async function AssessmentCriteriaSection() {
                     {row.weight}%
                   </span>
                 </Td>
-                <Td numeric>{row.caseCount}</Td>
                 <Td numeric>{row.criticalSceneCount}</Td>
               </Tr>
             ))}

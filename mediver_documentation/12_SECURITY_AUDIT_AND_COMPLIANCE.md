@@ -28,11 +28,15 @@ Enforce institution scope on the backend and, where Supabase/Postgres access is 
 `/content` (Instructor Content / Case Library) redirects a `learner` persona
 server-side before rendering — the navigation entry being hidden from that
 persona is a convenience, not the boundary, matching the rule above. The
-real boundary is still owed to the backend: `cases.program_id` does not
-exist yet (06_DATABASE_SCHEMA.md), so once the `/cases` API is implemented it
-must scope every list/read/write to the caller's institution (and program,
-once that relationship exists) the same way `programs`/`cohorts` already do,
-rather than trusting a client-supplied id.
+real boundary is the backend: `/cases` and `/procedures` require an
+instructor or admin who belongs to an institution, and every case query
+joins `cases → programs` and filters on that institution, so a case id from
+another institution reads as "not found" rather than "forbidden". `cases`
+has no institution column of its own, which is why `cases.program_id` is
+`NOT NULL`. `procedures` are shared reference data with no program in the
+documented schema, so they are readable by any instructor and are not
+editable through this API. Verified with a stubbed database layer only; the
+scoping SQL has not yet run against real tables.
 
 ## Audit
 

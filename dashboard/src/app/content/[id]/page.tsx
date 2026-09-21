@@ -1,14 +1,28 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, ImageOff, ListChecks, ShieldAlert, Users } from "lucide-react";
+import { ChevronLeft, ImageOff, ShieldAlert, Users } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/shell";
-import { Badge, Card, CardHeader, Chip, EmptyState, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
+import {
+  Badge,
+  Banner,
+  Card,
+  CardHeader,
+  Chip,
+  EmptyState,
+  Table,
+  TBody,
+  Td,
+  Th,
+  THead,
+  Tr,
+} from "@/components/ui";
 import {
   getCaseForAuthoring,
   getCaseTitleForAuthoring,
-  listProceduresForAuthoring,
+  listProcedureOptions,
 } from "@/lib/data/content";
+import { ContentApiError } from "@/lib/data/content-api";
 import { shortDate, titleCase } from "@/lib/format";
 import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
@@ -25,7 +39,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const title = await getCaseTitleForAuthoring(id);
-  return { title: title ? `${title} — Content` : id };
+  return { title: title ? `${title} — Content` : "Case — Content" };
 }
 
 /**
@@ -46,34 +60,41 @@ export default async function CaseAuthoringPage({
   const persona = personaFor(user.role);
   if (persona === "learner") redirect("/");
 
-  const [detail, procedures] = await Promise.all([
-    getCaseForAuthoring(id),
-    listProceduresForAuthoring(),
-  ]);
+  let detail: Awaited<ReturnType<typeof getCaseForAuthoring>>;
+  let procedures: Awaited<ReturnType<typeof listProcedureOptions>>;
+  try {
+    [detail, procedures] = await Promise.all([
+      getCaseForAuthoring(id),
+      listProcedureOptions(),
+    ]);
+  } catch (err) {
+    if (err instanceof ContentApiError) {
+      return (
+        <AppShell user={user} searchHint='Try searching "varus"'>
+          <BackLink />
+          <Banner tone="fail" title="This case couldn't be loaded">
+            {err.message}
+          </Banner>
+        </AppShell>
+      );
+    }
+    throw err;
+  }
 
   if (!detail) notFound();
 
   return (
     <AppShell user={user} searchHint='Try searching "varus"'>
-      <div style={{ marginBottom: "1rem" }}>
-        <Link
-          href="/content"
-          className={p.clear}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
-        >
-          <ChevronLeft size={16} /> Back to Content / Case Library
-        </Link>
-      </div>
+      <BackLink />
 
       <PageHeader
-        eyebrow={`${detail.procedureName} · ${detail.id}`}
+        eyebrow={detail.procedureName}
         title={detail.title}
-        lede={detail.summary}
+        lede={detail.description}
       />
 
       <div className={s.title} style={{ marginBottom: "var(--s-5)" }}>
         <span className={p.filters} style={{ marginBottom: 0 }}>
-          <Chip tone="muted">{titleCase(detail.side)} knee</Chip>
           <Chip tone="muted">{titleCase(detail.difficulty)}</Chip>
           <Badge status={detail.status === "active" ? "pass" : "neutral"}>
             {detail.status === "active" ? "Active" : "Inactive"}
@@ -98,31 +119,9 @@ export default async function CaseAuthoringPage({
 
       <div className={p.columns}>
         <div>
-          <Card padding="lg" style={{ marginBottom: "var(--s-5)" }}>
+          <Card padding="lg">
             <CardHeader title="Case details" subtitle="Visible to residents once the case is active." />
             <EditCaseForm detail={detail} procedures={procedures} />
-          </Card>
-
-          <Card padding="lg">
-            <CardHeader
-              title="Learning objectives"
-              subtitle={
-                detail.objectives.length === 0
-                  ? "None authored yet."
-                  : `${detail.objectives.length} objective${detail.objectives.length === 1 ? "" : "s"}`
-              }
-            />
-            {detail.objectives.length === 0 ? (
-              <EmptyState icon={ListChecks} title="No learning objectives authored yet" />
-            ) : (
-              <ul>
-                {detail.objectives.map((objective) => (
-                  <li key={objective} style={{ marginBottom: "var(--s-2)" }}>
-                    {objective}
-                  </li>
-                ))}
-              </ul>
-            )}
           </Card>
         </div>
 
@@ -169,7 +168,7 @@ export default async function CaseAuthoringPage({
           <Card padding="lg">
             <CardHeader
               title="Assessed against"
-              subtitle="Skill categories and critical scenes this case's procedure carries."
+              subtitle="The skill categories a scored report is broken into."
             />
             <ul>
               {detail.scoring.map((category) => (
@@ -195,12 +194,21 @@ export default async function CaseAuthoringPage({
           flush
           title="Usage"
           subtitle={
-            detail.usage.length === 0
-              ? "No resident has attempted this case yet."
-              : `${detail.usedByLearners} learner${detail.usedByLearners === 1 ? "" : "s"} · ${detail.usedBySessions} session${detail.usedBySessions === 1 ? "" : "s"}`
+            detail.usage === null
+              ? "Not tracked yet."
+              : detail.usage.length === 0
+                ? "No resident has attempted this case yet."
+                : `${detail.usage.length} learner${detail.usage.length === 1 ? "" : "s"}`
           }
         />
-        {detail.usage.length === 0 ? (
+        {detail.usage === null ? (
+          <div style={{ padding: "var(--s-5)" }}>
+            <EmptyState icon={Users} title="Usage isn't tracked yet">
+              Who has attempted this case appears here once sessions are
+              recorded against cases in the database.
+            </EmptyState>
+          </div>
+        ) : detail.usage.length === 0 ? (
           <div style={{ padding: "var(--s-5)" }}>
             <EmptyState icon={Users} title="Not yet used" />
           </div>
@@ -226,5 +234,19 @@ export default async function CaseAuthoringPage({
         )}
       </Card>
     </AppShell>
+  );
+}
+
+function BackLink() {
+  return (
+    <div style={{ marginBottom: "1rem" }}>
+      <Link
+        href="/content"
+        className={p.clear}
+        style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
+      >
+        <ChevronLeft size={16} /> Back to Content / Case Library
+      </Link>
+    </div>
   );
 }
