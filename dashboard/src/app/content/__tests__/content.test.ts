@@ -11,6 +11,7 @@ import {
 import {
   createCase,
   saveAssessmentCriterion,
+  saveCaseImaging,
   saveProcedureStep,
   setCaseStatus,
   updateCase,
@@ -86,6 +87,23 @@ describe("Content / Case Library — case detail", () => {
   it("returns null for a case that does not exist, rather than throwing", async () => {
     const detail = await getCaseForAuthoring("NOT-A-REAL-CASE");
     assert.strictEqual(detail, null);
+  });
+
+  it("resolves a real image for AP and long-leg views, and leaves the rest pending", async () => {
+    const detail = await getCaseForAuthoring("CASE_001");
+    assert.ok(detail);
+    const ap = detail!.imaging.find((v) => v.view === "ap");
+    const longLeg = detail!.imaging.find((v) => v.view === "long_leg");
+    const skyline = detail!.imaging.find((v) => v.view === "skyline");
+    assert.strictEqual(ap?.src, "/knee_xray_ap.jpg");
+    assert.strictEqual(longLeg?.src, "/full_leg_xray.jpg");
+    assert.strictEqual(skyline?.src, undefined, "no asset exists for skyline yet");
+  });
+
+  it("keeps the synthetic cases' own generated imaging untouched", async () => {
+    const varus = await getCaseForAuthoring("SYNTH-VARUS-001");
+    const flap = varus!.imaging.find((v) => v.view === "flap");
+    assert.strictEqual(flap?.src, "/synth_varus_flap.jpg");
   });
 
   it("marks the synthetic demo cases as synthetic and never as ordinary content", async () => {
@@ -205,5 +223,36 @@ describe("Content / Case Library — server actions", () => {
     );
     assert.strictEqual(state.fieldErrors, undefined);
     assert.ok(state.error);
+  });
+
+  it("saveCaseImaging rejects a submission with no file and an unknown view", async () => {
+    const state = await saveCaseImaging(
+      {},
+      formData({ caseId: "CASE_001", view: "mri", label: "MRI" }),
+    );
+    assert.ok(state.fieldErrors?.view);
+    assert.ok(state.fieldErrors?.file);
+  });
+
+  it("saveCaseImaging rejects a non-image file", async () => {
+    const fd = new FormData();
+    fd.set("caseId", "CASE_001");
+    fd.set("view", "ap");
+    fd.set("label", "AP standing");
+    fd.set("file", new File(["not an image"], "notes.txt", { type: "text/plain" }));
+    const state = await saveCaseImaging({}, fd);
+    assert.ok(state.fieldErrors?.file);
+  });
+
+  it("saveCaseImaging accepts a valid image but reports it is not stored yet", async () => {
+    const fd = new FormData();
+    fd.set("caseId", "CASE_001");
+    fd.set("view", "ap");
+    fd.set("label", "AP standing");
+    fd.set("file", new File(["fake-bytes"], "ap.jpg", { type: "image/jpeg" }));
+    const state = await saveCaseImaging({}, fd);
+    assert.strictEqual(state.fieldErrors, undefined);
+    assert.ok(state.error);
+    assert.match(state.error!, /storage/i);
   });
 });

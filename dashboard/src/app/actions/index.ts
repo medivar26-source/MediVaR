@@ -648,3 +648,57 @@ export async function saveAssessmentCriterion(
 
   return { error: CONTENT_NOT_PERSISTED };
 }
+
+export type CaseImagingFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+const IMAGING_VIEWS = ["ap", "lateral", "skyline", "long_leg", "flap", "klat"];
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Adds a radiograph view to a case's imaging package.
+ *
+ * There is no image bucket wired up yet (Supabase Storage is not
+ * configured — see 06_DATABASE_SCHEMA.md/14_DEPLOYMENT_AND_OPERATIONS.md),
+ * so a real upload is validated here — type, size, required fields — and
+ * then, like every other content write, reported as not persisted rather
+ * than accepted and silently dropped.
+ */
+export async function saveCaseImaging(
+  _prev: CaseImagingFormState,
+  formData: FormData,
+): Promise<CaseImagingFormState> {
+  const caseId = String(formData.get("caseId") ?? "");
+  const view = String(formData.get("view") ?? "");
+  const label = String(formData.get("label") ?? "").trim();
+  const file = formData.get("file");
+
+  const fieldErrors: Record<string, string> = {};
+  if (!caseId) return { error: "This form is missing its case." };
+  if (!IMAGING_VIEWS.includes(view)) {
+    fieldErrors.view = "Choose a view.";
+  }
+  if (label.length < 2) {
+    fieldErrors.label = "Give the view a label of at least two characters.";
+  }
+  if (file instanceof File && file.size > 0) {
+    if (!file.type.startsWith("image/")) {
+      fieldErrors.file = "Upload an image file.";
+    } else if (file.size > MAX_IMAGE_BYTES) {
+      fieldErrors.file = "Keep the image under 10 MB.";
+    }
+  } else {
+    fieldErrors.file = "Choose an image to upload.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, error: "Fix the highlighted fields and try again." };
+  }
+
+  return {
+    error:
+      "There is no image storage connected yet, so this view was validated but not uploaded or saved.",
+  };
+}

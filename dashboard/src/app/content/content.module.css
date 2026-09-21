@@ -128,3 +128,44 @@
   color: var(--text-muted);
   font-size: var(--t-caption);
 }
+
+.imgGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+
+.imgCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.imgThumb {
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r-md);
+  border: var(--bw) solid var(--border);
+  overflow: hidden;
+  background: var(--shade);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-disabled);
+}
+
+.imgThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imgLabel {
+  font-size: var(--t-caption);
+  font-weight: var(--fw-medium);
+}
+
+.imgPending {
+  color: var(--text-disabled);
+  font-size: var(--t-overline);
+}

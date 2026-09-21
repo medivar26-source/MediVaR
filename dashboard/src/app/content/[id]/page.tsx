@@ -14,6 +14,7 @@ import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import { CaseStatusForm } from "./CaseStatusForm";
 import { EditCaseForm } from "./EditCaseForm";
+import { ImagingManager } from "./ImagingManager";
 import p from "../../panels.module.css";
 import s from "../content.module.css";
 
@@ -139,14 +140,23 @@ export default async function CaseAuthoringPage({
             {detail.imaging.length === 0 ? (
               <EmptyState icon={ImageOff} title="No imaging authored yet" />
             ) : (
-              <ul>
+              <div className={s.imgGrid}>
                 {detail.imaging.map((view) => (
-                  <li key={view.view} style={{ marginBottom: "var(--s-2)" }}>
-                    {view.label}
-                  </li>
+                  <div key={view.view} className={s.imgCard}>
+                    <div className={s.imgThumb}>
+                      {view.src ? (
+                        <img src={view.src} alt={view.label} />
+                      ) : (
+                        <ImageOff width={20} height={20} strokeWidth={1.5} aria-hidden="true" />
+                      )}
+                    </div>
+                    <span className={s.imgLabel}>{view.label}</span>
+                    {!view.src && <span className={s.imgPending}>Asset pending</span>}
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
+            <ImagingManager caseId={detail.id} />
           </Card>
 
           <Card padding="lg">

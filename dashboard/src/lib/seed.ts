@@ -396,6 +396,14 @@ export type CaseRow = CaseSummary & {
   pathologyLabel: string;
   summary: string;
   patient: Record<string, string | number>;
+  /**
+   * `ap` and `long_leg` views point at the two generic radiograph plates in
+   * `public/` (`knee_xray_ap.jpg`, `full_leg_xray.jpg`) — shared placeholder
+   * imagery, the same file across every case, not a unique scan per patient.
+   * `lateral`/`skyline` have no asset yet and render as pending. The two
+   * SYNTH- cases are the exception: they carry their own generated FLAP/KLAT
+   * pair and must keep it.
+   */
   imaging: { view: string; label: string; src?: string }[];
   objectives: string[];
   createdAt: string;
@@ -431,10 +439,10 @@ export const CASES: CaseRow[] = [
       deformity: "8.2° varus, correctable",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
       { view: "lateral", label: "Lateral" },
       { view: "skyline", label: "Skyline" },
-      { view: "long_leg", label: "Full-length long-leg" },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
       "Recognise medial compartment OA with correctable varus on a long-leg film.",
@@ -472,9 +480,9 @@ export const CASES: CaseRow[] = [
       deformity: "12° valgus, partially correctable",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
       { view: "lateral", label: "Lateral" },
-      { view: "long_leg", label: "Full-length long-leg" },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
       "Recognise a valgus deformity with a contracted lateral sleeve.",
@@ -511,9 +519,9 @@ export const CASES: CaseRow[] = [
       deformity: "6° varus with a metaphyseal defect",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
       { view: "lateral", label: "Lateral" },
-      { view: "long_leg", label: "Full-length long-leg" },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
       "Classify a contained tibial defect using the AORI system.",
@@ -548,7 +556,7 @@ export const CASES: CaseRow[] = [
       deformity: "Neutral, balanced",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
       { view: "lateral", label: "Lateral" },
       { view: "skyline", label: "Skyline" },
     ],
@@ -585,9 +593,9 @@ export const CASES: CaseRow[] = [
       deformity: "18° varus, incompletely correctable",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
       { view: "lateral", label: "Lateral" },
-      { view: "long_leg", label: "Full-length long-leg" },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
       "Sequence a medial release for an incompletely correctable varus knee.",
@@ -653,9 +661,9 @@ export const CASES: CaseRow[] = [
       deformity: "4° varus, correctable",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
       { view: "lateral", label: "Lateral" },
-      { view: "long_leg", label: "Full-length long-leg" },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
       "Recognise early-stage medial OA with a small, fully correctable varus deformity.",
@@ -692,10 +700,10 @@ export const CASES: CaseRow[] = [
       deformity: "9° valgus, correctable",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
       { view: "lateral", label: "Lateral" },
       { view: "skyline", label: "Skyline" },
-      { view: "long_leg", label: "Full-length long-leg" },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
       "Recognise a moderate valgus deformity with a contained lateral sleeve.",
@@ -732,9 +740,9 @@ export const CASES: CaseRow[] = [
       deformity: "5° valgus malunion, extra-articular",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
       { view: "lateral", label: "Lateral" },
-      { view: "long_leg", label: "Full-length long-leg" },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
       "Account for extra-articular deformity when planning the distal femoral cut.",
@@ -770,7 +778,7 @@ export const CASES: CaseRow[] = [
       deformity: "Neutral, mild bone loss",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
       { view: "lateral", label: "Lateral" },
     ],
     objectives: [
@@ -807,9 +815,9 @@ export const CASES: CaseRow[] = [
       deformity: "16° varus with mediolateral instability, incompletely correctable",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
       { view: "lateral", label: "Lateral" },
-      { view: "long_leg", label: "Full-length long-leg" },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
       "Recognise when soft-tissue balancing alone will not stabilise the knee.",
