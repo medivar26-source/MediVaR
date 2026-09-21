@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Content — MediVeR XR</title>
+<link rel="stylesheet" href="wire.css">
+<style>
+  .wf-panel{display:none}
+  .wf-panel.on{display:block}
+  .wtabs span{cursor:pointer}
+</style>
+</head>
+<body data-nav="content">
+<div class="app">
+  <aside class="side" data-side></aside>
+  <div class="main">
+    <header class="topbar" data-topbar data-crumb="Content / Case Library"></header>
+    <div class="canvas">
+
+      <div class="page-head">
+        <div class="grow">
+          <h1>Content / Case Library</h1>
+          <p class="sub">Author and manage the cases, procedures and assessment criteria residents train against. Instructor/admin only — not the learner case browser, not the TKR planner.</p>
+        </div>
+        <a class="btn primary" href="#new-case">＋ Create case</a>
+      </div>
+
+      <div class="tabs wtabs" id="wtabs">
+        <span class="on" data-tab="cases">Cases</span>
+        <span data-tab="procedures">Procedures</span>
+        <span data-tab="criteria">Assessment criteria</span>
+      </div>
+
+      <!-- ================= CASES ================= -->
+      <div class="wf-panel on" id="panel-cases">
+
+        <div class="card pad-sm" style="margin-bottom:20px">
+          <div class="row">
+            <div class="inp ph-text" style="flex:1;min-width:220px">Search by case name or ID…</div>
+            <span class="chip on">Difficulty ▾</span>
+            <span class="chip">Procedure ▾</span>
+            <span class="chip">Status ▾</span>
+            <span class="spacer"></span>
+            <span class="tiny">13 cases</span>
+          </div>
+        </div>
+
+        <div class="card flush">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Case</th><th>Difficulty</th><th>Learning objective</th><th>Status</th>
+                <th class="n">Version</th><th>Used by</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="k">Medial OA — Left knee<br><span class="tiny">CASE_007</span></td>
+                <td>Beginner</td><td>Recognise early-stage medial OA with a small, fully correctable varus deformity.</td>
+                <td><span class="badge pass">Active</span></td><td class="n">v1</td>
+                <td class="tiny">Not yet used</td>
+                <td><a class="btn ghost sm" href="case-detail.html">Open</a></td>
+              </tr>
+              <tr>
+                <td class="k">Lateral OA — Right knee<br><span class="tiny">CASE_008</span></td>
+                <td>Intermediate</td><td>Recognise a moderate valgus deformity with a contained lateral sleeve.</td>
+                <td><span class="badge pass">Active</span></td><td class="n">v1</td>
+                <td class="tiny">Not yet used</td>
+                <td><a class="btn ghost sm" href="case-detail.html">Open</a></td>
+              </tr>
+              <tr>
+                <td class="k">Varus OA — Right knee<br><span class="tiny">CASE_001</span></td>
+                <td>Intermediate</td><td>Recognise medial compartment OA with correctable varus on a long-leg film.</td>
+                <td><span class="badge">Inactive</span></td><td class="n">v1</td>
+                <td class="tiny">5 learners · 5 sessions</td>
+                <td><a class="btn ghost sm" href="case-detail.html">Open</a></td>
+              </tr>
+              <tr>
+                <td class="k">Rheumatoid — Right knee<br><span class="tiny">CASE_010</span></td>
+                <td>Beginner</td><td>Adapt cutting and impaction technique to osteopenic bone.</td>
+                <td><span class="badge pass">Active</span></td><td class="n">v1</td>
+                <td class="tiny">Not yet used</td>
+                <td><a class="btn ghost sm" href="case-detail.html">Open</a></td>
+              </tr>
+              <tr>
+                <td class="k">Severe combined deformity — Right knee<br><span class="tiny">CASE_011</span></td>
+                <td>Expert</td><td>Recognise when soft-tissue balancing alone will not stabilise the knee.</td>
+                <td><span class="badge">Inactive</span></td><td class="n">v1</td>
+                <td class="tiny">Not yet used</td>
+                <td><a class="btn ghost sm" href="case-detail.html">Open</a></td>
+              </tr>
+              <tr style="background:var(--warn-bg)">
+                <td class="k">DEMO: Synthetic Varus TKR (P-0247)<br><span class="tiny">SYNTH-VARUS-001 · <b>DEMO / SYNTHETIC</b></span></td>
+                <td>Intermediate</td><td class="tiny">—</td>
+                <td><span class="badge pass">Active</span></td><td class="n">v1</td>
+                <td class="tiny">Not yet used</td>
+                <td><a class="btn ghost sm" href="case-detail.html">Open</a></td>
+              </tr>
+              <tr style="background:var(--warn-bg)">
+                <td class="k">DEMO: Synthetic Valgus TKR (P-0891)<br><span class="tiny">SYNTH-VALGUS-001 · <b>DEMO / SYNTHETIC</b></span></td>
+                <td>Expert</td><td class="tiny">—</td>
+                <td><span class="badge pass">Active</span></td><td class="n">v1</td>
+                <td class="tiny">Not yet used</td>
+                <td><a class="btn ghost sm" href="case-detail.html">Open</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sec" style="margin-top:28px"><h2>Create a case</h2><span class="line"></span></div>
+        <div class="card" id="new-case">
+          <div class="grid g2" style="margin-bottom:16px">
+            <div class="field"><label>Case name</label><div class="inp ph-text">Varus OA — Right knee</div></div>
+            <div class="field"><label>Procedure</label><div class="inp ph-text">Total Knee Replacement</div></div>
+          </div>
+          <div class="grid g2" style="margin-bottom:16px">
+            <div class="field"><label>Difficulty</label><div class="inp ph-text">Choose a difficulty</div></div>
+            <div class="field"><label>Side</label><div class="inp ph-text">Choose a side</div></div>
+          </div>
+          <div class="field" style="margin-bottom:16px"><label>Learning objective</label><div class="inp ph-text">What should a resident be able to do after completing this case?</div></div>
+          <div class="row"><button class="btn primary">＋ Create case</button></div>
+          <div class="note" style="margin-top:16px">Validated client- and server-side. Reports honestly when there is no table to save to yet — never a silent fake save.</div>
+        </div>
+      </div>
+
+      <!-- ================= PROCEDURES ================= -->
+      <div class="wf-panel" id="panel-procedures">
+        <div class="card flush">
+          <div class="row" style="padding:16px 20px;border-bottom:1px solid var(--line)">
+            <div class="ph solid" style="width:36px;height:36px;border-radius:50%;min-height:0;font-size:11px">TK</div>
+            <div style="font-weight:700">Total Knee Replacement</div>
+            <span class="spacer"></span>
+            <span class="badge pass">Published</span>
+            <span class="tiny">12 steps</span>
+            <span class="tiny">13 cases</span>
+          </div>
+          <div style="padding:8px 20px 20px 68px">
+            <div class="row between" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><b>P0</b> · Pre-surgery check (Time Out)</div><span class="chip mut">Required</span></div>
+            <div class="row between" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><b>P1</b> · Positioning &amp; preparation</div><span class="chip mut">Required</span></div>
+            <div class="row between" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><b>P2</b> · Surgical approach</div><span class="chip mut">Required</span></div>
+            <div class="row between" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><b>P3</b> · Joint preparation</div><span class="chip mut">Required</span></div>
+            <div class="row between" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><b>P4</b> · Tibial resection</div><span class="chip mut">Required</span></div>
+            <div class="row between" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><b>P5</b> · Femoral preparation</div><span class="chip mut">Required</span></div>
+            <div class="row between" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><b>P6</b> · Balancing &amp; trialling</div><span class="chip mut">Required</span></div>
+            <div class="row between" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><b>P7</b> · Tibial final preparation</div><span class="chip mut">Required</span></div>
+            <div class="row between" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><b>P8</b> · PS box cut <span class="tiny">PS only</span></div><span class="chip on">Optional</span></div>
+            <div class="row between" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><b>P9</b> · Patellar management</div><span class="chip mut">Required</span></div>
+            <div class="row between" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><b>P10</b> · Cementation <span class="tiny">Cemented only</span></div><span class="chip on">Optional</span></div>
+            <div class="row between" style="padding:10px 0"><div><b>P11</b> · Closure &amp; debrief</div><span class="chip mut">Required</span></div>
+          </div>
+        </div>
+        <div class="note" style="margin-top:16px">Steps come from the same table <code>/plan</code> reads for the eleven-part TKR walkthrough — an edit here and the walkthrough itself can never silently disagree about what a step is called.</div>
+      </div>
+
+      <!-- ================= ASSESSMENT CRITERIA ================= -->
+      <div class="wf-panel" id="panel-criteria">
+        <div class="banner" style="margin-bottom:20px">
+          <span class="ic">i</span>
+          <div class="grow">
+            <div class="bt">Configuration, not scoring</div>
+            <div class="bd">This page manages which skills a case is assessed against and how much each is worth. The assessment engine — not this screen — computes the score.</div>
+          </div>
+        </div>
+
+        <div class="card flush">
+          <table class="tbl">
+            <thead><tr><th>Skill</th><th>Procedure</th><th class="n">Weight</th><th class="n">Cases</th><th class="n">Critical scenes</th></tr></thead>
+            <tbody>
+              <tr><td class="k">Pre-operative planning</td><td>Total Knee Replacement</td><td class="n">20%</td><td class="n">13</td><td class="n">0</td></tr>
+              <tr><td class="k">Bone cuts &amp; alignment</td><td>Total Knee Replacement</td><td class="n">25%</td><td class="n">13</td><td class="n">2</td></tr>
+              <tr><td class="k">Gap assessment</td><td>Total Knee Replacement</td><td class="n">15%</td><td class="n">13</td><td class="n">1</td></tr>
+              <tr><td class="k">Trialling &amp; stability</td><td>Total Knee Replacement</td><td class="n">15%</td><td class="n">13</td><td class="n">1</td></tr>
+              <tr><td class="k">Implantation &amp; cementation</td><td>Total Knee Replacement</td><td class="n">15%</td><td class="n">13</td><td class="n">0</td></tr>
+              <tr><td class="k">Patellar management</td><td>Total Knee Replacement</td><td class="n">5%</td><td class="n">13</td><td class="n">0</td></tr>
+              <tr><td class="k">Exposure &amp; closure</td><td>Total Knee Replacement</td><td class="n">5%</td><td class="n">13</td><td class="n">0</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sec" style="margin-top:28px"><h2>Assessment settings</h2><span class="line"></span></div>
+        <div class="card">
+          <div class="grid g2">
+            <div><span class="tiny">Passing score</span><div style="font-weight:700;margin-top:4px">70</div></div>
+            <div><span class="tiny">Critical error</span><div style="font-weight:700;margin-top:4px">Automatic failure: ON</div></div>
+            <div><span class="tiny">Incomplete procedure</span><div style="font-weight:700;margin-top:4px">Automatic failure: ON</div></div>
+            <div><span class="tiny">Guidance during assessment</span><div style="font-weight:700;margin-top:4px">OFF</div></div>
+          </div>
+        </div>
+      </div>
+
+      <p class="tiny" style="margin-top:28px">Wireframe of <code>/content</code> (dashboard/src/app/content/). Data shown matches the real seed in <code>dashboard/src/lib/seed.ts</code> — 13 cases, 1 procedure, 7 skill categories.</p>
+
+    </div>
+  </div>
+</div>
+<script src="wire.js"></script>
+<script>
+  document.getElementById('wtabs').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-tab]');
+    if (!t) return;
+    document.querySelectorAll('#wtabs span').forEach(function (s) { s.classList.remove('on'); });
+    t.classList.add('on');
+    document.querySelectorAll('.wf-panel').forEach(function (p) { p.classList.remove('on'); });
+    document.getElementById('panel-' + t.dataset.tab).classList.add('on');
+  });
+</script>
+</body>
+</html>
