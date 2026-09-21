@@ -21,7 +21,7 @@ import p from "../panels.module.css";
  * field in `pageActions` sits in a row that centres its children and holds a
  * sibling button, so the field's label and the button's cap line never agree.
  */
-export function NewCohort() {
+export function NewCohort({ programId }: { programId: string }) {
   const [state, formAction, pending] = useActionState<CohortState, FormData>(
     createCohort,
     {},
@@ -34,6 +34,8 @@ export function NewCohort() {
           {state.error}
         </Banner>
       )}
+
+      <input type="hidden" name="program_id" value={programId} />
 
       <Input
         label="Cohort name"

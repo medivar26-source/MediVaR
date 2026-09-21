@@ -92,14 +92,14 @@ Login
 -> Select case
 -> Case briefing
 -> Start / Continue / Retry
--> Pre-operative Planning
--> Assessment on interactive X-ray canvas
--> FLAP/KLAT toggle as required
--> Confirm each measurement
--> Femoral Planning
--> Tibial Planning
--> Review & Send
--> Lock / transfer plan to VR
+-> Pre-operative Planning (MEASURE → SIZE → SEND)
+-> Assessment on interactive X-ray canvas (6 clinical measurements)
+-> FLAP/KLAT toggle as required (0.264 mm/px calibration)
+-> Confirm assessment measurements
+-> Tibial Planning (Sizes 1-6, 2D CAD template overlay, coverage ≥ 90%, overhang ≤ 1.0mm)
+-> Femoral Planning (Sizes 1-8, 2D CAD template overlay, notching risk verification)
+-> Review & Send to VR (3-card summary inspection)
+-> Lock / seal immutable V1 VR Payload
 -> VR simulation
 -> Return to MediVeR
 -> Post-operative review

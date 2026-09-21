@@ -40,6 +40,11 @@ export function proxy(request: NextRequest) {
   const token = getTokenFromRequest(request);
 
   if (!token) {
+    // If this is a Server Action request, do not return an HTML redirect which corrupts Next.js action protocol
+    if (request.headers.get("next-action") || request.headers.get("accept")?.includes("text/x-component")) {
+      return NextResponse.next();
+    }
+
     // Preserve the intended destination so we can redirect back after login
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);

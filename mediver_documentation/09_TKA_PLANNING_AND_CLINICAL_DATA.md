@@ -52,42 +52,66 @@ measurement
 - metadata
 ```
 
-## Preoperative flow
+## Source basis & Authoritative Specification
+
+The authoritative V1 specification for the Pre-operative TKA Planning workflow is **"Mediver User Planning Workflow V1.pdf"**.
+The core mental model is:
+
+$$\text{MEASURE} \longrightarrow \text{SIZE} \longrightarrow \text{SEND}$$
+
+## Strict 4-Page Preoperative Sequence
 
 ```text
-Assessment Page
--> Femoral Planning
--> Tibial Planning
--> Review & OR Transfer
--> lock plan
--> export plan
--> VR consumes locked plan
+Step 1: Assessment (/plan/[id]/assessment)
+  -> Landmark placement & measurement of 6 clinical angles/offsets on FLAP and KLAT
+Step 2: Tibial Planning (/plan/[id]/tibial)
+  -> Discrete sizing (Sizes 1 to 6) & 2D CAD template overlay on FLAP/KLAT
+Step 3: Femoral Planning (/plan/[id]/femoral)
+  -> Discrete sizing (Sizes 1 to 8) & 2D CAD template overlay + anterior notching verification
+Step 4: Review & Send to VR (/plan/[id]/review)
+  -> 3-card summary inspection & irreversible seal to immutable V1 VR Payload
 ```
 
-## Clinical safety boundary
+*(Note: Tibial is Page 2; Femoral is Page 3. The old inverted sequence is strictly prohibited).*
 
-This document records source-supported workflow concepts. It does not authorize new clinical thresholds, implant recommendations, or surgical decisions.
+## Radio-Opaque Calibration
 
-Any tolerance, correction target, sizing algorithm, or automated clinical rule not explicitly supplied must be clinically reviewed before production.
+All scans include a standard radio-opaque calibration marker (25.0 mm sphere). The scale is calibrated to **0.264 mm / pixel** (~3.788 px / mm). All physical dimensions (MAD, AP/ML dimensions, CAD templates, overhang) are computed using this calibration.
 
-## Confirmed Current Model Updates (2026-09-15)
+## Six Core Assessment Measurements
 
-## Confirmed TKR planning interaction model
+1. **MAD (Mechanical Axis Deviation)**: Perpendicular distance from knee joint center to mechanical axis (in mm) with Varus/Valgus designation.
+2. **AMA (Anatomical-Mechanical Angle)**: Angle between femoral anatomical axis and femoral mechanical axis (in °).
+3. **mHKA (Mechanical Hip-Knee-Ankle Angle)**: Coronal alignment angle with Varus/Valgus designation (in °).
+4. **MPTA (Medial Proximal Tibial Angle)**: Medial angle between tibial mechanical axis and proximal tibial plateau line (in °).
+5. **LDFA (Lateral Distal Femoral Angle)**: Lateral angle between femoral mechanical axis and distal femoral condylar line (in °).
+6. **PTS (Posterior Tibial Slope)**: Slope of tibial plateau relative to proximal tibial anterior cortex on KLAT (in °).
 
-The supplied TKA planning workflow remains the clinical/function baseline. The new implementation must add the following interaction requirements without changing the established planning parameters:
+## Component Planning & Tolerances
 
-```text
-Load X-ray
--> interactive canvas
--> FLAP/KLAT toggle
--> place landmarks directly on image
--> calculate measurements
--> confirm/edit each value
--> femoral planning
--> tibial planning
--> review summary
--> lock and transfer to VR
-```
+### Tibial Component (Page 2)
+- Discrete Sizes: 1 to 6 (Size 3 suggested).
+- 2D CAD Template: Translation ($x, y$ in mm) and rotation handles.
+- Cortical Coverage: Target $\ge 90.0\%$.
+- Medial / Lateral Overhang: Target $\le 1.0\text{ mm}$ (Overhang $>1.5\text{ mm}$ triggers Caution warning).
+- Fit Verdict: `ACCEPTABLE FIT` vs `CAUTION: Overhang > 1.5mm` vs `POOR FIT`.
+
+### Femoral Component (Page 3)
+- Discrete Sizes: 1 to 8 (Size 4 suggested).
+- 2D CAD Template: Translation ($x, y$ in mm) and rotation handles.
+- AP / ML Coverage: Target $\ge 90.0\%$.
+- Anterior Condylar Flush / Notching Risk: Tangent alignment to anterior femoral cortex on KLAT ($0.0\text{ mm}$ flush). Posterior shift triggers notching risk warning.
+- Fit Verdict: `ACCEPTABLE FIT` vs `CAUTION: Anterior Notch Risk` vs `POOR FIT`.
+
+## Strict Exclusions from 2D Planning
+- Resection depths (distal femur / proximal tibia)
+- Cut angles (varus/valgus, flexion/extension)
+- Posterior slope cutting controls
+- Polyethylene thickness selection
+- Gap balancing / joint line previews
+- 3D cut planes
+
+All bone cutting, resection adjustments, and ligament balancing decisions are deferred to the intraoperative VR simulation.
 
 ### X-ray canvas
 - The X-ray is the primary measurement workspace.

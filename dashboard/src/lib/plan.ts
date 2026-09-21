@@ -85,8 +85,95 @@ export type SessionConfig = {
   patella_resurfacing: boolean | null;
 };
 
+export type V1Calibration = {
+  marker_type: "sphere_25mm" | "manual";
+  marker_diameter_mm: number;
+  measured_pixel_diameter?: number;
+  mm_per_px: number;
+  calibrated_at?: string;
+};
+
+export type V1Assessment = {
+  MAD_mm: number;
+  AMA_deg: number;
+  mHKA_deg: number;
+  MPTA_deg: number;
+  LDFA_deg: number;
+  PTS_deg: number;
+  alignment_type?: "VARUS" | "VALGUS" | "NEUTRAL";
+};
+
+export type V1Position2D = {
+  x_offset_mm: number;
+  y_offset_mm: number;
+  rotation_deg: number;
+};
+
+export type V1TibialComponent = {
+  implant_size: number;
+  position_2d: V1Position2D;
+  ap_dimension_mm?: number;
+  ml_dimension_mm?: number;
+  cortical_coverage_pct?: number;
+  medial_overhang_mm?: number;
+  lateral_overhang_mm?: number;
+  fit_status?: "ACCEPTABLE FIT" | "CAUTION: Overhang > 1.5mm" | "POOR FIT";
+  is_confirmed?: boolean;
+};
+
+export type V1FemoralComponent = {
+  implant_size: number;
+  position_2d: V1Position2D;
+  ap_dimension_mm?: number;
+  ml_dimension_mm?: number;
+  ap_coverage_pct?: number;
+  ml_coverage_pct?: number;
+  notching_risk_mm?: number;
+  fit_status?: "ACCEPTABLE FIT" | "CAUTION: Anterior Notch Risk" | "POOR FIT";
+  is_confirmed?: boolean;
+};
+
+export type V1VrPayload = {
+  patient_id: string;
+  knee_side: "RIGHT" | "LEFT";
+  assessment: {
+    MAD_mm: number;
+    AMA_deg: number;
+    mHKA_deg: number;
+    MPTA_deg: number;
+    LDFA_deg: number;
+    PTS_deg: number;
+  };
+  tibial_component: {
+    implant_size: number;
+    position_2d: {
+      x_offset_mm: number;
+      y_offset_mm: number;
+      rotation_deg: number;
+    };
+  };
+  femoral_component: {
+    implant_size: number;
+    position_2d: {
+      x_offset_mm: number;
+      y_offset_mm: number;
+      rotation_deg: number;
+    };
+  };
+};
+
+export const V1_TKR_STEPS = [
+  { step: 1, id: "assessment", title: "Assessment", path: "assessment" },
+  { step: 2, id: "tibial", title: "Tibial Planning", path: "tibial" },
+  { step: 3, id: "femoral", title: "Femoral Planning", path: "femoral" },
+  { step: 4, id: "review", title: "Review & Send to VR", path: "review" },
+] as const;
+
+export type V1TkrStepId = (typeof V1_TKR_STEPS)[number]["id"];
+
 /** What the seven steps accumulate. Each step owns one branch of it. */
 export type PlanPayload = {
+  workflow?: "tkr";
   case_id?: string;
   session_config?: Partial<SessionConfig>;
   diagnosis?: string;
@@ -111,6 +198,14 @@ export type PlanPayload = {
     patellar_button_mm?: number;
   };
   risks?: { acknowledged?: string[]; tight_side?: string };
+  assessment_landmarks?: Record<string, { x: number; y: number }>;
+  femoral_planning?: Record<string, number>;
+  tibial_planning?: Record<string, number>;
+  calibration?: V1Calibration;
+  v1_assessment?: V1Assessment;
+  v1_tibial?: V1TibialComponent;
+  v1_femoral?: V1FemoralComponent;
+  v1_vr_payload?: V1VrPayload;
 };
 
 /**
@@ -162,9 +257,16 @@ export type PlanCase = {
   pathologyLabel: string;
   patient: { label: string; value: string }[];
   narrative: { label: string; value: string }[];
-  imaging: { view: string; label: string }[];
+  imaging: { view: string; label: string; src?: string }[];
   objectives: string[];
   referenceRanges: Partial<Record<MeasurementKey, [number, number]>>;
+};
+
+export type PlanSnapshot = {
+  versionId: string;
+  sealedBy: string;
+  sealedAt: string;
+  payload: PlanPayload;
 };
 
 export type PlanDetail = {
@@ -176,12 +278,11 @@ export type PlanDetail = {
   stepTimings: Record<string, number>;
   case: PlanCase;
   gates: StepGate[];
-  /** Choices, keyed by the payload field they answer. Procedure-scoped. */
   options: Record<string, StepOption[]>;
-  /** Step 6's intra-operative points — authored guidance, not a choice. */
   guidance: string[];
   risks: CaseRisk[];
   updatedAt: string;
+  lockedVersion?: PlanSnapshot;
 };
 
 /** The gate for one step, or a safe placeholder if the RPC returned nothing. */

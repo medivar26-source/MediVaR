@@ -28,6 +28,14 @@ export default async function PlanIndexPage({
   if (!plan) notFound();
 
   if (plan.hasSession) redirect(`/cases/${plan.caseId}`);
+
+  if (plan.payload.workflow === "tkr") {
+    if (plan.isReadyForVr || plan.lockedVersion) {
+      redirect(`/plan/${plan.id}/review`);
+    }
+    redirect(`/plan/${plan.id}/assessment`);
+  }
+
   if (plan.isReadyForVr) redirect(`/plan/${plan.id}/saved`);
 
   redirect(`/plan/${plan.id}/step/${furthestOpenStep(plan.gates)}`);

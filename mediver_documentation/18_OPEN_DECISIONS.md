@@ -28,7 +28,7 @@ Finalize stable event types from the actual VR implementation.
 Confirm whether editing creates a new version. Historical attempts must remain tied to the version used.
 
 ## 7. Plan locking
-Confirm when a preoperative plan becomes immutable.
+**Resolved for V1**: A preoperative plan becomes immutable upon resident confirmation on Page 4 (Review & Send to VR). Sealing the plan creates an immutable snapshot with `versionId`, `sealedBy`, `sealedAt`, and formatting into the exact V1 VR Payload schema. Once sealed, all 2D editing on Assessment, Tibial, and Femoral pages is hard-locked into read-only mode. All intraoperative variables are deferred to VR.
 
 ## 8. Guidance policy
 Define guidance for training, assessment, preview and any other modes.

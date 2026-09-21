@@ -396,7 +396,7 @@ export type CaseRow = CaseSummary & {
   pathologyLabel: string;
   summary: string;
   patient: Record<string, string | number>;
-  imaging: { view: string; label: string }[];
+  imaging: { view: string; label: string; src?: string }[];
   objectives: string[];
   createdAt: string;
 };
@@ -411,7 +411,7 @@ export const CASES: CaseRow[] = [
     pathologyLabel: "Osteoarthritis",
     side: "right",
     difficulty: "intermediate",
-    isActive: true,
+    isActive: false,
     summary:
       "62-year-old man, medial compartment collapse, 8.2° correctable varus. The reference case for the full eleven-part walkthrough.",
     patient: {
@@ -454,7 +454,7 @@ export const CASES: CaseRow[] = [
     pathologyLabel: "Osteoarthritis",
     side: "left",
     difficulty: "expert",
-    isActive: true,
+    isActive: false,
     summary:
       "Lateral compartment wear with a tight lateral sleeve. PS variant recommended.",
     patient: {
@@ -492,7 +492,7 @@ export const CASES: CaseRow[] = [
     pathologyLabel: "Post-traumatic",
     side: "right",
     difficulty: "expert",
-    isActive: true,
+    isActive: false,
     summary:
       "Old plateau fracture, AORI type 2A defect. Augment likely required before keel preparation.",
     patient: {
@@ -530,7 +530,7 @@ export const CASES: CaseRow[] = [
     pathologyLabel: "Inflammatory",
     side: "left",
     difficulty: "beginner",
-    isActive: true,
+    isActive: false,
     summary: "Soft bone, balanced deformity. The introductory case for residents.",
     patient: {
       age: 58,
@@ -567,7 +567,7 @@ export const CASES: CaseRow[] = [
     pathologyLabel: "Osteoarthritis",
     side: "right",
     difficulty: "expert",
-    isActive: true,
+    isActive: false,
     summary: "18° varus with a fixed flexion contracture. Staged medial release required.",
     patient: {
       age: 66,
@@ -625,6 +625,62 @@ export const CASES: CaseRow[] = [
     objectives: [],
     createdAt: daysAgo(40),
   },
+  {
+    id: "SYNTH-VARUS-001",
+    procedureId: "tkr",
+    title: "DEMO: Synthetic Varus TKR (P-0247)",
+    procedure: "tkr",
+    pathology: "primary_oa_varus",
+    pathologyLabel: "Osteoarthritis",
+    side: "right",
+    difficulty: "intermediate",
+    isActive: true,
+    summary: "Synthetic demo data - Not for clinical use. P-0247 Right Knee 7.0° Varus.",
+    patient: {
+      age: 68,
+      sex: "male",
+      bmi: 27.5,
+      occupation: "Software Test Fixture",
+      complaint: "Synthetic varus demo case",
+      history: "Synthetic demo data - Not for clinical use. Used for testing the pre-operative planning workflow.",
+      past_management: "None",
+      deformity: "7.0° Varus",
+    },
+    imaging: [
+      { view: "flap", label: "FLAP", src: "/synth_varus_flap.jpg" },
+      { view: "klat", label: "KLAT", src: "/synth_varus_klat.jpg" },
+    ],
+    objectives: [],
+    createdAt: daysAgo(1),
+  },
+  {
+    id: "SYNTH-VALGUS-001",
+    procedureId: "tkr",
+    title: "DEMO: Synthetic Valgus TKR (P-0891)",
+    procedure: "tkr",
+    pathology: "primary_oa_valgus",
+    pathologyLabel: "Osteoarthritis",
+    side: "left",
+    difficulty: "expert",
+    isActive: true,
+    summary: "Synthetic demo data - Not for clinical use. P-0891 Left Knee 5.0° Valgus.",
+    patient: {
+      age: 72,
+      sex: "female",
+      bmi: 26.2,
+      occupation: "Software Test Fixture",
+      complaint: "Synthetic valgus demo case",
+      history: "Synthetic demo data - Not for clinical use. Used for testing the pre-operative planning workflow.",
+      past_management: "None",
+      deformity: "5.0° Valgus",
+    },
+    imaging: [
+      { view: "flap", label: "FLAP", src: "/synth_valgus_flap.jpg" },
+      { view: "klat", label: "KLAT", src: "/synth_valgus_klat.jpg" },
+    ],
+    objectives: [],
+    createdAt: daysAgo(1),
+  }
 ];
 
 export const CASE_BY_ID = new Map(CASES.map((c) => [c.id, c]));

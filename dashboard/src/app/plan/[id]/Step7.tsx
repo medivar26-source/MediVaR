@@ -14,6 +14,7 @@ import { Rows } from "./Controls";
 import { SummaryFoot } from "./StepForm";
 import s from "./plan.module.css";
 import t from "./steps.module.css";
+import { TkrSummaryPanel } from "./TkrSummaryPanel";
 
 /**
  * 7 · Plan summary — read-only.
@@ -48,6 +49,10 @@ export function Step7({ plan, gate }: { plan: PlanDetail; gate: StepGate }) {
     )?.label ?? "Not chosen";
 
   const acknowledged = plan.payload.risks?.acknowledged ?? [];
+
+  if (plan.payload.assessment_landmarks) {
+    return <TkrSummaryPanel plan={plan} gate={gate} />;
+  }
 
   return (
     <>

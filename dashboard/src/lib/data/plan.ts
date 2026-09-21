@@ -84,6 +84,27 @@ const STEP_ANSWERS: { step: number; key: keyof PlanDetail["payload"] }[] = [
 ];
 
 function gatesFor(payload: PlanDetail["payload"]): StepGate[] {
+  // TKR workflow gates
+  if (payload.workflow === "tkr") {
+    const isAssessmentDone = !!payload.assessment_landmarks && Object.keys(payload.assessment_landmarks).length > 0;
+    const isFemurDone = payload.femoral_planning !== undefined;
+    const isTibiaDone = payload.tibial_planning !== undefined;
+
+    return [
+      {
+        step: 1, // Let's pretend 1-6 are the steps, but realistically we only need step 7 to open
+        passed: isAssessmentDone && isFemurDone && isTibiaDone,
+        reason: "TKR Planning completeness"
+      },
+      {
+        step: LAST_STEP,
+        passed: isAssessmentDone && isFemurDone && isTibiaDone,
+        reason: (isAssessmentDone && isFemurDone && isTibiaDone) ? "Ready for review" : "Complete Assessment, Femoral, and Tibial planning first."
+      }
+    ];
+  }
+
+  // Legacy workflow gates
   const gates: StepGate[] = STEP_ANSWERS.map(({ step, key }) => ({
     step,
     passed: payload[key] !== undefined,
@@ -120,6 +141,7 @@ export async function getPlan(planId: string): Promise<PlanDetail | null> {
     payload: plan.payload,
     stepTimings: plan.stepTimings,
     updatedAt: plan.updatedAt,
+    lockedVersion: plan.lockedVersion,
     case: {
       id: row.id,
       title: row.title,

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Users } from "lucide-react";
+import Link from "next/link";
+import { Users, ChevronLeft } from "lucide-react";
 import { AppShell, PageHeader, SectionHeader } from "@/components/shell";
 import {
   Badge,
@@ -55,6 +56,12 @@ export default async function CohortPage({
 
   return (
     <AppShell user={user} searchHint='Try searching "cohorts"'>
+      <div style={{ marginBottom: "1rem" }}>
+        <Link href={`/cohorts/program/${cohort.program_id}`} className={p.clear} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+          <ChevronLeft size={16} /> Back to Cohorts
+        </Link>
+      </div>
+
       <PageHeader
         eyebrow="Cohort"
         title={cohort.name}

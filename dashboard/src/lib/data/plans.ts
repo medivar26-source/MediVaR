@@ -7,7 +7,7 @@
  * column of that list rather than a separate subject.
  */
 
-import type { PlanPayload, PlanState } from "@/lib/plan";
+import type { PlanPayload, PlanState, PlanSnapshot } from "@/lib/plan";
 import { pinState, type PinLifecycle } from "./settings";
 import type { SimMode } from "@/lib/types";
 import {
@@ -56,6 +56,7 @@ export type PlanRecord = {
   presetName?: string;
   createdAt: string;
   updatedAt: string;
+  lockedVersion?: PlanSnapshot;
 };
 
 const FULL_TIMINGS = { "1": 54, "2": 108, "3": 61, "4": 57, "5": 49, "6": 38, "7": 17 };
@@ -160,6 +161,152 @@ export const PLANS: PlanRecord[] = [
     presetName: "Exam conditions",
     createdAt: daysAgo(1),
     updatedAt: minutesAgo(46),
+  },
+  {
+    id: "10000000-0000-4000-a000-000000000905",
+    userId: CURRENT_USER.id,
+    caseId: "SYNTH-VARUS-001",
+    payload: {
+      workflow: "tkr",
+      case_id: "SYNTH-VARUS-001",
+      session_config: { mode: "training", difficulty: "intermediate" },
+      calibration: {
+        marker_type: "sphere_25mm",
+        marker_diameter_mm: 25.0,
+        measured_pixel_diameter: 94.7,
+        mm_per_px: 0.264,
+        calibrated_at: new Date().toISOString(),
+      },
+      v1_assessment: {
+        MAD_mm: 12.0,
+        AMA_deg: 6.0,
+        mHKA_deg: 7.0,
+        MPTA_deg: 89.0,
+        LDFA_deg: 88.0,
+        PTS_deg: 7.0,
+        alignment_type: "VARUS",
+      },
+      v1_tibial: {
+        implant_size: 3,
+        position_2d: { x_offset_mm: 1.2, y_offset_mm: -0.4, rotation_deg: 0.5 },
+        ap_dimension_mm: 42.5,
+        ml_dimension_mm: 68.2,
+        cortical_coverage_pct: 91.5,
+        medial_overhang_mm: 0.4,
+        lateral_overhang_mm: 0.6,
+        fit_status: "ACCEPTABLE FIT",
+        is_confirmed: true,
+      },
+      v1_femoral: {
+        implant_size: 4,
+        position_2d: { x_offset_mm: 0.5, y_offset_mm: 0.0, rotation_deg: 0.0 },
+        ap_dimension_mm: 58.4,
+        ml_dimension_mm: 64.1,
+        ap_coverage_pct: 94.2,
+        ml_coverage_pct: 92.8,
+        notching_risk_mm: 0.0,
+        fit_status: "ACCEPTABLE FIT",
+        is_confirmed: true,
+      },
+      assessment_landmarks: {
+        hipCenter: { x: 50, y: 10 },
+        kneeCenter: { x: 65, y: 50 },
+        ankleCenter: { x: 50, y: 90 },
+        femoral_head_center: { x: 50, y: 10 },
+        femoral_knee_center: { x: 65, y: 50 },
+        tibial_knee_center: { x: 65, y: 50 },
+        ankle_center: { x: 50, y: 90 },
+      },
+      femoral_planning: {
+        size: 4,
+        x_offset_mm: 0.5,
+        y_offset_mm: 0.0,
+        rotation_deg: 0.0,
+      },
+      tibial_planning: {
+        tray_size: 3,
+        x_offset_mm: 1.2,
+        y_offset_mm: -0.4,
+        rotation_deg: 0.5,
+      },
+    },
+    stepTimings: { "1": 60, "2": 60, "3": 60, "4": 20 },
+    isReadyForVr: false,
+    createdAt: daysAgo(1),
+    updatedAt: minutesAgo(10),
+  },
+  {
+    id: "10000000-0000-4000-a000-000000000906",
+    userId: CURRENT_USER.id,
+    caseId: "SYNTH-VALGUS-001",
+    payload: {
+      workflow: "tkr",
+      case_id: "SYNTH-VALGUS-001",
+      session_config: { mode: "training", difficulty: "expert" },
+      calibration: {
+        marker_type: "sphere_25mm",
+        marker_diameter_mm: 25.0,
+        measured_pixel_diameter: 94.7,
+        mm_per_px: 0.264,
+        calibrated_at: new Date().toISOString(),
+      },
+      v1_assessment: {
+        MAD_mm: 10.0,
+        AMA_deg: 5.5,
+        mHKA_deg: 5.0,
+        MPTA_deg: 91.0,
+        LDFA_deg: 86.0,
+        PTS_deg: 6.5,
+        alignment_type: "VALGUS",
+      },
+      v1_tibial: {
+        implant_size: 4,
+        position_2d: { x_offset_mm: -0.8, y_offset_mm: 0.0, rotation_deg: 0.0 },
+        ap_dimension_mm: 45.0,
+        ml_dimension_mm: 72.0,
+        cortical_coverage_pct: 92.0,
+        medial_overhang_mm: 0.5,
+        lateral_overhang_mm: 0.5,
+        fit_status: "ACCEPTABLE FIT",
+        is_confirmed: true,
+      },
+      v1_femoral: {
+        implant_size: 5,
+        position_2d: { x_offset_mm: -0.5, y_offset_mm: 0.0, rotation_deg: 0.0 },
+        ap_dimension_mm: 61.0,
+        ml_dimension_mm: 67.0,
+        ap_coverage_pct: 93.5,
+        ml_coverage_pct: 94.0,
+        notching_risk_mm: 0.0,
+        fit_status: "ACCEPTABLE FIT",
+        is_confirmed: true,
+      },
+      assessment_landmarks: {
+        hipCenter: { x: 50, y: 10 },
+        kneeCenter: { x: 35, y: 50 },
+        ankleCenter: { x: 50, y: 90 },
+        femoral_head_center: { x: 50, y: 10 },
+        femoral_knee_center: { x: 35, y: 50 },
+        tibial_knee_center: { x: 35, y: 50 },
+        ankle_center: { x: 50, y: 90 },
+      },
+      femoral_planning: {
+        size: 5,
+        x_offset_mm: -0.5,
+        y_offset_mm: 0.0,
+        rotation_deg: 0.0,
+      },
+      tibial_planning: {
+        tray_size: 4,
+        x_offset_mm: -0.8,
+        y_offset_mm: 0.0,
+        rotation_deg: 0.0,
+      },
+    },
+    stepTimings: { "1": 45, "2": 45, "3": 45, "4": 15 },
+    isReadyForVr: false,
+    createdAt: daysAgo(1),
+    updatedAt: minutesAgo(5),
   },
 ];
 

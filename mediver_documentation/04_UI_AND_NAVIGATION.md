@@ -102,33 +102,34 @@ An attempt review should expose:
 
 The existing prototype uses a clean clinical SaaS style: light neutral background, white rounded cards, strong typography hierarchy, restrained accent actions, readable tables, and clear status treatment.
 
-## Confirmed Current Model Updates (2026-09-15)
+## Confirmed V1 TKA Preoperative Planning Workspace
 
-## Confirmed TKR Planning Workspace
+The pre-operative planning UI adheres to **Mediver User Planning Workflow V1.pdf**:
 
-The pre-operative planning UI shall retain the existing MediVeR visual language while providing an interactive X-ray workspace.
+$$\text{MEASURE} \longrightarrow \text{SIZE} \longrightarrow \text{SEND}$$
 
-### Canvas
-- X-ray scan displayed directly on the planning canvas.
-- Landmarks placed and adjusted on the image.
-- Measurement geometry drawn over the X-ray.
-- Dependent geometry and measurements update in real time after landmark movement.
-- FLAP/KLAT toggle switches views without losing placed work.
+### Strict 4-Page Sequence
+1. **Page 1: Assessment** (`/plan/[id]/assessment`)
+   - Interactive zoom/pan X-ray viewport (FLAP and KLAT toggle with preserved landmark state).
+   - Placement of shared anatomical landmarks for 6 clinical measurements: MAD (mm), AMA (°), mHKA (°), MPTA (°), LDFA (°), PTS (°).
+   - Radio-opaque 25mm spherical calibration scale (0.264 mm/px).
+   - Forward link: `[ Continue to Tibial Planning → ]`.
+2. **Page 2: Tibial Planning** (`/plan/[id]/tibial`)
+   - 2D CAD template overlay (Sizes 1 to 6) with translation and rotation handles.
+   - Sizing toolbar with discrete buttons (Size 3 suggested).
+   - Live clinical fit metrics: Cortical Coverage $\ge 90\%$, Medial & Lateral Overhang $\le 1.0\text{ mm}$, Overall Status `ACCEPTABLE FIT`.
+   - Forward link: `[ Continue to Femoral Planning → ]`.
+3. **Page 3: Femoral Planning** (`/plan/[id]/femoral`)
+   - 2D CAD template overlay (Sizes 1 to 8) with translation and rotation handles (Size 4 suggested).
+   - Live clinical fit metrics: AP Coverage, ML Coverage, Anterior Condylar Flush / Notching Risk verification ($0.0\text{ mm}$ flush).
+   - Forward link: `[ Continue to Review → ]`.
+4. **Page 4: Review & Send to VR** (`/plan/[id]/review`)
+   - 3 structured summary cards: Patient & Radiographs, Assessment Measurements, Component Selections & Fit.
+   - Non-destructive backward editing: `[ ← Back to Planning ]`.
+   - `[ LOCK PLAN & SEND TO VR → ]` modal confirmation.
+   - Irreversible seal to immutable V1 VR Payload schema (Pages 6-7 PDF).
+   - Truthful VR transport message ("VR transport unavailable / not implemented").
+   - Read-only locking of entire planning software once sealed.
 
-### Measurement panel
-- Numeric values displayed separately from the X-ray geometry.
-- HKA, mLDFA, mPTA and VCA each have independent Confirm/Edit actions.
-- Edit supports direct numeric entry or landmark adjustment.
-- Confirmed/edited state is visible per measurement.
-
-### Femoral and tibial planning
-- Keep the prior functional requirements.
-- Show the implant overlay against the anatomy on the X-ray.
-- Preserve the established planning controls for sizing, positioning, alignment/resection settings and other existing parameters.
-- Use the current MediVeR UI/UX system rather than copying the supplied reference screen design.
-
-### Review & Send
-Retain the established assessment, tibial and femoral summary information and final transfer action.
-
-### Post-operative review
-Both resident and instructor can view the result. The review exposes the planned configuration, actual execution, match/adherence information, deviations and mistakes. Instructor feedback is attached to specific mistakes or steps and remains available to the resident later.
+### Strict Exclusions from 2D Planning
+Resection depths, cut angles (varus/valgus, flexion/extension), posterior slope cutting controls, poly thickness sliders, gap balancing previews, and 3D cut planes are excluded from desktop planning and deferred to intraoperative VR execution.

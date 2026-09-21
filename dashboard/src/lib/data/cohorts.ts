@@ -5,6 +5,7 @@ import { apiClient } from "@/lib/api-client";
 
 export type CohortSummary = {
   id: string;
+  program_id: string;
   name: string;
   ownerId: string;
   ownerName?: string;
@@ -49,6 +50,7 @@ export async function getCohorts(): Promise<CohortSummary[]> {
     const data = await apiClient.get('/cohorts');
     return data.map((c: any) => ({
       id: c.id,
+      program_id: c.program_id,
       name: c.name,
       ownerId: c.owner_id,
       createdAt: c.created_at,
@@ -70,6 +72,7 @@ export async function getCohort(id: string): Promise<CohortDetail | null> {
     const c = data.cohort;
     const cohort: CohortSummary = {
       id: c.id,
+      program_id: c.program_id,
       name: c.name,
       ownerId: c.owner_id,
       createdAt: c.created_at,
