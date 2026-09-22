@@ -107,3 +107,11 @@ Authentication is intended to be addressed first during implementation. This doc
 - A single permanent learner account (Learner ID) supports many-to-many cohort memberships across different programs.
 - Duplicate membership within the same cohort is prevented.
 - A learner cannot simultaneously belong to multiple active cohorts within the same program.
+
+### Learner Account & Credential Management
+- Learners receive their permanent Learner ID and an instructor-generated temporary password upon initial provisioning.
+- Initial sign-in is performed using the Learner ID and temporary password.
+- Learners can update their password at any time from their Account Settings interface (`/settings`).
+- Password changes require verifying the current (or temporary) password before committing the new password.
+- New passwords must meet length and confirmation criteria (minimum 8 characters, matching confirmation, different from current).
+- Plaintext passwords are never logged, stored in application tables, or exposed in client state.

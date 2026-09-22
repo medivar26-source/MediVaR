@@ -128,6 +128,68 @@ export async function saveAccount(
   return { error: NOT_PERSISTED };
 }
 
+import { validatePasswordChange } from "@/lib/auth-validation";
+
+export type ChangePasswordState = {
+  error?: string;
+  success?: boolean;
+};
+
+export async function changePassword(
+  _prev: ChangePasswordState,
+  formData: FormData,
+): Promise<ChangePasswordState> {
+  const currentPassword = String(formData.get("currentPassword") ?? "");
+  const newPassword = String(formData.get("newPassword") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  const validation = validatePasswordChange(currentPassword, newPassword, confirmPassword);
+  if (!validation.isValid) {
+    return { error: validation.error };
+  }
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get("mediver-token")?.value;
+  if (!token) {
+    redirect("/login");
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}/auth/change-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword,
+      }),
+    });
+  } catch {
+    return {
+      error: "Cannot reach the server. Check your connection and try again.",
+    };
+  }
+
+  if (!response.ok) {
+    let message = "Failed to change password. Please try again.";
+    try {
+      const data = await response.json();
+      if (data?.detail && typeof data.detail === "string") {
+        message = data.detail;
+      }
+    } catch {
+      // Ignore JSON parse failure
+    }
+    return { error: message };
+  }
+
+  return { success: true };
+}
+
 /* ---------------------------------- plans --------------------------------- */
 
 export async function startPlan(formData: FormData): Promise<void> {

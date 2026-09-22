@@ -84,6 +84,11 @@ The learner dashboard is structured as an action-first personal training cockpit
 8. **Recent Activity**: Chronological list of completed attempts with scores, mode, date, duration, and report access.
 9. **Detailed Analytics**: Secondary supporting analytics drawer containing historical score dynamics vs. cohort benchmark, points/time lost rankings, and weekly training cadence.
 
+### Learner Account Settings (`/settings`)
+- **Account Details**: Editable profile settings (display name, training level, default difficulty).
+- **Security & Password Management**: Dedicated password change section. Learners can update their temporary credentials to a private personal password. Verifies current password before applying changes.
+- **Administered Metadata**: Displays learner account identity, including permanent Learner ID (`MVR-XXXXXX`), enrolled cohort, role, and account creation timestamp.
+
 ## Dashboard example data
 
 

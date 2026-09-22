@@ -9,9 +9,27 @@ Use REST/JSON for domain operations and WebSocket for live session updates. Vers
 POST /api/v1/auth/login
 GET  /api/v1/auth/me
 POST /api/v1/auth/logout
+POST /api/v1/auth/change-password
 ```
 
-These are the application-level authentication contracts. The underlying authentication provider is not yet fixed. Supabase is the database platform, but Supabase Auth is not yet a confirmed authentication choice. If Supabase Auth is selected later, the FastAPI layer must validate the provider-issued access token/session context and map it to the MediVeR user/institution/role model.
+- `POST /api/v1/auth/change-password`
+  - Requires Bearer token (`Authorization: Bearer <token>`).
+  - Request body:
+    ```json
+    {
+      "current_password": "string",
+      "new_password": "string (min 8 chars)",
+      "confirm_password": "string (min 8 chars)"
+    }
+    ```
+  - Response (`200 OK`):
+    ```json
+    {
+      "message": "Password changed successfully"
+    }
+    ```
+  - Error responses: `400 Bad Request` (invalid current password, mismatched confirmation, short password), `401 Unauthorized`.
+
 
 ## Programs
 ```text

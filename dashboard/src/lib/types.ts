@@ -52,6 +52,8 @@ export type Profile = {
   level?: string;
   defaultDifficulty: Difficulty;
   cohortId?: string;
+  learnerId?: string;
+  institutionId?: string;
   createdAt: string;
   lastActiveAt?: string;
 };

@@ -67,6 +67,8 @@ export async function getCurrentUser(): Promise<Profile> {
     level: u.level,
     defaultDifficulty: u.default_difficulty ?? "intermediate",
     cohortId: u.cohort_id,
+    learnerId: u.learner_id,
+    institutionId: u.institution_id,
     createdAt: new Date().toISOString(), // Backend doesn't return this in /me yet
     lastActiveAt: undefined,
   };
