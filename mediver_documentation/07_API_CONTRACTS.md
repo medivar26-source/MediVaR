@@ -66,12 +66,16 @@ POST /residents/{id}/notes
 
 ## Cases
 ```text
-GET    /cases
-POST   /cases
-GET    /cases/{id}
-PATCH  /cases/{id}
-DELETE /cases/{id}
+GET    /api/v1/cases                    (Instructors: institution cases with draft/published version pointers; Learners: program-scoped published cases)
+POST   /api/v1/cases                    (Instructor/Admin: creates case with initial draft version)
+GET    /api/v1/cases/{id}               (Instructors: full detail with reference plan; Learners: sanitized view without reference plan)
+PUT    /api/v1/cases/{id}               (Instructor/Admin: mutates draft version or branches new draft from published)
+POST   /api/v1/cases/{id}/publish       (Instructor/Admin: pre-flight checklist validation, freezes draft to immutable published version)
+POST   /api/v1/cases/{id}/deactivate    (Instructor/Admin: deactivates case)
+GET    /api/v1/cases/{id}/preview       (Instructor/Admin: previews exact sanitized learner view)
+POST   /api/v1/cases/{id}/upload-radiograph (Instructor/Admin: multipart upload to private storage + dynamic calibration derivation)
 ```
+
 
 ## Sessions
 ```text

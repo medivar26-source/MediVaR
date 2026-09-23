@@ -66,9 +66,38 @@ export const apiClient = {
   post: (endpoint: string, data: any, options?: RequestInit) => 
     fetchWithConfig(endpoint, { ...options, method: 'POST', body: JSON.stringify(data) }),
   
-  patch: (endpoint: string, data: any, options?: RequestInit) => 
-    fetchWithConfig(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(data) }),
+  put: (endpoint: string, data: any, options?: RequestInit) => 
+    fetchWithConfig(endpoint, { ...options, method: 'PUT', body: JSON.stringify(data) }),
+  
+  upload: async (endpoint: string, formData: FormData, options?: RequestInit) => {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const headers = new Headers(options?.headers);
+    try {
+      const cookieStore = await cookies();
+      const token = cookieStore.get("mediver-token")?.value;
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+    } catch {}
+    const response = await fetch(url, {
+      ...options,
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { detail: response.statusText };
+      }
+      throw new ApiError(response.status, errorData.detail || "API Error", errorData);
+    }
+    return response.json();
+  },
   
   delete: (endpoint: string, options?: RequestInit) => 
     fetchWithConfig(endpoint, { ...options, method: 'DELETE' }),
 };
+
