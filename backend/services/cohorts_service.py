@@ -2,8 +2,9 @@ import logging
 import random
 import string
 from typing import List, Optional, Tuple
-
+from schemas.cohorts import CaseSummary,CohortCasesResponse, SessionSummary
 from db.session import get_db_conn
+from datetime import datetime, timezone, timedelta
 from schemas.cohorts import (
     CohortSummary, CohortDetail, LearnerSummary,
     CreateLearnerResponse, AddExistingLearnerResponse
@@ -302,5 +303,406 @@ def add_existing_learner(
             display_name=display_name,
             joined_at=joined_at
         )
+    finally:
+        conn.close()
+
+def _verify_cohort_ownership(cur, cohort_id: str, owner_id: str) -> None:
+    cur.execute("SELECT id FROM cohorts WHERE id = %s AND owner_id = %s", (cohort_id, owner_id))
+    if not cur.fetchone():
+        raise ValueError("Cohort not found or unauthorized.")
+
+
+def set_cohort_cases(cohort_id: str, case_ids: List[str], owner_id: str) -> "CohortCasesResponse":
+    """Full-sync: the cohort's assigned cases become exactly case_ids."""
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+        _verify_cohort_ownership(cur, cohort_id, owner_id)
+
+        # Remove anything assigned that isn't in the new set.
+        if case_ids:
+            cur.execute(
+                """
+                DELETE FROM cohort_case_assignments
+                WHERE cohort_id = %s AND case_id NOT IN %s
+                """,
+                (cohort_id, tuple(case_ids))
+            )
+        else:
+            cur.execute(
+                "DELETE FROM cohort_case_assignments WHERE cohort_id = %s",
+                (cohort_id,)
+            )
+
+        # Add anything newly checked. ON CONFLICT DO NOTHING relies on the
+        # unique (cohort_id, case_id) constraint from the migration.
+        for case_id in case_ids:
+            cur.execute(
+                """
+                INSERT INTO cohort_case_assignments (cohort_id, case_id)
+                VALUES (%s, %s)
+                ON CONFLICT (cohort_id, case_id) DO NOTHING
+                """,
+                (cohort_id, case_id)
+            )
+
+        conn.commit()
+    except ValueError:
+        conn.rollback()
+        raise
+    except Exception as exc:
+        conn.rollback()
+        raise ValueError(f"Failed to assign cases: {exc}")
+    finally:
+        conn.close()
+
+    return get_cohort_cases(cohort_id, owner_id)
+
+
+def get_cohort_cases(cohort_id: str, owner_id: str) -> "CohortCasesResponse":
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+        _verify_cohort_ownership(cur, cohort_id, owner_id)
+
+        cur.execute(
+            """
+            SELECT c.id, c.name, c.difficulty
+            FROM cohort_case_assignments cca
+            JOIN cases c ON cca.case_id = c.id
+            WHERE cca.cohort_id = %s
+            ORDER BY c.name
+            """,
+            (cohort_id,)
+        )
+
+        cases = [
+            CaseSummary(id=str(row["id"]), name=row["name"], difficulty=row["difficulty"])
+            for row in cur.fetchall()
+        ]
+        return CohortCasesResponse(cohort_id=cohort_id, cases=cases)
+    finally:
+        conn.close()
+
+
+#helper function
+def _get_session_status(
+    scheduled_at: datetime,
+    duration: int,
+    is_cancelled: bool,
+) -> str:
+
+    if is_cancelled:
+        return "cancelled"
+
+    now = datetime.now(timezone.utc)
+
+    end_time = scheduled_at + timedelta(minutes=duration)
+
+    if now < scheduled_at:
+        return "scheduled"
+
+    if now < end_time:
+        return "in_progress"
+
+    return "completed"
+
+def create_session(
+    cohort_id: str,
+    name: str,
+    scheduled_at: datetime,
+    duration: int,
+    description: Optional[str],
+    owner_id: str,
+) -> SessionSummary:
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+
+        _verify_cohort_ownership(cur, cohort_id, owner_id)
+
+        cur.execute(
+            """
+            INSERT INTO sessions (
+                cohort_id,
+                name,
+                scheduled_at,
+                duration,
+                description
+            )
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING
+                id,
+                cohort_id,
+                name,
+                scheduled_at,
+                duration,
+                description,
+                is_cancelled,
+                created_at
+            """,
+            (
+                cohort_id,
+                name,
+                scheduled_at,
+                duration,
+                description,
+            )
+        )
+
+        row = cur.fetchone()
+        conn.commit()
+
+        return SessionSummary(
+            id=str(row["id"]),
+            cohort_id=str(row["cohort_id"]),
+            name=row["name"],
+            scheduled_at=row["scheduled_at"],
+            duration=row["duration"],
+            description=row["description"],
+            status=_get_session_status(
+                row["scheduled_at"],
+                row["duration"],
+                row["is_cancelled"],
+            ),
+            created_at=row["created_at"],
+        )
+
+    except ValueError:
+        conn.rollback()
+        raise
+
+    except Exception as exc:
+        conn.rollback()
+        raise ValueError(f"Failed to create session: {exc}")
+
+    finally:
+        conn.close()
+def get_cohort_sessions(
+    cohort_id: str,
+    owner_id: str
+) -> List[SessionSummary]:
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+        _verify_cohort_ownership(cur, cohort_id, owner_id)
+
+        cur.execute(
+            """
+            SELECT
+                id,
+                cohort_id,
+                name,
+                scheduled_at,
+                duration,
+                description,
+                is_cancelled,
+                created_at
+            FROM sessions
+            WHERE cohort_id = %s
+            ORDER BY scheduled_at NULLS LAST, created_at
+            """,
+            (cohort_id,)
+        )
+
+        return [
+            SessionSummary(
+                id=str(row["id"]),
+                cohort_id=str(row["cohort_id"]),
+                name=row["name"],
+                scheduled_at=row["scheduled_at"],
+                duration=row["duration"],
+                description=row["description"],
+                status=_get_session_status(
+                    row["scheduled_at"],
+                    row["duration"],
+                    row["is_cancelled"],
+                ),
+                created_at=row["created_at"],
+            )
+            for row in cur.fetchall()
+        ]
+
+    finally:
+        conn.close()
+def update_session(
+    session_id: str,
+    name: str,
+    scheduled_at: datetime,
+    duration: int,
+    description: Optional[str],
+    owner_id: str,
+) -> SessionSummary:
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT cohort_id
+            FROM sessions
+            WHERE id = %s
+            """,
+            (session_id,)
+        )
+
+        row = cur.fetchone()
+
+        if not row:
+            raise ValueError("Session not found")
+
+        cohort_id = str(row["cohort_id"])
+
+        _verify_cohort_ownership(cur, cohort_id, owner_id)
+
+        cur.execute(
+            """
+            UPDATE sessions
+            SET
+                name = %s,
+                scheduled_at = %s,
+                duration = %s,
+                description = %s,
+                updated_at = now()
+            WHERE id = %s
+            RETURNING
+                id,
+                cohort_id,
+                name,
+                scheduled_at,
+                duration,
+                description,
+                is_cancelled,
+                created_at
+            """,
+            (
+                name,
+                scheduled_at,
+                duration,
+                description,
+                session_id,
+            )
+        )
+
+        row = cur.fetchone()
+        conn.commit()
+
+        return SessionSummary(
+            id=str(row["id"]),
+            cohort_id=str(row["cohort_id"]),
+            name=row["name"],
+            scheduled_at=row["scheduled_at"],
+            duration=row["duration"],
+            description=row["description"],
+            status=_get_session_status(
+                row["scheduled_at"],
+                row["duration"],
+                row["is_cancelled"],
+            ),
+            created_at=row["created_at"],
+        )
+
+    except ValueError:
+        conn.rollback()
+        raise
+    except Exception as exc:
+        conn.rollback()
+        raise ValueError(f"Failed to update session: {exc}")
+    finally:
+        conn.close()
+def cancel_session(
+    session_id: str,
+    owner_id: str,
+) -> SessionSummary:
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+
+        # Get the session
+        cur.execute(
+            """
+            SELECT
+                cohort_id,
+                scheduled_at,
+                duration,
+                is_cancelled
+            FROM sessions
+            WHERE id = %s
+            """,
+            (session_id,)
+        )
+
+        row = cur.fetchone()
+
+        if not row:
+            raise ValueError("Session not found")
+
+        # Check that the instructor owns the cohort
+        cohort_id = str(row["cohort_id"])
+        _verify_cohort_ownership(cur, cohort_id, owner_id)
+
+        # Calculate the session's current status
+        current_status = _get_session_status(
+            row["scheduled_at"],
+            row["duration"],
+            row["is_cancelled"],
+        )
+
+        # Completed sessions cannot be cancelled
+        if current_status == "completed":
+            raise ValueError("Completed sessions cannot be cancelled")
+
+        # Already cancelled sessions cannot be cancelled again
+        if current_status == "cancelled":
+            raise ValueError("Session is already cancelled")
+
+        # Mark the session as cancelled
+        cur.execute(
+            """
+            UPDATE sessions
+            SET
+                is_cancelled = true,
+                updated_at = now()
+            WHERE id = %s
+            RETURNING
+                id,
+                cohort_id,
+                name,
+                scheduled_at,
+                duration,
+                description,
+                is_cancelled,
+                created_at
+            """,
+            (session_id,)
+        )
+
+        row = cur.fetchone()
+        conn.commit()
+
+        # Return the updated session
+        return SessionSummary(
+            id=str(row["id"]),
+            cohort_id=str(row["cohort_id"]),
+            name=row["name"],
+            scheduled_at=row["scheduled_at"],
+            duration=row["duration"],
+            description=row["description"],
+            status=_get_session_status(
+                row["scheduled_at"],
+                row["duration"],
+                row["is_cancelled"],
+            ),
+            created_at=row["created_at"],
+        )
+
+    except ValueError:
+        conn.rollback()
+        raise
+
+    except Exception as exc:
+        conn.rollback()
+        raise ValueError(f"Failed to cancel session: {exc}")
+
     finally:
         conn.close()

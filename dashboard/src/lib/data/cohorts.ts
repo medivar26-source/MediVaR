@@ -138,3 +138,53 @@ export async function getSupervisedLearners(): Promise<LearnerRow[]> {
     return rank(a) - rank(b) || a.displayName.localeCompare(b.displayName);
   });
 }
+
+export type CaseSummary = {
+  id: string;
+  name: string;
+  difficulty?: string;
+};
+
+export async function getCohortCases(cohortId: string): Promise<CaseSummary[]> {
+  try {
+    const data = await apiClient.get(`/cohorts/${cohortId}/cases`);
+    return data.cases.map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      difficulty: c.difficulty,
+    }));
+  } catch (error) {
+    console.error(`Failed to fetch cases for cohort ${cohortId}:`, error);
+    return [];
+  }
+}
+
+export type SessionSummary = {
+  id: string;
+  cohortId: string;
+  name: string;
+  scheduledAt: string;
+  duration: number;
+  description?: string;
+  status: string;
+  createdAt: string;
+};
+
+export async function getCohortSessions(cohortId: string): Promise<SessionSummary[]> {
+  try {
+    const data = await apiClient.get(`/cohorts/${cohortId}/sessions`);
+    return data.map((s: any) => ({
+      id: s.id,
+      cohortId: s.cohort_id,
+      name: s.name,
+      scheduledAt: s.scheduled_at,
+      duration: s.duration,
+      description: s.description ?? undefined,
+      status: s.status,
+      createdAt: s.created_at,
+    }));
+  } catch (error) {
+    console.error(`Failed to fetch sessions for cohort ${cohortId}:`, error);
+    return [];
+  }
+}

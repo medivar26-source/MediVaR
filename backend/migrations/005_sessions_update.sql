@@ -1,0 +1,7 @@
+ALTER TABLE sessions
+ADD COLUMN IF NOT EXISTS duration integer NOT NULL,
+ADD COLUMN IF NOT EXISTS description text,
+ADD COLUMN IF NOT EXISTS is_cancelled boolean NOT NULL DEFAULT false;
+
+ALTER TABLE sessions
+DROP COLUMN IF EXISTS status;

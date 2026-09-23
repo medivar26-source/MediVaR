@@ -5,7 +5,9 @@ from schemas.auth import UserProfile
 from schemas.cohorts import (
     CohortSummary, CohortCreate, CohortDetail,
     CreateLearnerRequest, CreateLearnerResponse,
-    AddExistingLearnerRequest, AddExistingLearnerResponse
+    AddExistingLearnerRequest, AddExistingLearnerResponse,
+    CaseAssignmentRequest, CaseSummary, CohortCasesResponse,
+    SessionCreate, SessionSummary,
 )
 from services import cohorts_service
 
@@ -93,3 +95,167 @@ def add_existing_learner_to_cohort(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.put("/{cohort_id}/cases", response_model=CohortCasesResponse)
+def assign_cases(
+    cohort_id: str,
+    payload: CaseAssignmentRequest,
+    current_user: UserProfile = Depends(get_current_user)
+):
+    """Replace the full set of cases assigned to a cohort."""
+    if current_user.role not in ("instructor", "admin"):
+        raise HTTPException(status_code=403, detail="Not authorized to assign cases.")
+
+    try:
+        return cohorts_service.set_cohort_cases(
+            cohort_id=cohort_id,
+            case_ids=payload.case_ids,
+            owner_id=current_user.id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/{cohort_id}/cases", response_model=CohortCasesResponse)
+def list_cohort_cases(
+    cohort_id: str,
+    current_user: UserProfile = Depends(get_current_user)
+):
+    """List cases currently assigned to a cohort."""
+    if current_user.role not in ("instructor", "admin"):
+        raise HTTPException(status_code=403, detail="Not authorized to view cohort cases.")
+
+    try:
+        return cohorts_service.get_cohort_cases(
+            cohort_id=cohort_id,
+            owner_id=current_user.id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post(
+    "/{cohort_id}/sessions",
+    response_model=SessionSummary,
+    status_code=status.HTTP_201_CREATED
+)
+def create_session(
+    cohort_id: str,
+    session_in: SessionCreate,
+    current_user: UserProfile = Depends(get_current_user)
+):
+    """Create a session under a cohort."""
+
+    if current_user.role not in ("instructor", "admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="Not authorized to create sessions."
+        )
+
+    try:
+        return cohorts_service.create_session(
+            cohort_id=cohort_id,
+            name=session_in.name,
+            scheduled_at=session_in.scheduled_at,
+            duration=session_in.duration,
+            description=session_in.description,
+            owner_id=current_user.id,
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(e)
+        )
+
+
+@router.get(
+    "/{cohort_id}/sessions",
+    response_model=List[SessionSummary]
+)
+def list_cohort_sessions(
+    cohort_id: str,
+    current_user: UserProfile = Depends(get_current_user)
+):
+    """List sessions scheduled under a cohort."""
+
+    if current_user.role not in ("instructor", "admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="Not authorized to view sessions."
+        )
+
+    try:
+        return cohorts_service.get_cohort_sessions(
+            cohort_id=cohort_id,
+            owner_id=current_user.id,
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(e)
+        )
+
+
+@router.put(
+    "/sessions/{session_id}",
+    response_model=SessionSummary
+)
+def update_session(
+    session_id: str,
+    session_in: SessionCreate,
+    current_user: UserProfile = Depends(get_current_user)
+):
+    """Update a session."""
+
+    if current_user.role not in ("instructor", "admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="Not authorized to update sessions."
+        )
+
+    try:
+        return cohorts_service.update_session(
+            session_id=session_id,
+            name=session_in.name,
+            scheduled_at=session_in.scheduled_at,
+            duration=session_in.duration,
+            description=session_in.description,
+            owner_id=current_user.id,
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(e)
+        )
+
+
+@router.post(
+    "/sessions/{session_id}/cancel",
+    response_model=SessionSummary
+)
+def cancel_session(
+    session_id: str,
+    current_user: UserProfile = Depends(get_current_user)
+):
+    """Cancel a session."""
+
+    if current_user.role not in ("instructor", "admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="Not authorized to cancel sessions."
+        )
+
+    try:
+        return cohorts_service.cancel_session(
+            session_id=session_id,
+            owner_id=current_user.id,
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
