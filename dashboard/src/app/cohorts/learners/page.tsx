@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Users } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/shell";
 import {
@@ -97,7 +98,9 @@ export default async function LearnersPage() {
             <TBody>
               {learners.map((learner) => (
                 <Tr key={learner.id}>
-                  <Td head>{learner.displayName}</Td>
+                  <Td head>
+                    <Link href={`/cohorts/learners/${learner.id}`}>{learner.displayName}</Link>
+                  </Td>
                   <Td>{learner.cohortName}</Td>
                   <Td>{ROLE_LABEL[learner.role]}</Td>
                   <Td numeric>{learner.sessions}</Td>

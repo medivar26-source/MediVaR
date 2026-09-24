@@ -10,7 +10,11 @@ import {
   weakestCategory,
 } from "@/lib/data/sessions";
 import { clock, shortDate, timeOfDay, titleCase } from "@/lib/format";
+import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
+import { getFeedbackForAttempt } from "@/lib/data/residents";
+import { ResidentApiError } from "@/lib/data/residents-api";
+import { InstructorFeedback } from "./InstructorFeedback";
 import s from "./report.module.css";
 
 export async function generateMetadata({
@@ -42,6 +46,7 @@ export default async function ReportPage({
 }) {
   const { id } = await params;
   const user = await getCurrentUser();
+  const persona = personaFor(user.role);
 
   const [session, report] = await Promise.all([getSession(id), getReport(id)]);
   if (!session) notFound();
@@ -50,6 +55,24 @@ export default async function ReportPage({
   // somebody to an empty report page when there is a running operation to watch
   // is the wrong answer to the same URL.
   if (!report) redirect(`/sessions/${id}`);
+
+  // Feedback is keyed to a real users.id (migration 006's FK). Today's seeded
+  // sessions carry a synthetic profile id that was never provisioned as a
+  // real user, so the lookup below legitimately 404s for them — the panel
+  // says so rather than pretending feedback saved. A resident created
+  // through Manage Learners and given a real session will resolve normally.
+  let existingFeedback: Awaited<ReturnType<typeof getFeedbackForAttempt>> = [];
+  let feedbackUnavailable: string | undefined;
+  if (persona === "instructor" || persona === "admin") {
+    try {
+      existingFeedback = await getFeedbackForAttempt(session.userId, id);
+    } catch (err) {
+      feedbackUnavailable =
+        err instanceof ResidentApiError
+          ? err.message
+          : "Feedback couldn't be loaded for this attempt.";
+    }
+  }
 
   const weakest = weakestCategory(report.categories);
   const largest = Math.max(...report.categories.map((c) => c.max), 1);
@@ -333,6 +356,15 @@ export default async function ReportPage({
               })}
             </ol>
           </Card>
+
+          {(persona === "instructor" || persona === "admin") && (
+            <InstructorFeedback
+              residentId={session.userId}
+              attemptId={id}
+              existing={existingFeedback}
+              unavailableReason={feedbackUnavailable}
+            />
+          )}
         </div>
       </div>
     </AppShell>

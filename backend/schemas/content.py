@@ -10,7 +10,10 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 Difficulty = Literal["beginner", "intermediate", "expert"]
-CaseStatus = Literal["active", "inactive"]
+# "draft" exists on the live table (added by another migration, outside
+# 004_content_tables.sql) alongside active/inactive. Accepted here so the API
+# doesn't crash on those rows; this page's own writes never set it.
+CaseStatus = Literal["draft", "active", "inactive"]
 
 
 class ProcedureSummary(BaseModel):

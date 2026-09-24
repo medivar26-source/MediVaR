@@ -761,3 +761,95 @@ export async function saveCaseImaging(
       "There is no image storage connected yet, so this view was validated but not uploaded or saved.",
   };
 }
+
+/* --------------------- resident detail / case review ---------------------- */
+
+export type InstructorNoteFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+export async function addInstructorNote(
+  _prev: InstructorNoteFormState,
+  formData: FormData,
+): Promise<InstructorNoteFormState> {
+  const residentId = String(formData.get("residentId") ?? "");
+  const note = String(formData.get("note") ?? "").trim();
+
+  if (!residentId) return { error: "This form is missing its resident." };
+  if (note.length < 2) {
+    return { fieldErrors: { note: "Write at least a couple of words." } };
+  }
+
+  const { addResidentNote } = await import("@/lib/data/residents");
+  const { ResidentApiError } = await import("@/lib/data/residents-api");
+  try {
+    await addResidentNote(residentId, note);
+  } catch (err) {
+    return { error: err instanceof ResidentApiError ? err.message : "Could not save the note." };
+  }
+
+  revalidatePath(`/cohorts/learners/${residentId}`);
+  return {};
+}
+
+export type AssignPracticeFormState = {
+  error?: string;
+  saved?: boolean;
+};
+
+export async function assignPractice(
+  _prev: AssignPracticeFormState,
+  formData: FormData,
+): Promise<AssignPracticeFormState> {
+  const residentId = String(formData.get("residentId") ?? "");
+  const caseId = String(formData.get("caseId") ?? "");
+  const caseTitle = String(formData.get("caseTitle") ?? "");
+
+  if (!residentId || !caseId || !caseTitle) {
+    return { error: "This form is missing the case to assign." };
+  }
+
+  const { addResidentAssignment } = await import("@/lib/data/residents");
+  const { ResidentApiError } = await import("@/lib/data/residents-api");
+  try {
+    await addResidentAssignment(residentId, caseId, caseTitle);
+  } catch (err) {
+    return { error: err instanceof ResidentApiError ? err.message : "Could not assign the case." };
+  }
+
+  revalidatePath(`/cohorts/learners/${residentId}`);
+  return { saved: true };
+}
+
+export type InstructorFeedbackFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+  saved?: boolean;
+};
+
+export async function saveInstructorFeedback(
+  _prev: InstructorFeedbackFormState,
+  formData: FormData,
+): Promise<InstructorFeedbackFormState> {
+  const residentId = String(formData.get("residentId") ?? "");
+  const attemptId = String(formData.get("attemptId") ?? "") || undefined;
+  const feedback = String(formData.get("feedback") ?? "").trim();
+
+  if (!residentId) return { error: "This form is missing its resident." };
+  if (feedback.length < 2) {
+    return { fieldErrors: { feedback: "Write at least a couple of words." } };
+  }
+
+  const { addResidentFeedback } = await import("@/lib/data/residents");
+  const { ResidentApiError } = await import("@/lib/data/residents-api");
+  try {
+    await addResidentFeedback(residentId, feedback, attemptId);
+  } catch (err) {
+    return { error: err instanceof ResidentApiError ? err.message : "Could not save the feedback." };
+  }
+
+  if (attemptId) revalidatePath(`/sessions/${attemptId}/report`);
+  revalidatePath(`/cohorts/learners/${residentId}`);
+  return { saved: true };
+}
