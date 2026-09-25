@@ -52,6 +52,7 @@ ALTER TABLE session_residents ENABLE ROW LEVEL SECURITY;
 
 -- Same ownership pattern as `sessions` itself (007_sessions_and_case_assignments.sql):
 -- the cohort owner manages the roster; a resident can see only their own row.
+DROP POLICY IF EXISTS "Cohort owner can manage session roster" ON session_residents;
 CREATE POLICY "Cohort owner can manage session roster" ON session_residents
     FOR ALL USING (
         EXISTS (
@@ -70,7 +71,9 @@ CREATE POLICY "Cohort owner can manage session roster" ON session_residents
         )
     );
 
+DROP POLICY IF EXISTS "Residents can view their own roster row" ON session_residents;
 CREATE POLICY "Residents can view their own roster row" ON session_residents
     FOR SELECT USING (
         resident_id = auth.uid()
     );
+
