@@ -96,7 +96,7 @@ export default async function LearnersPage() {
             </THead>
             <TBody>
               {learners.map((learner) => (
-                <Tr key={learner.id}>
+                <Tr key={`${learner.cohortId}-${learner.id}`}>
                   <Td head>{learner.displayName}</Td>
                   <Td>{learner.cohortName}</Td>
                   <Td>{ROLE_LABEL[learner.role]}</Td>

@@ -221,6 +221,50 @@ class TestCaseAuthoringAndCalculations(unittest.TestCase):
         for img in learner_case["imaging"]:
             self.assertIn("storage_path", img)
 
+    def test_create_case_draft_foreign_key_resolution(self):
+        from schemas.cases import CaseCreate
+        from services.cases_service import create_case
+        from db.session import get_db_conn
+
+        conn = get_db_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id FROM institutions LIMIT 1")
+                inst_row = cur.fetchone()
+                institution_id = inst_row["id"] if inst_row else UUID("00000000-0000-0000-0000-000000000001")
+
+                cur.execute("SELECT id FROM users WHERE role IN ('instructor', 'admin') LIMIT 1")
+                usr_row = cur.fetchone()
+                instructor_id = usr_row["id"] if usr_row else UUID("00000000-0000-0000-0000-000000000002")
+        finally:
+            conn.close()
+
+        case_in = CaseCreate(
+            name="Test FK Resolution Case",
+            difficulty="intermediate",
+            description="Testing foreign key constraint resolution",
+            pathology="osteoarthritis",
+            pathology_label="Varus Deformity",
+            side="right",
+            patient={"age": 65, "gender": "Female", "bmi": 28.5},
+            objectives=["Validate foreign key draft linkage"],
+        )
+
+        created = create_case(case_in, instructor_id, institution_id)
+        self.assertIsNotNone(created)
+        self.assertEqual(created["name"], "Test FK Resolution Case")
+        self.assertEqual(created["status"], "draft")
+        self.assertIsNotNone(created["draft_version_id"])
+
+        # Clean up created test case
+        conn = get_db_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM cases WHERE id = %s", (str(created["id"]),))
+            conn.commit()
+        finally:
+            conn.close()
+
 
 if __name__ == "__main__":
     unittest.main()

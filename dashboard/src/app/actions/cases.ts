@@ -101,3 +101,17 @@ export async function previewCaseAsLearnerAction(caseId: string): Promise<Action
     };
   }
 }
+
+export async function uploadAssetAction(formData: FormData): Promise<ActionResult<{ storage_path: string; filename: string }>> {
+  try {
+    const data = await apiClient.upload("/cases/upload-asset", formData);
+    return { success: true, data };
+  } catch (err: any) {
+    console.error("uploadAssetAction error:", err);
+    return {
+      success: false,
+      error: err.message || "Failed to upload asset.",
+    };
+  }
+}
+

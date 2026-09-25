@@ -183,6 +183,39 @@ def deactivate_case(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.post("/upload-asset")
+async def upload_asset(
+    file: UploadFile = File(...),
+    current_user: UserProfile = Depends(get_current_user),
+):
+    """
+    Generic upload for Case Library assets to Supabase Storage 'imaging' bucket.
+    Returns the storage path for the frontend to include in the case payload.
+    """
+    if current_user.role not in ("instructor", "admin"):
+        raise HTTPException(status_code=403, detail="Not authorized to upload assets.")
+
+    contents = await file.read()
+    filename = file.filename or "asset.jpg"
+    mimetype = file.content_type or "image/jpeg"
+    
+    # Store in a generic 'temp' or 'assets' path since case_id might not exist yet
+    # The storage rules must allow this path. We'll use 'cases/assets/'
+    storage_path = f"cases/assets/{uuid4().hex[:8]}_{filename}"
+
+    try:
+        service_client = get_service_client()
+        service_client.storage.from_("imaging").upload(
+            path=storage_path,
+            file=contents,
+            file_options={"content-type": mimetype}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
+
+    return {"storage_path": storage_path, "filename": filename, "mimetype": mimetype, "file_size": len(contents)}
+
+
 @router.post("/{case_id}/upload-radiograph", response_model=CaseDetailResponse)
 async def upload_radiograph(
     case_id: UUID,

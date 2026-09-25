@@ -9,7 +9,7 @@ Implements strict layer separation between:
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
 
 
 # ---------------------------------------------------------------------------
@@ -160,6 +160,15 @@ class CaseCreate(BaseModel):
     imaging: Optional[List[CaseImagingCreate]] = Field(default_factory=list)
     reference_plan: Optional[ReferencePlan] = None
     criteria: Optional[List[AssessmentCriterionItem]] = Field(default_factory=list)
+    assessment_rubric: Optional[List[AssessmentCriterionItem]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_criteria(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if not data.get("criteria") and data.get("assessment_rubric"):
+                data["criteria"] = data["assessment_rubric"]
+        return data
 
 
 class CaseUpdate(BaseModel):
@@ -176,6 +185,15 @@ class CaseUpdate(BaseModel):
     imaging: Optional[List[CaseImagingCreate]] = None
     reference_plan: Optional[ReferencePlan] = None
     criteria: Optional[List[AssessmentCriterionItem]] = None
+    assessment_rubric: Optional[List[AssessmentCriterionItem]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_criteria(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if not data.get("criteria") and data.get("assessment_rubric"):
+                data["criteria"] = data["assessment_rubric"]
+        return data
 
 
 # ---------------------------------------------------------------------------
@@ -197,6 +215,16 @@ class CaseListItem(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+    @field_validator("program_ids", mode="before")
+    @classmethod
+    def parse_program_ids(cls, v):
+        if isinstance(v, str):
+            v = v.strip("{}")
+            if not v:
+                return []
+            return [x.strip() for x in v.split(",") if x.strip()]
+        return v or []
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -214,6 +242,17 @@ class CaseDetailResponse(BaseModel):
     draft_version_id: Optional[UUID] = None
     published_version_id: Optional[UUID] = None
     program_ids: List[UUID] = Field(default_factory=list)
+
+    @field_validator("program_ids", mode="before")
+    @classmethod
+    def parse_detail_program_ids(cls, v):
+        if isinstance(v, str):
+            v = v.strip("{}")
+            if not v:
+                return []
+            return [x.strip() for x in v.split(",") if x.strip()]
+        return v or []
+
     active_version: Optional[CaseVersionSummary] = None
     imaging: List[CaseImagingSummary] = Field(default_factory=list)
     reference_plan: Optional[ReferencePlan] = None

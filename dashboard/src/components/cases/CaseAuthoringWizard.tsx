@@ -26,6 +26,7 @@ import {
   createCaseAction,
   updateCaseAction,
   publishCaseAction,
+  uploadAssetAction,
 } from "@/app/actions/cases";
 import {
   Badge,
@@ -99,6 +100,9 @@ export function CaseAuthoringWizard({
   );
 
   // Step 2: Patient & Clinical Scenario State
+  const [patientId, setPatientId] = useState<string>(
+    activeVersion.patient?.patient_id || "PT-10293"
+  );
   const [patientAge, setPatientAge] = useState<number>(
     activeVersion.patient?.age || 68
   );
@@ -107,6 +111,24 @@ export function CaseAuthoringWizard({
   );
   const [patientBmi, setPatientBmi] = useState<number>(
     activeVersion.patient?.bmi || 29.4
+  );
+  const [occupation, setOccupation] = useState<string>(
+    activeVersion.patient?.occupation || "Retired Teacher"
+  );
+  const [activityLevel, setActivityLevel] = useState<string>(
+    activeVersion.patient?.activity_level || "Sedentary"
+  );
+  const [walkingDistance, setWalkingDistance] = useState<number>(
+    activeVersion.patient?.walking_distance_m || 500
+  );
+  const [fixedFlexion, setFixedFlexion] = useState<number>(
+    activeVersion.patient?.fixed_flexion_deg || 5
+  );
+  const [rangeOfMotion, setRangeOfMotion] = useState<string>(
+    activeVersion.patient?.range_of_motion || "5-100"
+  );
+  const [deformity, setDeformity] = useState<string>(
+    activeVersion.patient?.deformity || "15 varus"
   );
   const [clinicalNotes, setClinicalNotes] = useState<string>(
     activeVersion.patient?.clinical_notes ||
@@ -129,24 +151,35 @@ export function CaseAuthoringWizard({
   const [newObjective, setNewObjective] = useState<string>("");
 
   // Step 3: Imaging & Calibration State
-  const initialImaging = initialCase?.imaging || [];
-  const flapImg =
-    initialImaging.find((img: any) => img.view_type === "FLAP") || {};
-  const klatImg =
-    initialImaging.find((img: any) => img.view_type === "KLAT") || {};
-
-  const [flapStoragePath, setFlapStoragePath] = useState<string>(
-    flapImg.storage_path || "cases/synth/flap.jpg"
-  );
-  const [flapPixelDia, setFlapPixelDia] = useState<number>(
-    flapImg.calibration?.detected_marker_pixel_diameter || 94.7
-  );
-
-  const [klatStoragePath, setKlatStoragePath] = useState<string>(
-    klatImg.storage_path || "cases/synth/klat.jpg"
-  );
-  const [klatPixelDia, setKlatPixelDia] = useState<number>(
-    klatImg.calibration?.detected_marker_pixel_diameter || 94.7
+  const [images, setImages] = useState<any[]>(
+    initialCase?.imaging?.length ? initialCase.imaging : [
+      {
+        id: crypto.randomUUID(),
+        view_type: "FLAP",
+        label: "Full Leg Anteroposterior (FLAP)",
+        storage_path: "cases/synth/flap.jpg",
+        is_learner_visible: true,
+        is_required: true,
+        calibration: {
+          is_required: true,
+          detected_marker_pixel_diameter: 94.7,
+          physical_marker_diameter_mm: 25.0
+        }
+      },
+      {
+        id: crypto.randomUUID(),
+        view_type: "KLAT",
+        label: "Knee Lateral (KLAT)",
+        storage_path: "cases/synth/klat.jpg",
+        is_learner_visible: true,
+        is_required: true,
+        calibration: {
+          is_required: true,
+          detected_marker_pixel_diameter: 94.7,
+          physical_marker_diameter_mm: 25.0
+        }
+      }
+    ]
   );
 
   // Step 4: Reference Plan & Assessment Key State
@@ -159,6 +192,56 @@ export function CaseAuthoringWizard({
   const [ptsDeg, setPtsDeg] = useState<number>(refAssessment.PTS_deg ?? 7.0);
   const [alignmentType, setAlignmentType] = useState<string>(
     refAssessment.alignment_type || (side === "right" && madMm > 0 ? "VARUS" : "VALGUS")
+  );
+
+  const defaultSkillId = availableSkills[0]?.id || "116c30d7-817e-417d-afd7-a76c296af9ec";
+  const [criteria, setCriteria] = useState<any[]>(
+    initialCase?.assessment_rubric?.length ? initialCase.assessment_rubric : [
+      {
+        id: crypto.randomUUID(),
+        skill_id: defaultSkillId,
+        name: "Mechanical Axis Deviation (MAD)",
+        parameter: "MAD_mm",
+        target_value: refAssessment.MAD_mm ?? 12.0,
+        tolerance_min: 2.0,
+        tolerance_max: 2.0,
+        unit: "mm",
+        severity_rule: { minor: 2.0, major: 4.0, critical: 6.0 },
+      },
+      {
+        id: crypto.randomUUID(),
+        skill_id: defaultSkillId,
+        name: "Mechanical Hip-Knee-Ankle Angle",
+        parameter: "mHKA_deg",
+        target_value: refAssessment.mHKA_deg ?? 174.0,
+        tolerance_min: 1.5,
+        tolerance_max: 1.5,
+        unit: "°",
+        severity_rule: { minor: 1.5, major: 3.0, critical: 5.0 },
+      },
+      {
+        id: crypto.randomUUID(),
+        skill_id: defaultSkillId,
+        name: "Medial Proximal Tibial Angle",
+        parameter: "MPTA_deg",
+        target_value: refAssessment.MPTA_deg ?? 85.5,
+        tolerance_min: 2.0,
+        tolerance_max: 2.0,
+        unit: "°",
+        severity_rule: { minor: 2.0, major: 3.5, critical: 5.0 },
+      },
+      {
+        id: crypto.randomUUID(),
+        skill_id: defaultSkillId,
+        name: "Lateral Distal Femoral Angle",
+        parameter: "LDFA_deg",
+        target_value: refAssessment.LDFA_deg ?? 87.0,
+        tolerance_min: 2.0,
+        tolerance_max: 2.0,
+        unit: "°",
+        severity_rule: { minor: 2.0, major: 3.5, critical: 5.0 },
+      }
+    ]
   );
 
   const refTibial = initialCase?.reference_plan?.tibial_component || {};
@@ -203,18 +286,16 @@ export function CaseAuthoringWizard({
     return evaluateFemoralFit(femoralSize, femoralX, femoralY);
   }, [femoralSize, femoralX, femoralY]);
 
-  const flapScale = useMemo(() => {
-    if (flapPixelDia <= 0) return 0;
-    return Number((25.0 / flapPixelDia).toFixed(4));
-  }, [flapPixelDia]);
+  const calibratedImages = useMemo(() => {
+    return images.filter(img => img.calibration?.is_required).map(img => {
+      const pix = img.calibration?.detected_marker_pixel_diameter || 0;
+      const scale = pix > 0 ? Number((25.0 / pix).toFixed(4)) : 0;
+      const valid = scale >= 0.05 && scale <= 1.5;
+      return { ...img, scale, valid };
+    });
+  }, [images]);
 
-  const klatScale = useMemo(() => {
-    if (klatPixelDia <= 0) return 0;
-    return Number((25.0 / klatPixelDia).toFixed(4));
-  }, [klatPixelDia]);
-
-  const isFlapValid = flapScale >= 0.05 && flapScale <= 1.5;
-  const isKlatValid = klatScale >= 0.05 && klatScale <= 1.5;
+  const allCalibrationsValid = calibratedImages.length > 0 ? calibratedImages.every(img => img.valid) : true;
 
   // Pre-flight Checklist Items
   const checklist = useMemo(() => {
@@ -229,15 +310,15 @@ export function CaseAuthoringWizard({
       },
       {
         id: "imaging",
-        label: "FLAP & KLAT Radiograph Packages Attached",
-        ok: Boolean(flapStoragePath) && Boolean(klatStoragePath),
-        detail: "Full-length AP and lateral views specified",
+        label: "Required Image Assets Attached",
+        ok: images.some(i => i.view_type === 'FLAP') && images.some(i => i.view_type === 'KLAT') && images.every(i => i.storage_path?.trim()),
+        detail: `${images.length} image(s) configured`,
       },
       {
         id: "calibration",
-        label: "Radio-Opaque Marker Calibration Verified (Dynamic mm/px)",
-        ok: isFlapValid && isKlatValid,
-        detail: `FLAP: ${flapScale} mm/px · KLAT: ${klatScale} mm/px (Target range 0.05–1.5 mm/px)`,
+        label: "Radio-Opaque Marker Calibration Verified",
+        ok: allCalibrationsValid,
+        detail: calibratedImages.length > 0 ? `${calibratedImages.filter(i=>i.valid).length} of ${calibratedImages.length} calibrations valid` : 'No calibrations required',
       },
       {
         id: "measurements",
@@ -267,12 +348,9 @@ export function CaseAuthoringWizard({
     side,
     difficulty,
     pathology,
-    flapStoragePath,
-    klatStoragePath,
-    isFlapValid,
-    isKlatValid,
-    flapScale,
-    klatScale,
+    images,
+    calibratedImages,
+    allCalibrationsValid,
     madMm,
     amaDeg,
     mhkaDeg,
@@ -287,6 +365,28 @@ export function CaseAuthoringWizard({
   ]);
 
   const isPublishable = checklist.every((c) => c.ok);
+
+  const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
+
+  const handleImageUpload = async (index: number, file: File) => {
+    try {
+      setUploadingImageId(images[index].id);
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await uploadAssetAction(formData);
+      if (res.success && res.data?.storage_path) {
+        const newImgs = [...images];
+        newImgs[index].storage_path = res.data.storage_path;
+        setImages(newImgs);
+      } else {
+        alert("Failed to upload image: " + (res.error || "Unknown error"));
+      }
+    } catch (err: any) {
+      alert("Failed to upload image: " + err.message);
+    } finally {
+      setUploadingImageId(null);
+    }
+  };
 
   const handleAddObjective = () => {
     if (!newObjective.trim()) return;
@@ -308,8 +408,6 @@ export function CaseAuthoringWizard({
 
   // Build Payload
   const buildPayload = () => {
-    const defaultSkillId =
-      availableSkills[0]?.id || "116c30d7-817e-417d-afd7-a76c296af9ec";
     return {
       name,
       difficulty,
@@ -320,43 +418,40 @@ export function CaseAuthoringWizard({
       pathology_label: pathologyLabel,
       program_ids: programIds,
       patient: {
+        patient_id: patientId,
         age: Number(patientAge),
         gender: patientGender,
         bmi: Number(patientBmi),
+        occupation,
+        activity_level: activityLevel,
+        walking_distance_m: Number(walkingDistance),
+        fixed_flexion_deg: Number(fixedFlexion),
+        range_of_motion: rangeOfMotion,
+        deformity,
         clinical_notes: clinicalNotes,
         history: patientHistory,
       },
       objectives,
-      imaging: [
-        {
-          view_type: "FLAP",
-          label: "Full Leg Anteroposterior (FLAP)",
-          storage_path: flapStoragePath,
+      imaging: images.map(img => {
+        let calcScale = 0;
+        let isValid = false;
+        if (img.calibration?.is_required) {
+          const pix = img.calibration.detected_marker_pixel_diameter || 0;
+          calcScale = pix > 0 ? Number((25.0 / pix).toFixed(4)) : 0;
+          isValid = calcScale >= 0.05 && calcScale <= 1.5;
+        }
+        return {
+          ...img,
           laterality: side,
-          calibration: {
+          calibration: img.calibration?.is_required ? {
+            ...img.calibration,
             marker_type: "sphere_25mm",
-            physical_marker_diameter_mm: 25.0,
-            detected_marker_pixel_diameter: Number(flapPixelDia),
-            calculated_scale_mm_per_px: flapScale,
+            calculated_scale_mm_per_px: calcScale,
             unit: "mm/px",
-            is_valid: isFlapValid,
-          },
-        },
-        {
-          view_type: "KLAT",
-          label: "Knee Lateral (KLAT)",
-          storage_path: klatStoragePath,
-          laterality: side,
-          calibration: {
-            marker_type: "sphere_25mm",
-            physical_marker_diameter_mm: 25.0,
-            detected_marker_pixel_diameter: Number(klatPixelDia),
-            calculated_scale_mm_per_px: klatScale,
-            unit: "mm/px",
-            is_valid: isKlatValid,
-          },
-        },
-      ],
+            is_valid: isValid,
+          } : undefined
+        };
+      }),
       reference_plan: {
         assessment: {
           MAD_mm: Number(madMm),
@@ -395,48 +490,8 @@ export function CaseAuthoringWizard({
         },
         instructor_notes: instructorNotes,
       },
-      assessment_rubric: [
-        {
-          skill_id: defaultSkillId,
-          name: "Mechanical Axis Deviation (MAD)",
-          parameter: "MAD_mm",
-          target_value: Number(madMm),
-          tolerance_min: 2.0,
-          tolerance_max: 2.0,
-          unit: "mm",
-          severity_rule: { minor: 2.0, major: 4.0, critical: 6.0 },
-        },
-        {
-          skill_id: defaultSkillId,
-          name: "Mechanical Hip-Knee-Ankle Angle",
-          parameter: "mHKA_deg",
-          target_value: Number(mhkaDeg),
-          tolerance_min: 1.5,
-          tolerance_max: 1.5,
-          unit: "°",
-          severity_rule: { minor: 1.5, major: 3.0, critical: 5.0 },
-        },
-        {
-          skill_id: defaultSkillId,
-          name: "Medial Proximal Tibial Angle",
-          parameter: "MPTA_deg",
-          target_value: Number(mptaDeg),
-          tolerance_min: 2.0,
-          tolerance_max: 2.0,
-          unit: "°",
-          severity_rule: { minor: 2.0, major: 3.5, critical: 5.0 },
-        },
-        {
-          skill_id: defaultSkillId,
-          name: "Lateral Distal Femoral Angle",
-          parameter: "LDFA_deg",
-          target_value: Number(ldfaDeg),
-          tolerance_min: 2.0,
-          tolerance_max: 2.0,
-          unit: "°",
-          severity_rule: { minor: 2.0, major: 3.5, critical: 5.0 },
-        },
-      ],
+      criteria: criteria,
+      assessment_rubric: criteria,
     };
   };
 
@@ -711,6 +766,12 @@ export function CaseAuthoringWizard({
           <div className={s.stackLg}>
             <div className={s.grid3}>
               <Input
+                label="Patient ID"
+                value={patientId}
+                onChange={(e) => setPatientId(e.target.value)}
+                required
+              />
+              <Input
                 label="Patient Age"
                 type="number"
                 value={patientAge}
@@ -736,6 +797,47 @@ export function CaseAuthoringWizard({
                 onChange={(e) => setPatientBmi(Number(e.target.value))}
                 trailing="kg/m²"
                 required
+              />
+              <Input
+                label="Occupation"
+                value={occupation}
+                onChange={(e) => setOccupation(e.target.value)}
+              />
+              <Select
+                label="Activity Level"
+                value={activityLevel}
+                onChange={(e) => setActivityLevel(e.target.value)}
+              >
+                <option value="Sedentary">Sedentary</option>
+                <option value="Lightly Active">Lightly Active</option>
+                <option value="Moderately Active">Moderately Active</option>
+                <option value="Very Active">Very Active</option>
+              </Select>
+              <Input
+                label="Walking Distance"
+                type="number"
+                value={walkingDistance}
+                onChange={(e) => setWalkingDistance(Number(e.target.value))}
+                trailing="m"
+              />
+              <Input
+                label="Fixed Flexion"
+                type="number"
+                value={fixedFlexion}
+                onChange={(e) => setFixedFlexion(Number(e.target.value))}
+                trailing="°"
+              />
+              <Input
+                label="Range of Motion"
+                value={rangeOfMotion}
+                onChange={(e) => setRangeOfMotion(e.target.value)}
+                placeholder="e.g. 5-100"
+              />
+              <Input
+                label="Deformity"
+                value={deformity}
+                onChange={(e) => setDeformity(e.target.value)}
+                placeholder="e.g. 15 varus"
               />
             </div>
 
@@ -828,131 +930,167 @@ export function CaseAuthoringWizard({
             title="Step 3: Imaging & Calibration"
             subtitle="Full-length standing AP (FLAP) and Knee Lateral (KLAT) radiograph manifests with 25.0 mm spherical radio-opaque marker calibration."
           />
-          <div className={s.imagingGrid}>
-            {/* FLAP Radiograph */}
-            <Card tone="sunken" padding="md">
-              <CardHeader
-                title="FLAP"
-                subtitle="Full-Length Standing AP Radiograph"
-                action={
-                  <Badge status={isFlapValid ? "pass" : "warn"}>
-                    {isFlapValid ? "Calibrated" : "Calibration invalid"}
-                  </Badge>
-                }
-              />
-              <div className={s.stack}>
-                <div className={s.previewFrame}>
-                  {flapStoragePath ? (
-                    <img
-                      src={`/cases/synth/${side === "right" ? "synth_varus_flap.jpg" : "synth_valgus_flap.jpg"}`}
-                      alt="FLAP preview"
-                      className={s.previewImg}
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
-                      }}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--s-4)" }}>
+              <Button
+                variant="secondary"
+                icon={Plus}
+                onClick={() => {
+                  setImages((prev) => [
+                    ...prev,
+                    {
+                      id: crypto.randomUUID(),
+                      view_type: "OTHER",
+                      label: "New Image",
+                      storage_path: "",
+                      is_learner_visible: true,
+                      is_required: false,
+                      calibration: {
+                        is_required: false,
+                        detected_marker_pixel_diameter: 0,
+                        physical_marker_diameter_mm: 25.0
+                      }
+                    }
+                  ]);
+                }}
+              >
+                Add Image
+              </Button>
+            </div>
+            <div className={s.imagingGrid}>
+              {images.map((img, index) => {
+                const pix = img.calibration?.detected_marker_pixel_diameter || 0;
+                const scale = pix > 0 ? Number((25.0 / pix).toFixed(4)) : 0;
+                const isValid = scale >= 0.05 && scale <= 1.5;
+
+                return (
+                  <Card key={img.id} tone="sunken" padding="md">
+                    <CardHeader
+                      title={img.view_type}
+                      subtitle={img.label}
+                      action={
+                        <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
+                          {img.calibration?.is_required && (
+                            <Badge status={isValid ? "pass" : "warn"}>
+                              {isValid ? "Calibrated" : "Calibration invalid"}
+                            </Badge>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={Trash2}
+                            onClick={() => setImages(prev => prev.filter((_, i) => i !== index))}
+                          />
+                        </div>
+                      }
                     />
-                  ) : (
-                    <ImageIcon
-                      width={36}
-                      height={36}
-                      color="var(--text-disabled)"
-                    />
-                  )}
-                </div>
+                    <div className={s.stack}>
+                      <div className={s.previewFrame}>
+                        {img.storage_path ? (
+                          <img
+                            src={img.storage_path.startsWith('cases/synth/') ? `/${img.storage_path}` : img.storage_path}
+                            alt={`${img.view_type} preview`}
+                            className={s.previewImg}
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <ImageIcon width={36} height={36} color="var(--text-disabled)" />
+                        )}
+                      </div>
 
-                <Input
-                  label="Storage Path / Asset Reference"
-                  value={flapStoragePath}
-                  onChange={(e) => setFlapStoragePath(e.target.value)}
-                  helper="Relative path in Supabase Storage 'imaging' bucket."
-                  required
-                />
+                      <div className={s.grid2}>
+                        <Input
+                          label="View Type"
+                          value={img.view_type}
+                          onChange={(e) => {
+                            const newImgs = [...images];
+                            newImgs[index].view_type = e.target.value;
+                            setImages(newImgs);
+                          }}
+                        />
+                        <Input
+                          label="Display Label"
+                          value={img.label}
+                          onChange={(e) => {
+                            const newImgs = [...images];
+                            newImgs[index].label = e.target.value;
+                            setImages(newImgs);
+                          }}
+                        />
+                      </div>
 
-                <div className={s.calibrationMeta}>
-                  <Input
-                    label="Detected 25mm Marker Diameter"
-                    type="number"
-                    step="0.1"
-                    value={flapPixelDia}
-                    onChange={(e) => setFlapPixelDia(Number(e.target.value))}
-                    trailing="px"
-                    required
-                  />
+                      <div className={s.stack}>
+                        <label style={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>
+                          Upload Image File
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              handleImageUpload(index, e.target.files[0]);
+                            }
+                          }}
+                          disabled={uploadingImageId === img.id}
+                          style={{ padding: "8px 0" }}
+                        />
+                        {uploadingImageId === img.id && (
+                          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                            Uploading...
+                          </span>
+                        )}
+                        {img.storage_path && img.storage_path !== "" && !img.storage_path.includes("synth") && (
+                           <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
+                             Uploaded: {img.storage_path.split("/").pop()}
+                           </span>
+                        )}
+                      </div>
 
-                  <div className={s.calibrationBadgeRow}>
-                    <span style={{ color: "var(--text-muted)" }}>
-                      Derived Scale (25mm / {flapPixelDia}px):
-                    </span>
-                    <Badge status={isFlapValid ? "pass" : "warn"}>
-                      {flapScale} mm/px
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </Card>
+                      <Checkbox
+                        label="Requires Calibration"
+                        checked={img.calibration?.is_required || false}
+                        onChange={() => {
+                          const newImgs = [...images];
+                          if (!newImgs[index].calibration) {
+                            newImgs[index].calibration = { physical_marker_diameter_mm: 25.0, detected_marker_pixel_diameter: 0 };
+                          }
+                          newImgs[index].calibration.is_required = !newImgs[index].calibration.is_required;
+                          setImages(newImgs);
+                        }}
+                      />
 
-            {/* KLAT Radiograph */}
-            <Card tone="sunken" padding="md">
-              <CardHeader
-                title="KLAT"
-                subtitle="Knee Lateral Radiograph"
-                action={
-                  <Badge status={isKlatValid ? "pass" : "warn"}>
-                    {isKlatValid ? "Calibrated" : "Calibration invalid"}
-                  </Badge>
-                }
-              />
-              <div className={s.stack}>
-                <div className={s.previewFrame}>
-                  {klatStoragePath ? (
-                    <img
-                      src={`/cases/synth/${side === "right" ? "synth_varus_klat.jpg" : "synth_valgus_klat.jpg"}`}
-                      alt="KLAT preview"
-                      className={s.previewImg}
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <ImageIcon
-                      width={36}
-                      height={36}
-                      color="var(--text-disabled)"
-                    />
-                  )}
-                </div>
+                      {img.calibration?.is_required && (
+                        <div className={s.calibrationMeta}>
+                          <Input
+                            label="Detected 25mm Marker Diameter"
+                            type="number"
+                            step="0.1"
+                            value={pix}
+                            onChange={(e) => {
+                              const newImgs = [...images];
+                              newImgs[index].calibration.detected_marker_pixel_diameter = Number(e.target.value);
+                              setImages(newImgs);
+                            }}
+                            trailing="px"
+                            required
+                          />
 
-                <Input
-                  label="Storage Path / Asset Reference"
-                  value={klatStoragePath}
-                  onChange={(e) => setKlatStoragePath(e.target.value)}
-                  helper="Relative path in Supabase Storage 'imaging' bucket."
-                  required
-                />
-
-                <div className={s.calibrationMeta}>
-                  <Input
-                    label="Detected 25mm Marker Diameter"
-                    type="number"
-                    step="0.1"
-                    value={klatPixelDia}
-                    onChange={(e) => setKlatPixelDia(Number(e.target.value))}
-                    trailing="px"
-                    required
-                  />
-
-                  <div className={s.calibrationBadgeRow}>
-                    <span style={{ color: "var(--text-muted)" }}>
-                      Derived Scale (25mm / {klatPixelDia}px):
-                    </span>
-                    <Badge status={isKlatValid ? "pass" : "warn"}>
-                      {klatScale} mm/px
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
+                          <div className={s.calibrationBadgeRow}>
+                            <span style={{ color: "var(--text-muted)" }}>
+                              Derived Scale (25mm / {pix}px):
+                            </span>
+                            <Badge status={isValid ? "pass" : "warn"}>
+                              {scale} mm/px
+                            </Badge>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
         </Card>
       )}
 
@@ -1202,16 +1340,40 @@ export function CaseAuthoringWizard({
 
             {/* Assessment Rubric Table */}
             <div>
-              <p
-                style={{
-                  fontSize: "var(--t-label)",
-                  fontWeight: "var(--fw-semibold)",
-                  color: "var(--ink)",
-                  marginBottom: "var(--s-2)",
-                }}
-              >
-                Canonical Assessment Rubric &amp; Tolerances
-              </p>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--s-2)" }}>
+                <p
+                  style={{
+                    fontSize: "var(--t-label)",
+                    fontWeight: "var(--fw-semibold)",
+                    color: "var(--ink)",
+                  }}
+                >
+                  Canonical Assessment Rubric &amp; Tolerances
+                </p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={Plus}
+                  onClick={() => {
+                    setCriteria((prev) => [
+                      ...prev,
+                      {
+                        id: crypto.randomUUID(),
+                        skill_id: availableSkills[0]?.id || "116c30d7-817e-417d-afd7-a76c296af9ec",
+                        name: "New Criterion",
+                        parameter: "custom_param",
+                        target_value: 0,
+                        tolerance_min: 0,
+                        tolerance_max: 0,
+                        unit: "",
+                        severity_rule: { minor: 0, major: 0, critical: 0 },
+                      }
+                    ]);
+                  }}
+                >
+                  Add Criterion
+                </Button>
+              </div>
               <Table label="Assessment Rubric Tolerances">
                 <THead>
                   <Tr>
@@ -1221,41 +1383,125 @@ export function CaseAuthoringWizard({
                     <Th>Minor Error</Th>
                     <Th>Major Error</Th>
                     <Th>Critical Violation</Th>
+                    <Th aria-label="Actions" />
                   </Tr>
                 </THead>
                 <TBody>
-                  <Tr>
-                    <Td head>Mechanical Axis Deviation (MAD)</Td>
-                    <Td>{madMm} mm</Td>
-                    <Td>± 2.0 mm</Td>
-                    <Td>&gt; 2.0 mm</Td>
-                    <Td>&gt; 4.0 mm</Td>
-                    <Td>&gt; 6.0 mm</Td>
-                  </Tr>
-                  <Tr>
-                    <Td head>Mechanical HKA Angle (mHKA)</Td>
-                    <Td>{mhkaDeg}°</Td>
-                    <Td>± 1.5°</Td>
-                    <Td>&gt; 1.5°</Td>
-                    <Td>&gt; 3.0°</Td>
-                    <Td>&gt; 5.0°</Td>
-                  </Tr>
-                  <Tr>
-                    <Td head>Medial Proximal Tibial Angle (MPTA)</Td>
-                    <Td>{mptaDeg}°</Td>
-                    <Td>± 2.0°</Td>
-                    <Td>&gt; 2.0°</Td>
-                    <Td>&gt; 3.5°</Td>
-                    <Td>&gt; 5.0°</Td>
-                  </Tr>
-                  <Tr>
-                    <Td head>Lateral Distal Femoral Angle (LDFA)</Td>
-                    <Td>{ldfaDeg}°</Td>
-                    <Td>± 2.0°</Td>
-                    <Td>&gt; 2.0°</Td>
-                    <Td>&gt; 3.5°</Td>
-                    <Td>&gt; 5.0°</Td>
-                  </Tr>
+                  {criteria.map((c, i) => (
+                    <Tr key={c.id}>
+                      <Td head>
+                        <input
+                          className={s.tableInput}
+                          value={c.name}
+                          onChange={(e) => {
+                            const newC = [...criteria];
+                            newC[i].name = e.target.value;
+                            setCriteria(newC);
+                          }}
+                          aria-label="Criterion Name"
+                        />
+                      </Td>
+                      <Td>
+                        <div style={{ display: "flex", gap: "var(--s-1)", alignItems: "center" }}>
+                          <input
+                            type="number"
+                            step="0.1"
+                            className={s.tableInput}
+                            value={c.target_value}
+                            onChange={(e) => {
+                              const newC = [...criteria];
+                              newC[i].target_value = Number(e.target.value);
+                              setCriteria(newC);
+                            }}
+                            aria-label="Target Value"
+                          />
+                          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{c.unit}</span>
+                        </div>
+                      </Td>
+                      <Td>
+                        <div style={{ display: "flex", gap: "var(--s-1)", alignItems: "center" }}>
+                          <span style={{ color: "var(--text-muted)" }}>±</span>
+                          <input
+                            type="number"
+                            step="0.1"
+                            className={s.tableInput}
+                            value={c.tolerance_max}
+                            onChange={(e) => {
+                              const newC = [...criteria];
+                              newC[i].tolerance_min = Number(e.target.value);
+                              newC[i].tolerance_max = Number(e.target.value);
+                              setCriteria(newC);
+                            }}
+                            aria-label="Tolerance"
+                          />
+                          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{c.unit}</span>
+                        </div>
+                      </Td>
+                      <Td>
+                        <div style={{ display: "flex", gap: "var(--s-1)", alignItems: "center" }}>
+                          <span style={{ color: "var(--text-muted)" }}>&gt;</span>
+                          <input
+                            type="number"
+                            step="0.1"
+                            className={s.tableInput}
+                            value={c.severity_rule.minor}
+                            onChange={(e) => {
+                              const newC = [...criteria];
+                              newC[i].severity_rule.minor = Number(e.target.value);
+                              setCriteria(newC);
+                            }}
+                            aria-label="Minor Error Threshold"
+                          />
+                          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{c.unit}</span>
+                        </div>
+                      </Td>
+                      <Td>
+                        <div style={{ display: "flex", gap: "var(--s-1)", alignItems: "center" }}>
+                          <span style={{ color: "var(--text-muted)" }}>&gt;</span>
+                          <input
+                            type="number"
+                            step="0.1"
+                            className={s.tableInput}
+                            value={c.severity_rule.major}
+                            onChange={(e) => {
+                              const newC = [...criteria];
+                              newC[i].severity_rule.major = Number(e.target.value);
+                              setCriteria(newC);
+                            }}
+                            aria-label="Major Error Threshold"
+                          />
+                          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{c.unit}</span>
+                        </div>
+                      </Td>
+                      <Td>
+                        <div style={{ display: "flex", gap: "var(--s-1)", alignItems: "center" }}>
+                          <span style={{ color: "var(--text-muted)" }}>&gt;</span>
+                          <input
+                            type="number"
+                            step="0.1"
+                            className={s.tableInput}
+                            value={c.severity_rule.critical}
+                            onChange={(e) => {
+                              const newC = [...criteria];
+                              newC[i].severity_rule.critical = Number(e.target.value);
+                              setCriteria(newC);
+                            }}
+                            aria-label="Critical Error Threshold"
+                          />
+                          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{c.unit}</span>
+                        </div>
+                      </Td>
+                      <Td>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={Trash2}
+                          onClick={() => setCriteria((prev) => prev.filter((_, idx) => idx !== i))}
+                          aria-label="Remove Criterion"
+                        />
+                      </Td>
+                    </Tr>
+                  ))}
                 </TBody>
               </Table>
             </div>
@@ -1438,6 +1684,24 @@ export function CaseAuthoringWizard({
                     </span>
                     <div style={{ fontWeight: "var(--fw-semibold)" }}>{patientBmi} kg/m²</div>
                   </div>
+                  <div>
+                    <span style={{ fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>
+                      Occupation
+                    </span>
+                    <div style={{ fontWeight: "var(--fw-semibold)" }}>{occupation || "N/A"}</div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>
+                      Activity Level
+                    </span>
+                    <div style={{ fontWeight: "var(--fw-semibold)" }}>{activityLevel || "N/A"}</div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>
+                      ROM & Deformity
+                    </span>
+                    <div style={{ fontWeight: "var(--fw-semibold)" }}>{rangeOfMotion || "N/A"} | {deformity || "N/A"}</div>
+                  </div>
                 </div>
               </Card>
 
@@ -1472,33 +1736,25 @@ export function CaseAuthoringWizard({
               )}
 
               <div className={s.imagingGrid}>
-                <Card tone="sunken" padding="sm">
-                  <CardHeader title="FLAP Radiograph" subtitle="Unannotated full-leg view" />
-                  <div className={s.previewFrame}>
-                    <img
-                      src={`/cases/synth/${side === "right" ? "synth_varus_flap.jpg" : "synth_valgus_flap.jpg"}`}
-                      alt="FLAP Learner Preview"
-                      className={s.previewImg}
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
-                      }}
-                    />
-                  </div>
-                </Card>
-
-                <Card tone="sunken" padding="sm">
-                  <CardHeader title="KLAT Radiograph" subtitle="Unannotated lateral view" />
-                  <div className={s.previewFrame}>
-                    <img
-                      src={`/cases/synth/${side === "right" ? "synth_varus_klat.jpg" : "synth_valgus_klat.jpg"}`}
-                      alt="KLAT Learner Preview"
-                      className={s.previewImg}
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
-                      }}
-                    />
-                  </div>
-                </Card>
+                {images.filter(img => img.is_learner_visible).map((img) => (
+                  <Card key={img.id} tone="sunken" padding="sm">
+                    <CardHeader title={`${img.view_type} Radiograph`} subtitle={img.label} />
+                    <div className={s.previewFrame}>
+                      {img.storage_path ? (
+                        <img
+                          src={img.storage_path.startsWith('cases/synth/') ? `/${img.storage_path}` : img.storage_path}
+                          alt={`${img.view_type} Learner Preview`}
+                          className={s.previewImg}
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <ImageIcon width={36} height={36} color="var(--text-disabled)" />
+                      )}
+                    </div>
+                  </Card>
+                ))}
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "var(--s-4)" }}>

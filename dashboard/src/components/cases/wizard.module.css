@@ -304,3 +304,24 @@
     justify-content: space-between;
   }
 }
+
+.tableInput {
+  width: 100%;
+  min-width: 60px;
+  height: 32px;
+  padding: 0 var(--s-2);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-caption);
+  font-family: inherit;
+  transition: border-color var(--m-fast) var(--ease-out);
+}
+
+.tableInput:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px var(--brand-surface);
+}
+

@@ -48,7 +48,11 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
     } catch {
       errorData = { detail: response.statusText };
     }
-    throw new ApiError(response.status, errorData.detail || 'API Error', errorData);
+    const defaultMsg =
+      response.status === 401
+        ? "Your session has expired or you are not signed in. Please log in as an Instructor in another tab to preserve your inputs, then click Publish again."
+        : errorData.detail || "API Error";
+    throw new ApiError(response.status, defaultMsg, errorData);
   }
 
   // Handle empty responses
@@ -92,7 +96,11 @@ export const apiClient = {
       } catch {
         errorData = { detail: response.statusText };
       }
-      throw new ApiError(response.status, errorData.detail || "API Error", errorData);
+      const defaultMsg =
+        response.status === 401
+          ? "Your session has expired or you are not signed in. Please log in as an Instructor in another tab to preserve your inputs, then try again."
+          : errorData.detail || "API Error";
+      throw new ApiError(response.status, defaultMsg, errorData);
     }
     return response.json();
   },

@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { PLANS, PLAN_BY_ID } from "@/lib/data/plans";
+import { PLANS, PLAN_BY_ID, type PlanRecord } from "@/lib/data/plans";
 
 /**
  * The write surface.
@@ -196,19 +196,25 @@ export async function startPlan(formData: FormData): Promise<void> {
   const caseId = String(formData.get("caseId") ?? "");
   if (!caseId) throw new Error("No case was supplied.");
 
-  let existing = PLANS.find((plan) => plan.caseId === caseId);
+  const { getCurrentUser } = await import("@/lib/session");
+  const { CURRENT_USER } = await import("@/lib/seed");
+  const user = await getCurrentUser();
+  const userId = user?.id || CURRENT_USER.id;
+
+  let existing = PLANS.find((plan: PlanRecord) => plan.caseId === caseId && plan.userId === userId);
   
   if (!existing) {
-    const { CURRENT_USER } = await import("@/lib/seed");
-    const { PLAN_BY_ID } = await import("@/lib/data/plans");
-    
     existing = {
       id: crypto.randomUUID(),
-      userId: CURRENT_USER.id,
+      userId: userId,
       caseId: caseId,
       payload: { 
+        workflow: "tkr",
         case_id: caseId,
-        session_config: { mode: "training", difficulty: "intermediate" },
+        session_config: {
+          mode: (formData.get("mode") as any) || "training",
+          difficulty: (formData.get("difficulty") as any) || "intermediate",
+        },
       },
       stepTimings: {},
       isReadyForVr: false,

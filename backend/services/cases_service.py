@@ -64,7 +64,8 @@ def validate_case_version_for_publishing(
     # 1. Metadata check
     if not version_row.get("title") or not str(version_row.get("title")).strip():
         errors.append("Case title is required.")
-    if not version_row.get("side") or version_row.get("side") not in ("RIGHT", "LEFT"):
+    side_val = str(version_row.get("side") or "").upper()
+    if side_val not in ("RIGHT", "LEFT"):
         errors.append("Operative side (RIGHT or LEFT) is required.")
     if not version_row.get("pathology"):
         errors.append("Pathology classification is required.")
@@ -126,8 +127,8 @@ def get_institution_cases(institution_id: UUID) -> List[Dict[str, Any]]:
                     c.status, c.version, c.institution_id, c.draft_version_id, c.published_version_id,
                     c.created_at, c.updated_at,
                     COALESCE(
-                        array_agg(cp.program_id) FILTER (WHERE cp.program_id IS NOT NULL),
-                        ARRAY[]::uuid[]
+                        json_agg(cp.program_id) FILTER (WHERE cp.program_id IS NOT NULL),
+                        '[]'::json
                     ) AS program_ids
                 FROM cases c
                 LEFT JOIN case_programs cp ON cp.case_id = c.id
@@ -400,19 +401,18 @@ def create_case(case_in: CaseCreate, instructor_id: UUID, institution_id: UUID) 
             case_id = uuid4()
             version_id = uuid4()
 
-            # 2. Insert case record
+            # 2. Insert case record with NULL draft_version_id to satisfy foreign key
             cur.execute(
                 """
                 INSERT INTO cases (
                     id, institution_id, procedure_id, name, difficulty,
                     description, learning_objective, status, version, draft_version_id
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', 1, %s)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', 1, NULL)
                 RETURNING id, name, status, draft_version_id, published_version_id
                 """,
                 (
                     str(case_id), str(institution_id), str(proc_id), case_in.name,
-                    case_in.difficulty, case_in.description, case_in.learning_objective,
-                    str(version_id)
+                    case_in.difficulty, case_in.description, case_in.learning_objective
                 )
             )
 
@@ -431,6 +431,12 @@ def create_case(case_in: CaseCreate, instructor_id: UUID, institution_id: UUID) 
                     case_in.description, json.dumps(case_in.patient or {}),
                     json.dumps(case_in.objectives or []), str(instructor_id)
                 )
+            )
+
+            # 3b. Point cases.draft_version_id to the created case_version
+            cur.execute(
+                "UPDATE cases SET draft_version_id = %s WHERE id = %s",
+                (str(version_id), str(case_id))
             )
 
             # 4. Insert program curriculum associations
