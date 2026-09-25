@@ -60,7 +60,7 @@ export default async function LearnerProgramDetailPage({
       ? Math.max(...scoredSessions.map((s) => s.totalScore as number))
       : undefined;
 
-  const userPassMark = PASS_MARK[user.defaultDifficulty];
+  const userPassMark = PASS_MARK[user.defaultDifficulty] ?? 70;
 
   return (
     <AppShell user={user} searchHint='Try searching "cases"'>
@@ -147,7 +147,7 @@ export default async function LearnerProgramDetailPage({
       ) : (
         <div className={p.cards}>
           {cases.map((item) => {
-            const passMark = PASS_MARK[item.difficulty];
+            const passMark = PASS_MARK[item.difficulty] ?? 70;
             return (
               <Card key={item.id} padding="none" className={p.card}>
                 <Link
