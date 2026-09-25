@@ -15,6 +15,7 @@ import {
 } from "@/lib/seed";
 import type { Difficulty, SessionSummary, Side } from "@/lib/types";
 import { PASS_MARK } from "@/lib/types";
+import { apiClient } from "../api-client";
 
 export type AttemptedFilter = "all" | "attempted" | "unattempted";
 

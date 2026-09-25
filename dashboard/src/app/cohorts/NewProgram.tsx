@@ -5,7 +5,6 @@ import { Plus } from "lucide-react";
 import { Banner, Button, Input } from "@/components/ui";
 import { createProgram, type ProgramState } from "@/app/actions";
 import p from "../panels.module.css";
-
 export function NewProgram() {
   const [state, formAction, pending] = useActionState<ProgramState, FormData>(
     createProgram,

@@ -69,3 +69,35 @@ class AddExistingLearnerResponse(BaseModel):
     learner_id: str
     display_name: str
     joined_at: datetime
+
+
+class CaseAssignmentRequest(BaseModel):
+    case_ids: List[str]
+
+
+class CaseSummary(BaseModel):
+    id: str
+    name: str
+    difficulty: str | None = None
+
+
+class CohortCasesResponse(BaseModel):
+    cohort_id: str
+    cases: List[CaseSummary]
+
+
+class SessionCreate(BaseModel):
+    name: str
+    scheduled_at: datetime
+    duration: int
+    description: Optional[str] = None
+
+class SessionSummary(BaseModel):
+    id: str
+    cohort_id: str
+    name: str
+    scheduled_at: datetime
+    duration: int
+    description: Optional[str] = None
+    status: str
+    created_at: datetime

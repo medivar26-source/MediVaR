@@ -17,11 +17,9 @@ import psycopg2.extras
 from supabase import create_client, Client
 from core.config import settings
 
-
 def _get_supabase_client(key: str) -> Client:
     url = settings.SUPABASE_URL or "http://localhost:8000"
     return create_client(url, key or "dummy-key")
-
 
 def get_service_client() -> Client:
     """

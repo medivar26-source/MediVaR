@@ -542,6 +542,164 @@ export async function addExistingLearner(
   }
 }
 
+export async function assignCases(
+  _prev: CohortState,
+  formData: FormData,
+): Promise<CohortState> {
+  const cohortId = String(formData.get("cohortId") ?? "");
+  const caseIds = formData.getAll("caseIds").map(String);
+
+  if (!cohortId) return { error: "This form is missing its cohort." };
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get("mediver-token")?.value;
+
+  try {
+    const res = await fetch(`${API_BASE}/cohorts/${cohortId}/cases`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ case_ids: caseIds }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      return { error: data.detail || "Failed to assign cases." };
+    }
+  } catch {
+    return { error: "Failed to connect to the server." };
+  }
+
+  revalidatePath(`/cohorts/${cohortId}`);
+  return { saved: `${caseIds.length} case(s) assigned` };
+}
+
+export type SessionState = { error?: string; saved?: string };
+
+export async function createSession(
+  _prev: SessionState,
+  formData: FormData,
+): Promise<SessionState> {
+  const cohortId = String(formData.get("cohortId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const scheduledAt = String(formData.get("scheduledAt") ?? "").trim();
+  const duration = Number(formData.get("duration") ?? 0);
+  const description = String(formData.get("description") ?? "").trim();
+
+  if (!cohortId) return { error: "Cohort ID is missing." };
+  if (name.length < 2) return { error: "Session name must be at least 2 characters." };
+  if (!scheduledAt) return { error: "Scheduled date & time is required." };
+  if (duration <= 0) return { error: "Duration must be greater than 0 minutes." };
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get("mediver-token")?.value;
+
+  try {
+    const res = await fetch(`${API_BASE}/cohorts/${cohortId}/sessions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        name,
+        scheduled_at: new Date(scheduledAt).toISOString(),
+        duration,
+        description: description || null,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      return { error: data.detail || "Failed to create session." };
+    }
+  } catch {
+    return { error: "Failed to connect to the server." };
+  }
+
+  revalidatePath(`/cohorts/${cohortId}`);
+  return { saved: "Session scheduled successfully." };
+}
+
+export async function cancelSession(
+  _prev: SessionState,
+  formData: FormData,
+): Promise<SessionState> {
+  const sessionId = String(formData.get("sessionId") ?? "");
+  const cohortId = String(formData.get("cohortId") ?? "");
+
+  if (!sessionId) return { error: "Session ID missing." };
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get("mediver-token")?.value;
+
+  try {
+    const res = await fetch(`${API_BASE}/cohorts/sessions/${sessionId}/cancel`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      return { error: data.detail || "Failed to cancel session." };
+    }
+  } catch {
+    return { error: "Failed to connect to server." };
+  }
+
+  revalidatePath(`/cohorts/${cohortId}`);
+  return { saved: "Session cancelled." };
+}
+
+export async function updateSession(
+  _prev: SessionState,
+  formData: FormData,
+): Promise<SessionState> {
+  const sessionId = String(formData.get("sessionId") ?? "");
+  const cohortId = String(formData.get("cohortId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const scheduledAt = String(formData.get("scheduledAt") ?? "").trim();
+  const duration = Number(formData.get("duration") ?? 0);
+  const description = String(formData.get("description") ?? "").trim();
+
+  if (!sessionId) return { error: "Session ID missing." };
+  if (name.length < 2) return { error: "Session name must be at least 2 characters." };
+  if (!scheduledAt) return { error: "Scheduled date & time is required." };
+  if (duration <= 0) return { error: "Duration must be greater than 0 minutes." };
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get("mediver-token")?.value;
+
+  try {
+    const res = await fetch(`${API_BASE}/cohorts/sessions/${sessionId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        name,
+        scheduled_at: new Date(scheduledAt).toISOString(),
+        duration,
+        description: description || null,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      return { error: data.detail || "Failed to update session." };
+    }
+  } catch {
+    return { error: "Failed to connect to the server." };
+  }
+
+  revalidatePath(`/cohorts/${cohortId}`);
+  return { saved: "Session updated successfully." };
+}
 /* ---------------------------------- cases --------------------------------- */
 
 export type ConfigState = { error?: string; saved?: string };

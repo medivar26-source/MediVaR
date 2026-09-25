@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Users, ChevronLeft } from "lucide-react";
 import { AppShell, PageHeader, SectionHeader } from "@/components/shell";
+import { EditSessionModal } from "../EditSessionModal";
+
 import {
   Badge,
   Button,
@@ -19,12 +21,15 @@ import {
 import { RankedList, StatCard, StatRow } from "@/components/viz";
 import { AssignPreset } from "../AssignPreset";
 import { ManageLearnersPanel } from "../ManageLearnersPanel";
-import { getCohort } from "@/lib/data/cohorts";
 import { relativeTime, shortDate } from "@/lib/format";
 import { personaFor, ROLE_LABEL } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import p from "../../panels.module.css";
-
+import { Calendar } from "lucide-react"; // Add Calendar to your lucide-react imports
+import { getCohort, getCohortCases, getCohortSessions } from "@/lib/data/cohorts";
+import { NewSession } from "../NewSession";
+import { AssignCasesPanel } from "../AssignCasesPanel";
+import { CancelSessionButton } from "../CancelSessionButton";
 export const metadata: Metadata = { title: "Cohort" };
 
 export default async function CohortPage({
@@ -46,6 +51,10 @@ export default async function CohortPage({
   if (!detail) redirect("/cohorts");
 
   const { cohort, learners, categories, hotspots, presets } = detail;
+  const [cohortCases, sessions] = await Promise.all([
+    getCohortCases(cohort.id),
+    getCohortSessions(cohort.id),
+  ]);
   const now = new Date().toISOString();
   const scored = learners.filter((l) => l.meanScore !== undefined);
 
@@ -221,7 +230,77 @@ export default async function CohortPage({
           )}
         </section>
       </div>
+      <SectionHeader title="Sessions" />
 
+      <section className={p.panel} aria-label="Schedule session">
+        <div>
+          <p className={p.panelTitle}>Schedule a Session</p>
+          <p className={p.panelSub}>
+            Plan upcoming training labs or assessment sessions for this cohort.
+          </p>
+        </div>
+        <NewSession cohortId={cohort.id} />
+      </section>
+
+      {sessions.length === 0 ? (
+        <EmptyState icon={Calendar} title="No sessions scheduled yet">
+          Schedule a session above to organize training dates for this cohort.
+        </EmptyState>
+      ) : (
+        <Table label={`Sessions in ${cohort.name}`}>
+          <THead>
+            <Tr>
+              <Th>Session Name</Th>
+              <Th>Scheduled Date & Time</Th>
+              <Th numeric>Duration</Th>
+              <Th>Status</Th>
+              <Th>Actions</Th>
+            </Tr>
+          </THead>
+          <TBody>
+          {sessions.map((session) => {
+            const statusBadge =
+              session.status === "in_progress"
+                ? "active"
+                : session.status === "scheduled"
+                ? "warn"
+                : session.status === "cancelled"
+                ? "fail"
+                : "neutral"; // for completed
+
+            return (
+              <Tr key={session.id}>
+                <Td head>
+                  <div>
+                    <strong>{session.name}</strong>
+                    {session.description && (
+                      <div style={{ fontSize: "0.85rem", opacity: 0.7 }}>
+                        {session.description}
+                      </div>
+                    )}
+                  </div>
+                </Td>
+                <Td>{new Date(session.scheduledAt).toLocaleString()}</Td>
+                <Td numeric>{session.duration} mins</Td>
+                <Td>
+                  <Badge status={statusBadge}>
+                    {session.status.replace("_", " ")}
+                  </Badge>
+                </Td>
+                <Td>
+                  {(session.status === "scheduled" || session.status === "in_progress") && (
+                    <div style={{ display: "inline-flex", gap: "0.5rem", alignItems: "center" }}>
+                      <EditSessionModal session={session} />
+                      <CancelSessionButton sessionId={session.id} cohortId={cohort.id} />
+                    </div>
+                  )}
+                </Td>
+              </Tr>
+            );
+          })}
+        </TBody>
+        </Table>
+      )}
       <SectionHeader title="Enrolment" />
       <section className={p.panel} aria-label="Manage Learners">
         <div>
