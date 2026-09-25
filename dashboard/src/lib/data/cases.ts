@@ -37,12 +37,7 @@ export type CaseCard = {
   bestScore?: number;
   /** Score of the most recent completed attempt, for the card badge. */
   lastScore?: number;
-  status?: string;
-  version?: number;
-  draft_version_id?: string | null;
-  published_version_id?: string | null;
 };
-
 
 /**
  * One selectable value on the filter bar, with the number of cases it would
@@ -156,62 +151,19 @@ function facetOf(
  * it ever passes roughly a thousand, move the filtering back into the query and
  * compute the counts with `group by` instead.
  */
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-
-import { cookies } from "next/headers";
-
-async function getOptionalToken(): Promise<string | null> {
-  try {
-    const cookieStore = await cookies();
-    return cookieStore.get("mediver-token")?.value ?? null;
-  } catch {
-    return null;
-  }
-}
-
 export async function listCases(
   userId: string,
   filters: CaseFilters = {},
 ): Promise<CaseBrowse> {
   const stats = statsByCase(sessionsFor(userId));
-  const token = await getOptionalToken();
 
-  let dbCases: CaseCard[] = [];
-  if (token) {
-    try {
-      const res = await fetch(`${API_BASE}/cases`, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-      if (res.ok) {
-        const rows = await res.json();
-        dbCases = rows.map((r: any) => {
-          const stat = stats.get(r.id);
-          return {
-            id: r.id,
-            title: r.name,
-            summary: r.description,
-            pathologyLabel: r.pathology_label || "Osteoarthritis",
-            side: (r.side || "right").toLowerCase() as Side,
-            difficulty: (r.difficulty || "intermediate").toLowerCase() as Difficulty,
-            attempts: stat?.attempts ?? 0,
-            bestScore: stat?.best,
-            lastScore: stat?.last,
-            status: r.status,
-            version: r.version,
-            draft_version_id: r.draft_version_id,
-            published_version_id: r.published_version_id,
-          };
-        });
-      }
-    } catch (e) {
-      console.warn("Failed to fetch cases from API, falling back to seed catalogue:", e);
-    }
-  }
-
-  // Combine with seed catalogue, deduplicating by ID
-  const seenIds = new Set(dbCases.map((c) => c.id));
-  const seedCases: CaseCard[] = CASES.filter((row) => row.isActive && !seenIds.has(row.id))
+  const all: CaseCard[] = CASES.filter((row) => row.isActive)
+    .slice()
+    .sort(
+      (a, b) =>
+        DIFFICULTY_ORDER.indexOf(a.difficulty) -
+          DIFFICULTY_ORDER.indexOf(b.difficulty) || a.id.localeCompare(b.id),
+    )
     .map((row) => {
       const stat = stats.get(row.id);
       return {
@@ -224,16 +176,8 @@ export async function listCases(
         attempts: stat?.attempts ?? 0,
         bestScore: stat?.best,
         lastScore: stat?.last,
-        status: "active" as const,
-        version: 1,
       };
     });
-
-  const all: CaseCard[] = [...dbCases, ...seedCases].sort(
-    (a, b) =>
-      DIFFICULTY_ORDER.indexOf(a.difficulty) -
-        DIFFICULTY_ORDER.indexOf(b.difficulty) || a.title.localeCompare(b.title),
-  );
 
   return {
     cases: all.filter((item) => matches(item, filters)),
@@ -262,10 +206,13 @@ export async function listCases(
 
 export type PatientField = { label: string; value: string };
 export type PatientSnapshot = {
+  /** Short scalar readings — they tile two-up. */
   vitals: PatientField[];
+  /** Prose. Full width, one under the other. */
   notes: PatientField[];
 };
 
+/** One of the six report categories, and what it is worth. */
 export type ScoringCategory = { key: string; label: string; max: number };
 
 export type CaseDetail = {
@@ -278,23 +225,26 @@ export type CaseDetail = {
   side: Side;
   difficulty: Difficulty;
   patient: PatientSnapshot;
-  imaging: { view: string; label: string; url?: string; calibration?: any }[];
+  imaging: { view: string; label: string }[];
   objectives: string[];
   attempts: SessionSummary[];
   bestScore?: number;
+  /** Completed attempts at or above this difficulty's pass mark. */
   passed: number;
+  /** Total time this viewer has spent on the case, in seconds. */
   timeSpentS: number;
   scoring: ScoringCategory[];
-  status?: string;
-  version?: number;
-  draft_version_id?: string | null;
-  published_version_id?: string | null;
-  reference_plan?: any;
-  criteria?: any[];
-  validation_errors?: string[];
-  is_publishable?: boolean;
 };
 
+/**
+ * Patient fields, in the order a surgeon reads them. Keys absent from the JSON
+ * are dropped rather than rendered blank — an empty row invites the reader to
+ * wonder what was lost.
+ *
+ * `block` decides where a field lands: a reading tiles into the two-column
+ * grid, a paragraph gets the full width. Putting an eighteen-word history in a
+ * 150px column is what made the old snapshot six hundred pixels tall.
+ */
 const PATIENT_FIELDS: {
   key: string;
   label: string;
@@ -302,7 +252,6 @@ const PATIENT_FIELDS: {
   block: "vital" | "note";
 }[] = [
   { key: "age", label: "Age", suffix: " years", block: "vital" },
-  { key: "gender", label: "Gender", block: "vital" },
   { key: "sex", label: "Sex", block: "vital" },
   { key: "bmi", label: "BMI", block: "vital" },
   { key: "occupation", label: "Occupation", block: "vital" },
@@ -311,12 +260,12 @@ const PATIENT_FIELDS: {
   { key: "fixed_flexion_deg", label: "Fixed flexion", suffix: "°", block: "vital" },
   { key: "deformity", label: "Deformity", block: "vital" },
   { key: "complaint", label: "Chief complaint", block: "note" },
-  { key: "clinical_notes", label: "Clinical presentation", block: "note" },
   { key: "history", label: "History", block: "note" },
   { key: "past_management", label: "Past management", block: "note" },
 ];
 
 function toSnapshot(record: Record<string, unknown>): PatientSnapshot {
+
   const fields = PATIENT_FIELDS.flatMap(({ key, label, suffix, block }) => {
     const value = record[key];
     if (value === undefined || value === null || value === "") return [];
@@ -342,78 +291,6 @@ export async function getCase(
   caseId: string,
   userId: string,
 ): Promise<CaseDetail | null> {
-  const token = await getOptionalToken();
-
-  // Try API first
-  if (token) {
-    try {
-      const res = await fetch(`${API_BASE}/cases/${caseId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-      if (res.ok) {
-        const row = await res.json();
-        const attempts = sessionsFor(userId).filter((s) => s.caseId === caseId);
-        const scores = attempts
-          .map((a) => a.totalScore)
-          .filter((s): s is number => s !== undefined);
-
-        const diff = (row.difficulty || "intermediate").toLowerCase() as Difficulty;
-        const passMark = PASS_MARK[diff] ?? 70;
-        const passed = attempts.filter(
-          (a) => a.totalScore !== undefined && a.totalScore >= passMark,
-        ).length;
-
-        const patientObj = (row.active_version?.patient || row.patient || {});
-        const objectivesList = (row.active_version?.objectives || row.objectives || []);
-
-        const imagingViews = (row.imaging || []).map((img: any) => ({
-          view: img.view_type,
-          label: img.label,
-          url: img.signed_url,
-          calibration: img.calibration,
-        }));
-
-        return {
-          id: row.id,
-          title: row.active_version?.title || row.title || row.name,
-          summary: row.active_version?.description || row.description,
-          procedureId: row.procedure_id || "tkr",
-          procedureName: "Total Knee Replacement",
-          pathologyLabel: row.active_version?.pathology_label || row.pathology_label || "Osteoarthritis",
-          side: (row.active_version?.side || row.side || "right").toLowerCase() as Side,
-          difficulty: diff,
-          patient: toSnapshot(patientObj),
-          imaging: imagingViews.length > 0 ? imagingViews : [
-            { view: "FLAP", label: "Full Leg Anteroposterior (FLAP)" },
-            { view: "KLAT", label: "Knee Lateral (KLAT)" },
-          ],
-          objectives: objectivesList,
-          attempts,
-          bestScore: scores.length ? Math.max(...scores) : undefined,
-          passed,
-          timeSpentS: attempts.reduce((total, a) => total + (a.durationS ?? 0), 0),
-          scoring: CATEGORY_META.map((category) => ({
-            key: category.key,
-            label: category.label,
-            max: category.max,
-          })),
-          status: row.status,
-          version: row.version,
-          draft_version_id: row.draft_version_id,
-          published_version_id: row.published_version_id,
-          reference_plan: row.reference_plan,
-          criteria: row.criteria,
-          validation_errors: row.validation_errors,
-          is_publishable: row.is_publishable,
-        };
-      }
-    } catch (e) {
-      console.warn("API case detail lookup failed, falling back to seed:", e);
-    }
-  }
-
-  // Seed Fallback
   const row = CASE_BY_ID.get(caseId);
   if (!row) return null;
 
@@ -423,6 +300,9 @@ export async function getCase(
     .filter((s): s is number => s !== undefined);
 
   const procedure = PROCEDURES.find((p) => p.id === row.procedureId);
+
+  // The pass mark follows the difficulty each attempt was actually run at, not
+  // the case's own difficulty — an attempt taken on Expert is judged on Expert.
   const passed = attempts.filter(
     (a) => a.totalScore !== undefined && a.totalScore >= PASS_MARK[a.difficulty],
   ).length;
@@ -448,8 +328,6 @@ export async function getCase(
       label: category.label,
       max: category.max,
     })),
-    status: "active",
-    version: 1,
   };
 }
 
@@ -461,6 +339,13 @@ export type InstructorConfig = {
   createdAt: string;
 };
 
+/**
+ * Presets this instructor owns for a case.
+ *
+ * Nothing has authored one yet, so this is empty for everybody and the panel
+ * on `/cases/[id]` draws its own empty state rather than a list of invented
+ * preset names.
+ */
 export async function getInstructorConfigs(
   caseId: string,
 ): Promise<InstructorConfig[]> {
@@ -468,20 +353,7 @@ export async function getInstructorConfigs(
   return [];
 }
 
+/** Just the title, for a page's `<title>` — the full detail read is wasted there. */
 export async function getCaseTitle(caseId: string): Promise<string | null> {
-  const token = await getOptionalToken();
-  if (token) {
-    try {
-      const res = await fetch(`${API_BASE}/cases/${caseId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-      if (res.ok) {
-        const row = await res.json();
-        return row.active_version?.title || row.title || row.name;
-      }
-    } catch {}
-  }
   return CASE_BY_ID.get(caseId)?.title ?? null;
 }
-

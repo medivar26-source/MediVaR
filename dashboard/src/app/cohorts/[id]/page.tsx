@@ -36,7 +36,7 @@ export default async function CohortPage({
   const user = await getCurrentUser();
   const persona = personaFor(user.role);
 
-  if (persona === "learner") redirect("/programs");
+  if (persona === "learner") redirect("/");
 
   const detail = await getCohort(id);
 

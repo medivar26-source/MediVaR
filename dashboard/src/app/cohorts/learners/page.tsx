@@ -35,7 +35,7 @@ export default async function LearnersPage() {
   const user = await getCurrentUser();
   const persona = personaFor(user.role);
 
-  if (persona === "learner") redirect("/programs");
+  if (persona === "learner") redirect("/");
 
   const learners = await getSupervisedLearners();
   const now = new Date().toISOString();
@@ -96,7 +96,7 @@ export default async function LearnersPage() {
             </THead>
             <TBody>
               {learners.map((learner) => (
-                <Tr key={`${learner.cohortId}-${learner.id}`}>
+                <Tr key={learner.id}>
                   <Td head>{learner.displayName}</Td>
                   <Td>{learner.cohortName}</Td>
                   <Td>{ROLE_LABEL[learner.role]}</Td>

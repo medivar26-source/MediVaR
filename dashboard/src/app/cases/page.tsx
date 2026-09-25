@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { FolderOpen, Play, Plus } from "lucide-react";
+import { FolderOpen, Play } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/shell";
 import { Badge, Button, Card, Chip, EmptyState, Skeleton } from "@/components/ui";
 import { listCases, type AttemptedFilter } from "@/lib/data/cases";
 import { titleCase } from "@/lib/format";
-import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import { PASS_MARK } from "@/lib/types";
 import { CaseFilters } from "./CaseFilters";
@@ -29,8 +28,6 @@ export default async function CasesPage({
 }) {
   const filters = await searchParams;
   const user = await getCurrentUser();
-  const persona = personaFor(user.role);
-  const isInstructor = persona === "instructor" || persona === "admin";
 
   const attempted = ATTEMPTED.includes(filters.attempted as AttemptedFilter)
     ? (filters.attempted as AttemptedFilter)
@@ -50,19 +47,11 @@ export default async function CasesPage({
         title="Cases"
         lede="Every case is synthetic. No patient data is stored anywhere in the product."
         actions={
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            {isInstructor && (
-              <Button variant="primary" icon={Plus} href="/cases/new">
-                Create Case
-              </Button>
-            )}
-            <Button variant={isInstructor ? "secondary" : "primary"} icon={Play} href="/setup">
-              Start simulation
-            </Button>
-          </div>
+          <Button variant="primary" icon={Play} href="/setup">
+            Start simulation
+          </Button>
         }
       />
-
 
       <Suspense fallback={<Skeleton height="180px" block />}>
         <CaseFilters facets={facets} matched={cases.length} total={total} />
@@ -114,12 +103,6 @@ export default async function CasesPage({
                         <Chip tone="muted">{item.pathologyLabel}</Chip>
                         <Chip tone="muted">{titleCase(item.side)}</Chip>
                         <Chip tone="muted">{titleCase(item.difficulty)}</Chip>
-                        {item.status && (
-                          <Chip tone={item.status === "active" ? "muted" : "default"}>
-                            {item.status === "active" ? `v${item.version ?? 1} Published` : item.status.toUpperCase()}
-                          </Chip>
-                        )}
-
                       </span>
 
                       {item.summary && (
@@ -127,21 +110,14 @@ export default async function CasesPage({
                       )}
 
                       <span className={s.cardFoot}>
-                        {isInstructor ? (
-                          <span>Version {item.version ?? 1} · {item.status ?? "active"}</span>
-                        ) : item.attempts > 0 ? (
-                          `${item.attempts} attempt${item.attempts === 1 ? "" : "s"} · best ${item.bestScore ?? "—"}`
-                        ) : (
-                          "Not yet attempted"
-                        )}
-                        <span className={s.cardCta}>
-                          {isInstructor ? "View & Reference →" : "Start planning →"}
-                        </span>
+                        {item.attempts > 0
+                          ? `${item.attempts} attempt${item.attempts === 1 ? "" : "s"} · best ${item.bestScore ?? "—"}`
+                          : "Not yet attempted"}
+                        <span className={s.cardCta}>Start planning →</span>
                       </span>
                     </span>
                   </Link>
                 </Card>
-
               </li>
             );
           })}

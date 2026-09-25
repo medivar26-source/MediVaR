@@ -27,7 +27,7 @@ import {
   risksFor,
 } from "./planning-content";
 import { LAST_STEP } from "@/lib/plan";
-import type { PlanCase, PlanDetail, StepGate, CaseRisk } from "@/lib/plan";
+import type { PlanDetail, StepGate } from "@/lib/plan";
 
 export * from "@/lib/plan";
 
@@ -127,52 +127,22 @@ function gatesFor(payload: PlanDetail["payload"]): StepGate[] {
 }
 
 export async function getPlan(planId: string): Promise<PlanDetail | null> {
-  let plan = PLAN_BY_ID.get(planId);
-
-  if (!plan) {
-    // If planId is not in the map, check if it's a valid caseId or if we can instantiate an on-demand plan
-    const { getCase } = await import("@/lib/data/cases");
-    const { getCurrentUser } = await import("@/lib/session");
-    const { CURRENT_USER } = await import("@/lib/seed");
-    const currentUser = await getCurrentUser();
-    const userId = currentUser?.id || CURRENT_USER.id;
-
-    // Check seed cases or DB cases
-    const seedCase = CASE_BY_ID.get(planId);
-    let resolvedCaseId: string | null = seedCase ? planId : null;
-
-    if (!resolvedCaseId) {
-      const dbCase = await getCase(planId, userId);
-      if (dbCase) resolvedCaseId = planId;
-    }
-
-    if (resolvedCaseId) {
-      plan = {
-        id: planId,
-        userId: userId,
-        caseId: resolvedCaseId,
-        payload: {
-          workflow: "tkr",
-          case_id: resolvedCaseId,
-          session_config: { mode: "training", difficulty: "intermediate" },
-        },
-        stepTimings: {},
-        isReadyForVr: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      PLAN_BY_ID.set(plan.id, plan);
-    }
-  }
-
+  const plan = PLAN_BY_ID.get(planId);
   if (!plan) return null;
 
-  let planCase: PlanCase | null = null;
-  let risks: CaseRisk[] = [];
-
   const row = CASE_BY_ID.get(plan.caseId);
-  if (row) {
-    planCase = {
+  if (!row) return null;
+
+  return {
+    id: plan.id,
+    caseId: plan.caseId,
+    isReadyForVr: plan.isReadyForVr,
+    hasSession: SESSIONS.some((s) => s.planId === plan.id),
+    payload: plan.payload,
+    stepTimings: plan.stepTimings,
+    updatedAt: plan.updatedAt,
+    lockedVersion: plan.lockedVersion,
+    case: {
       id: row.id,
       title: row.title,
       summary: row.summary,
@@ -184,64 +154,10 @@ export async function getPlan(planId: string): Promise<PlanDetail | null> {
       imaging: row.imaging,
       objectives: row.objectives,
       referenceRanges: REFERENCE_RANGES,
-    };
-    risks = risksFor(row);
-  } else {
-    // Fetch dynamically authored case from backend database
-    const { getCase } = await import("@/lib/data/cases");
-    const caseDetail = await getCase(plan.caseId, plan.userId);
-    if (!caseDetail) return null;
-
-    planCase = {
-      id: caseDetail.id,
-      title: caseDetail.title,
-      summary: caseDetail.summary,
-      side: caseDetail.side,
-      difficulty: caseDetail.difficulty,
-      pathologyLabel: caseDetail.pathologyLabel,
-      patient: caseDetail.patient?.vitals || [],
-      narrative: caseDetail.patient?.notes || [],
-      imaging: (caseDetail.imaging || []).map((img) => ({
-        view: img.view,
-        label: img.label,
-        src: img.url || (img.view === "FLAP" ? "/flap.jpg" : "/klat.jpg"),
-      })),
-      objectives: caseDetail.objectives || [],
-      referenceRanges: REFERENCE_RANGES,
-    };
-
-    risks = [
-      {
-        id: "infection",
-        label: "Superficial / deep prosthetic joint infection",
-        detail: "Standard surgical prophylaxis, laminar airflow and careful tissue handling are required.",
-        severity: "critical",
-      },
-      {
-        id: "tightness",
-        label: "Contracted collateral sleeve",
-        detail: "The deformity is structural. A staged release will be required to balance the gaps.",
-        severity: "high",
-      },
-    ];
-  }
-
-  return {
-    id: plan.id,
-    caseId: plan.caseId,
-    isReadyForVr: plan.isReadyForVr,
-    hasSession: SESSIONS.some((s) => s.planId === plan.id),
-    payload: {
-      workflow: "tkr",
-      ...plan.payload,
     },
-    stepTimings: plan.stepTimings,
-    updatedAt: plan.updatedAt,
-    lockedVersion: plan.lockedVersion,
-    case: planCase,
     gates: gatesFor(plan.payload),
     options: STEP_OPTIONS,
     guidance: GUIDANCE,
-    risks: risks,
+    risks: risksFor(row),
   };
 }

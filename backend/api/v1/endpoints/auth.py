@@ -1,24 +1,16 @@
 """
 Authentication API endpoints.
 
-POST /api/v1/auth/login           — instructor (email+password) or learner (learner_id+password)
-GET  /api/v1/auth/me              — return current authenticated user profile
-POST /api/v1/auth/logout          — revoke the current session token
-POST /api/v1/auth/change-password — change password for current authenticated user
+POST /api/v1/auth/login  — instructor (email+password) or learner (learner_id+password)
+GET  /api/v1/auth/me     — return current authenticated user profile
+POST /api/v1/auth/logout — revoke the current session token
 """
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from core.security import get_current_active_user
-from schemas.auth import (
-    ChangePasswordRequest,
-    ChangePasswordResponse,
-    LoginRequest,
-    LoginResponse,
-    MeResponse,
-    UserProfile,
-)
+from schemas.auth import LoginRequest, LoginResponse, MeResponse, UserProfile
 from services import auth_service
 
 logger = logging.getLogger(__name__)
@@ -114,39 +106,3 @@ async def logout(
         # Log but don't fail — the client should discard the token regardless
         logger.warning("Error revoking session for user %s: %s", current_user.id, exc)
     return None
-
-
-@router.post(
-    "/change-password",
-    response_model=ChangePasswordResponse,
-    summary="Change the authenticated user's password",
-)
-async def change_password(
-    payload: ChangePasswordRequest,
-    current_user: UserProfile = Depends(get_current_active_user),
-):
-    """
-    Change password for the authenticated user.
-    Verifies current_password before updating.
-    Works for both learners and instructors.
-    """
-    try:
-        result = auth_service.change_user_password(
-            user=current_user,
-            current_password=payload.current_password,
-            new_password=payload.new_password,
-            confirm_password=payload.confirm_password,
-        )
-        return ChangePasswordResponse(message=result["message"])
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        )
-    except Exception as exc:
-        logger.error("Unexpected error changing password for user %s: %s", current_user.id, exc)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to change password. Please try again later.",
-        )
-

@@ -8,7 +8,6 @@ import { relativeTime, shortDate, titleCase } from "@/lib/format";
 import { personaFor, ROLE_LABEL } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import { AccountForm } from "./AccountForm";
-import { ChangePasswordForm } from "./ChangePasswordForm";
 import p from "../panels.module.css";
 import s from "./settings.module.css";
 
@@ -84,21 +83,6 @@ export default async function SettingsPage({
             />
           </section>
 
-          <SectionHeader title="Security" />
-
-          <section className={p.panel} aria-label="Change password">
-            <div className={p.panelHead}>
-              <div>
-                <p className={p.panelTitle}>Change password</p>
-                <p className={p.panelSub}>
-                  Update your password to keep your account secure. If you are signing in with an instructor-issued temporary password, set a personal password here.
-                </p>
-              </div>
-            </div>
-
-            <ChangePasswordForm />
-          </section>
-
           <SectionHeader title="Administered" />
 
           <section className={p.panel} aria-label="Administered fields">
@@ -109,20 +93,10 @@ export default async function SettingsPage({
             </p>
 
             <div className={p.rows}>
-              {user.learnerId && (
-                <div className={s.administered}>
-                  <span>Learner ID</span>
-                  <span className={s.administeredValue} style={{ fontFamily: "monospace", letterSpacing: "0.05em" }}>
-                    {user.learnerId}
-                  </span>
-                </div>
-              )}
-              {user.email && !user.email.endsWith("@learner.mediver.local") && (
-                <div className={s.administered}>
-                  <span>Email address</span>
-                  <span className={s.administeredValue}>{user.email}</span>
-                </div>
-              )}
+              <div className={s.administered}>
+                <span>Email address</span>
+                <span className={s.administeredValue}>{user.email}</span>
+              </div>
               <div className={s.administered}>
                 <span>Role</span>
                 <span className={s.administeredValue}>

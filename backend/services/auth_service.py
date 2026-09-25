@@ -159,66 +159,6 @@ def authenticate_learner(learner_id: str, password: str) -> dict:
     }
 
 
-def change_user_password(
-    user: UserProfile,
-    current_password: str,
-    new_password: str,
-    confirm_password: str,
-) -> dict:
-    """
-    Change the authenticated user's password in Supabase Auth.
-    Verifies the current password first, then updates it via the admin API.
-    Works for both learners (synthetic email) and instructors (standard email).
-    Never logs or exposes passwords.
-    """
-    if not current_password or not new_password or not confirm_password:
-        raise ValueError("All password fields are required.")
-
-    if new_password != confirm_password:
-        raise ValueError("New password and confirmation do not match.")
-
-    if len(new_password) < 8:
-        raise ValueError("New password must be at least 8 characters long.")
-
-    if new_password == current_password:
-        raise ValueError("New password must be different from current password.")
-
-    # Determine Supabase Auth email
-    if user.learner_id:
-        auth_email = _learner_id_to_email(user.learner_id)
-    elif user.email:
-        auth_email = user.email.strip().lower()
-    else:
-        raise ValueError("Account configuration error: no email or Learner ID associated.")
-
-    # 1. Verify current password
-    anon_client = get_anon_client()
-    try:
-        auth_res = anon_client.auth.sign_in_with_password({
-            "email": auth_email,
-            "password": current_password,
-        })
-        if not auth_res.session:
-            raise ValueError("Current password is incorrect.")
-    except Exception as exc:
-        logger.warning("Password verification failed for user_id=%s: %s", user.id, exc)
-        raise ValueError("Current password is incorrect.")
-
-    # 2. Update to new password via Admin API
-    service_client = get_service_client()
-    try:
-        service_client.auth.admin.update_user_by_id(
-            user.id,
-            {"password": new_password},
-        )
-        logger.info("Successfully updated password for user_id=%s", user.id)
-    except Exception as exc:
-        logger.error("Failed to update password for user_id=%s: %s", user.id, exc)
-        raise ValueError(f"Could not update password: {exc}")
-
-    return {"message": "Password changed successfully"}
-
-
 # --------------------------------------------------------------------------- #
 # Instructor provisioning                                                      #
 # --------------------------------------------------------------------------- #
