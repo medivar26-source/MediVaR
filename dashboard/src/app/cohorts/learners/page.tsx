@@ -85,7 +85,7 @@ export default async function LearnersPage() {
             <THead>
               <Tr>
                 <Th>Learner</Th>
-                <Th>Cohort</Th>
+                <Th>Program / cohort</Th>
                 <Th>Role</Th>
                 <Th numeric>Sessions</Th>
                 <Th numeric>Assessments</Th>
@@ -101,7 +101,13 @@ export default async function LearnersPage() {
                   <Td head>
                     <Link href={`/cohorts/learners/${learner.id}`}>{learner.displayName}</Link>
                   </Td>
-                  <Td>{learner.cohortName}</Td>
+                  <Td>
+                    {learner.cohorts.map((c) => (
+                      <div key={c.id}>
+                        {c.programName ? `${c.programName} — ${c.name}` : c.name}
+                      </div>
+                    ))}
+                  </Td>
                   <Td>{ROLE_LABEL[learner.role]}</Td>
                   <Td numeric>{learner.sessions}</Td>
                   <Td numeric>{learner.assessments}</Td>
