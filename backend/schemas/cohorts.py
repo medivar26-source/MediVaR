@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Literal
 from datetime import datetime
 from pydantic import BaseModel, Field
 
@@ -91,6 +91,25 @@ class SessionCreate(BaseModel):
     scheduled_at: datetime
     duration: int
     description: Optional[str] = None
+    case_id: str = Field(..., min_length=1)
+    mode: Literal["training", "assessment"] = "training"
+    # Residents this session is assigned to. Omitted/empty -> every current
+    # member of the cohort (resolved server-side at creation time).
+    resident_ids: Optional[List[str]] = None
+
+
+class SessionUpdate(BaseModel):
+    """Session edits after creation: schedule/description only.
+
+    Deliberately excludes case_id/mode/resident_ids — like a case version
+    pinned to a session, the assignment target shouldn't silently change
+    underneath residents who were already given the task.
+    """
+    name: str
+    scheduled_at: datetime
+    duration: int
+    description: Optional[str] = None
+
 
 class SessionSummary(BaseModel):
     id: str
@@ -101,3 +120,23 @@ class SessionSummary(BaseModel):
     description: Optional[str] = None
     status: str
     created_at: datetime
+    case_id: Optional[str] = None
+    case_name: Optional[str] = None
+    mode: str = "training"
+    instructor_id: Optional[str] = None
+    resident_count: int = 0
+    completed_count: int = 0
+
+
+class SessionResidentSummary(BaseModel):
+    id: str
+    resident_id: str
+    display_name: str
+    status: str
+    joined_at: datetime
+    completed_at: Optional[datetime] = None
+
+
+class SessionRosterResponse(BaseModel):
+    session_id: str
+    residents: List[SessionResidentSummary]

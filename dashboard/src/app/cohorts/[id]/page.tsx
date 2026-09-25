@@ -27,6 +27,7 @@ import { getCurrentUser } from "@/lib/session";
 import p from "../../panels.module.css";
 import { Calendar } from "lucide-react"; // Add Calendar to your lucide-react imports
 import { getCohort, getCohortCases, getCohortSessions } from "@/lib/data/cohorts";
+import { listCasesForAuthoring } from "@/lib/data/content";
 import { NewSession } from "../NewSession";
 import { AssignCasesPanel } from "../AssignCasesPanel";
 import { CancelSessionButton } from "../CancelSessionButton";
@@ -51,10 +52,19 @@ export default async function CohortPage({
   if (!detail) redirect("/cohorts");
 
   const { cohort, learners, categories, hotspots, presets } = detail;
-  const [cohortCases, sessions] = await Promise.all([
+  const [cohortCases, sessions, catalogue] = await Promise.all([
     getCohortCases(cohort.id),
     getCohortSessions(cohort.id),
+    // Every active case this instructor could assign to the cohort — the
+    // pool AssignCasesPanel picks from. A session can only be scheduled for
+    // one of the cases already assigned below (`cohortCases`).
+    listCasesForAuthoring({ status: "active" }).catch(() => ({ cases: [] })),
   ]);
+  const assignableCases = catalogue.cases.map((c) => ({
+    id: c.id,
+    name: c.title,
+    difficulty: c.difficulty,
+  }));
   const now = new Date().toISOString();
   const scored = learners.filter((l) => l.meanScore !== undefined);
 
@@ -232,16 +242,35 @@ export default async function CohortPage({
           )}
         </section>
       </div>
+      <SectionHeader title="Cases" />
+      <section className={p.panel} aria-label="Assign cases">
+        <div>
+          <p className={p.panelTitle}>Assigned cases</p>
+          <p className={p.panelSub}>
+            Cases assigned here are what a session can be scheduled against
+            below — every learner in the cohort gets access through
+            membership, not a per-learner copy.
+          </p>
+        </div>
+        <AssignCasesPanel
+          cohortId={cohort.id}
+          assignedCaseIds={cohortCases.map((c) => c.id)}
+          cases={assignableCases}
+        />
+      </section>
+
       <SectionHeader title="Sessions" />
 
       <section className={p.panel} aria-label="Schedule session">
         <div>
           <p className={p.panelTitle}>Schedule a Session</p>
           <p className={p.panelSub}>
-            Plan upcoming training labs or assessment sessions for this cohort.
+            Plan upcoming training labs or assessment sessions for this cohort,
+            for one of the cases assigned above. Every current member of the
+            cohort is added to the session&apos;s roster.
           </p>
         </div>
-        <NewSession cohortId={cohort.id} />
+        <NewSession cohortId={cohort.id} cases={cohortCases} />
       </section>
 
       {sessions.length === 0 ? (
@@ -253,9 +282,12 @@ export default async function CohortPage({
           <THead>
             <Tr>
               <Th>Session Name</Th>
+              <Th>Case</Th>
+              <Th>Mode</Th>
               <Th>Scheduled Date & Time</Th>
               <Th numeric>Duration</Th>
               <Th>Status</Th>
+              <Th>Roster</Th>
               <Th>Actions</Th>
             </Tr>
           </THead>
@@ -282,12 +314,19 @@ export default async function CohortPage({
                     )}
                   </div>
                 </Td>
+                <Td>{session.caseName ?? "—"}</Td>
+                <Td>
+                  <Chip tone="muted">{session.mode}</Chip>
+                </Td>
                 <Td>{new Date(session.scheduledAt).toLocaleString()}</Td>
                 <Td numeric>{session.duration} mins</Td>
                 <Td>
                   <Badge status={statusBadge}>
                     {session.status.replace("_", " ")}
                   </Badge>
+                </Td>
+                <Td>
+                  {session.completedCount} / {session.residentCount}
                 </Td>
                 <Td>
                   {(session.status === "scheduled" || session.status === "in_progress") && (

@@ -595,11 +595,14 @@ export async function createSession(
   const scheduledAt = String(formData.get("scheduledAt") ?? "").trim();
   const duration = Number(formData.get("duration") ?? 0);
   const description = String(formData.get("description") ?? "").trim();
+  const caseId = String(formData.get("caseId") ?? "").trim();
+  const mode = String(formData.get("mode") ?? "training").trim();
 
   if (!cohortId) return { error: "Cohort ID is missing." };
   if (name.length < 2) return { error: "Session name must be at least 2 characters." };
   if (!scheduledAt) return { error: "Scheduled date & time is required." };
   if (duration <= 0) return { error: "Duration must be greater than 0 minutes." };
+  if (!caseId) return { error: "Choose a case for this session." };
 
   const cookieStore = await cookies();
   const token = cookieStore.get("mediver-token")?.value;
@@ -616,6 +619,8 @@ export async function createSession(
         scheduled_at: new Date(scheduledAt).toISOString(),
         duration,
         description: description || null,
+        case_id: caseId,
+        mode,
       }),
     });
 

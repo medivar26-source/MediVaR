@@ -7,7 +7,7 @@ from schemas.cohorts import (
     CreateLearnerRequest, CreateLearnerResponse,
     AddExistingLearnerRequest, AddExistingLearnerResponse,
     CaseAssignmentRequest, CaseSummary, CohortCasesResponse,
-    SessionCreate, SessionSummary,
+    SessionCreate, SessionUpdate, SessionSummary, SessionRosterResponse,
 )
 from services import cohorts_service
 
@@ -159,6 +159,9 @@ def create_session(
             scheduled_at=session_in.scheduled_at,
             duration=session_in.duration,
             description=session_in.description,
+            case_id=session_in.case_id,
+            mode=session_in.mode,
+            resident_ids=session_in.resident_ids,
             owner_id=current_user.id,
         )
 
@@ -204,7 +207,7 @@ def list_cohort_sessions(
 )
 def update_session(
     session_id: str,
-    session_in: SessionCreate,
+    session_in: SessionUpdate,
     current_user: UserProfile = Depends(get_current_user)
 ):
     """Update a session."""
@@ -257,5 +260,34 @@ def cancel_session(
     except ValueError as e:
         raise HTTPException(
             status_code=400,
+            detail=str(e)
+        )
+
+
+@router.get(
+    "/sessions/{session_id}/residents",
+    response_model=SessionRosterResponse
+)
+def get_session_roster(
+    session_id: str,
+    current_user: UserProfile = Depends(get_current_user)
+):
+    """List the residents assigned to a session and their status."""
+
+    if current_user.role not in ("instructor", "admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="Not authorized to view the session roster."
+        )
+
+    try:
+        return cohorts_service.get_session_roster(
+            session_id=session_id,
+            owner_id=current_user.id,
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=404,
             detail=str(e)
         )

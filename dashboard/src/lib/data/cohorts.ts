@@ -201,23 +201,63 @@ export type SessionSummary = {
   description?: string;
   status: string;
   createdAt: string;
+  caseId?: string;
+  caseName?: string;
+  mode: string;
+  residentCount: number;
+  completedCount: number;
 };
+
+function toSessionSummary(s: any): SessionSummary {
+  return {
+    id: s.id,
+    cohortId: s.cohort_id,
+    name: s.name,
+    scheduledAt: s.scheduled_at,
+    duration: s.duration,
+    description: s.description ?? undefined,
+    status: s.status,
+    createdAt: s.created_at,
+    caseId: s.case_id ?? undefined,
+    caseName: s.case_name ?? undefined,
+    mode: s.mode ?? "training",
+    residentCount: s.resident_count ?? 0,
+    completedCount: s.completed_count ?? 0,
+  };
+}
 
 export async function getCohortSessions(cohortId: string): Promise<SessionSummary[]> {
   try {
     const data = await apiClient.get(`/cohorts/${cohortId}/sessions`);
-    return data.map((s: any) => ({
-      id: s.id,
-      cohortId: s.cohort_id,
-      name: s.name,
-      scheduledAt: s.scheduled_at,
-      duration: s.duration,
-      description: s.description ?? undefined,
-      status: s.status,
-      createdAt: s.created_at,
-    }));
+    return data.map(toSessionSummary);
   } catch (error) {
     console.error(`Failed to fetch sessions for cohort ${cohortId}:`, error);
+    return [];
+  }
+}
+
+export type SessionResidentSummary = {
+  id: string;
+  residentId: string;
+  displayName: string;
+  status: string;
+  joinedAt: string;
+  completedAt?: string;
+};
+
+export async function getSessionRoster(sessionId: string): Promise<SessionResidentSummary[]> {
+  try {
+    const data = await apiClient.get(`/cohorts/sessions/${sessionId}/residents`);
+    return data.residents.map((r: any) => ({
+      id: r.id,
+      residentId: r.resident_id,
+      displayName: r.display_name,
+      status: r.status,
+      joinedAt: r.joined_at,
+      completedAt: r.completed_at ?? undefined,
+    }));
+  } catch (error) {
+    console.error(`Failed to fetch roster for session ${sessionId}:`, error);
     return [];
   }
 }

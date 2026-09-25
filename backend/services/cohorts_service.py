@@ -2,7 +2,10 @@ import logging
 import random
 import string
 from typing import List, Optional, Tuple
-from schemas.cohorts import CaseSummary,CohortCasesResponse, SessionSummary
+from schemas.cohorts import (
+    CaseSummary, CohortCasesResponse, SessionSummary,
+    SessionResidentSummary, SessionRosterResponse,
+)
 from db.session import get_db_conn
 from datetime import datetime, timezone, timedelta
 from schemas.cohorts import (
@@ -407,12 +410,79 @@ def _get_session_status(
 
     return "completed"
 
+def _verify_case_assigned_to_cohort(cur, cohort_id: str, case_id: str) -> str:
+    """Returns the case name, or raises if the case isn't one of the
+    cohort's assigned cases (see set_cohort_cases/get_cohort_cases)."""
+    cur.execute(
+        """
+        SELECT c.name
+        FROM cohort_case_assignments cca
+        JOIN cases c ON cca.case_id = c.id
+        WHERE cca.cohort_id = %s AND cca.case_id = %s
+        """,
+        (cohort_id, case_id)
+    )
+    row = cur.fetchone()
+    if not row:
+        raise ValueError(
+            "That case isn't assigned to this cohort yet. Assign it under "
+            "Cases before scheduling a session for it."
+        )
+    return row["name"]
+
+
+def _session_summary_with_roster(cur, row) -> SessionSummary:
+    """Builds a SessionSummary from a `sessions` row (must include case_id,
+    mode, instructor_id), looking up the case name and roster counts."""
+    case_name = None
+    if row["case_id"]:
+        cur.execute("SELECT name FROM cases WHERE id = %s", (row["case_id"],))
+        case_row = cur.fetchone()
+        case_name = case_row["name"] if case_row else None
+
+    cur.execute(
+        """
+        SELECT
+            COUNT(*) AS resident_count,
+            COUNT(*) FILTER (WHERE status = 'completed') AS completed_count
+        FROM session_residents
+        WHERE session_id = %s
+        """,
+        (row["id"],)
+    )
+    counts = cur.fetchone()
+
+    return SessionSummary(
+        id=str(row["id"]),
+        cohort_id=str(row["cohort_id"]),
+        name=row["name"],
+        scheduled_at=row["scheduled_at"],
+        duration=row["duration"],
+        description=row["description"],
+        status=_get_session_status(
+            row["scheduled_at"],
+            row["duration"],
+            row["is_cancelled"],
+        ),
+        created_at=row["created_at"],
+        case_id=str(row["case_id"]) if row["case_id"] else None,
+        case_name=case_name,
+        mode=row["mode"] or "training",
+        instructor_id=str(row["instructor_id"]) if row["instructor_id"] else None,
+        resident_count=counts["resident_count"],
+        completed_count=counts["completed_count"],
+    )
+
+
 def create_session(
     cohort_id: str,
     name: str,
     scheduled_at: datetime,
     duration: int,
     description: Optional[str],
+    case_id: str,
+    mode: str,
+    resident_ids: Optional[List[str]],
     owner_id: str,
 ) -> SessionSummary:
     conn = get_db_conn()
@@ -420,6 +490,31 @@ def create_session(
         cur = conn.cursor()
 
         _verify_cohort_ownership(cur, cohort_id, owner_id)
+        case_name = _verify_case_assigned_to_cohort(cur, cohort_id, case_id)
+
+        # Resolve the roster: explicit residents (must be cohort members) or
+        # every current member of the cohort if none were given.
+        if resident_ids:
+            cur.execute(
+                """
+                SELECT user_id FROM cohort_members
+                WHERE cohort_id = %s AND user_id IN %s
+                """,
+                (cohort_id, tuple(resident_ids))
+            )
+            valid_ids = {str(r["user_id"]) for r in cur.fetchall()}
+            invalid = [rid for rid in resident_ids if rid not in valid_ids]
+            if invalid:
+                raise ValueError(
+                    f"{len(invalid)} selected resident(s) are not members of this cohort."
+                )
+            roster_ids = list(valid_ids)
+        else:
+            cur.execute(
+                "SELECT user_id FROM cohort_members WHERE cohort_id = %s",
+                (cohort_id,)
+            )
+            roster_ids = [str(r["user_id"]) for r in cur.fetchall()]
 
         cur.execute(
             """
@@ -428,9 +523,12 @@ def create_session(
                 name,
                 scheduled_at,
                 duration,
-                description
+                description,
+                case_id,
+                mode,
+                instructor_id
             )
-            VALUES (%s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING
                 id,
                 cohort_id,
@@ -439,7 +537,10 @@ def create_session(
                 duration,
                 description,
                 is_cancelled,
-                created_at
+                created_at,
+                case_id,
+                mode,
+                instructor_id
             """,
             (
                 cohort_id,
@@ -447,10 +548,25 @@ def create_session(
                 scheduled_at,
                 duration,
                 description,
+                case_id,
+                mode,
+                owner_id,
             )
         )
 
         row = cur.fetchone()
+        session_id = row["id"]
+
+        for resident_id in roster_ids:
+            cur.execute(
+                """
+                INSERT INTO session_residents (session_id, resident_id)
+                VALUES (%s, %s)
+                ON CONFLICT (session_id, resident_id) DO NOTHING
+                """,
+                (session_id, resident_id)
+            )
+
         conn.commit()
 
         return SessionSummary(
@@ -466,6 +582,12 @@ def create_session(
                 row["is_cancelled"],
             ),
             created_at=row["created_at"],
+            case_id=str(row["case_id"]) if row["case_id"] else None,
+            case_name=case_name,
+            mode=row["mode"],
+            instructor_id=str(row["instructor_id"]) if row["instructor_id"] else None,
+            resident_count=len(roster_ids),
+            completed_count=0,
         )
 
     except ValueError:
@@ -490,17 +612,26 @@ def get_cohort_sessions(
         cur.execute(
             """
             SELECT
-                id,
-                cohort_id,
-                name,
-                scheduled_at,
-                duration,
-                description,
-                is_cancelled,
-                created_at
-            FROM sessions
-            WHERE cohort_id = %s
-            ORDER BY scheduled_at NULLS LAST, created_at
+                s.id,
+                s.cohort_id,
+                s.name,
+                s.scheduled_at,
+                s.duration,
+                s.description,
+                s.is_cancelled,
+                s.created_at,
+                s.case_id,
+                s.mode,
+                s.instructor_id,
+                c.name AS case_name,
+                COUNT(sr.id) AS resident_count,
+                COUNT(sr.id) FILTER (WHERE sr.status = 'completed') AS completed_count
+            FROM sessions s
+            LEFT JOIN cases c ON c.id = s.case_id
+            LEFT JOIN session_residents sr ON sr.session_id = s.id
+            WHERE s.cohort_id = %s
+            GROUP BY s.id, c.name
+            ORDER BY s.scheduled_at NULLS LAST, s.created_at
             """,
             (cohort_id,)
         )
@@ -519,9 +650,58 @@ def get_cohort_sessions(
                     row["is_cancelled"],
                 ),
                 created_at=row["created_at"],
+                case_id=str(row["case_id"]) if row["case_id"] else None,
+                case_name=row["case_name"],
+                mode=row["mode"] or "training",
+                instructor_id=str(row["instructor_id"]) if row["instructor_id"] else None,
+                resident_count=row["resident_count"],
+                completed_count=row["completed_count"],
             )
             for row in cur.fetchall()
         ]
+
+    finally:
+        conn.close()
+
+
+def get_session_roster(session_id: str, owner_id: str) -> SessionRosterResponse:
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+
+        cur.execute("SELECT cohort_id FROM sessions WHERE id = %s", (session_id,))
+        row = cur.fetchone()
+        if not row:
+            raise ValueError("Session not found")
+
+        _verify_cohort_ownership(cur, str(row["cohort_id"]), owner_id)
+
+        cur.execute(
+            """
+            SELECT
+                sr.id, sr.resident_id, sr.status, sr.joined_at, sr.completed_at,
+                u.first_name, u.last_name
+            FROM session_residents sr
+            JOIN users u ON u.id = sr.resident_id
+            WHERE sr.session_id = %s
+            ORDER BY u.last_name, u.first_name
+            """,
+            (session_id,)
+        )
+
+        residents = [
+            SessionResidentSummary(
+                id=str(r["id"]),
+                resident_id=str(r["resident_id"]),
+                display_name=f"{r['first_name']} {r['last_name']}",
+                status=r["status"],
+                joined_at=r["joined_at"],
+                completed_at=r["completed_at"],
+            )
+            for r in cur.fetchall()
+        ]
+
+        return SessionRosterResponse(session_id=session_id, residents=residents)
 
     finally:
         conn.close()
@@ -573,7 +753,10 @@ def update_session(
                 duration,
                 description,
                 is_cancelled,
-                created_at
+                created_at,
+                case_id,
+                mode,
+                instructor_id
             """,
             (
                 name,
@@ -587,20 +770,7 @@ def update_session(
         row = cur.fetchone()
         conn.commit()
 
-        return SessionSummary(
-            id=str(row["id"]),
-            cohort_id=str(row["cohort_id"]),
-            name=row["name"],
-            scheduled_at=row["scheduled_at"],
-            duration=row["duration"],
-            description=row["description"],
-            status=_get_session_status(
-                row["scheduled_at"],
-                row["duration"],
-                row["is_cancelled"],
-            ),
-            created_at=row["created_at"],
-        )
+        return _session_summary_with_roster(cur, row)
 
     except ValueError:
         conn.rollback()
@@ -672,7 +842,10 @@ def cancel_session(
                 duration,
                 description,
                 is_cancelled,
-                created_at
+                created_at,
+                case_id,
+                mode,
+                instructor_id
             """,
             (session_id,)
         )
@@ -681,20 +854,7 @@ def cancel_session(
         conn.commit()
 
         # Return the updated session
-        return SessionSummary(
-            id=str(row["id"]),
-            cohort_id=str(row["cohort_id"]),
-            name=row["name"],
-            scheduled_at=row["scheduled_at"],
-            duration=row["duration"],
-            description=row["description"],
-            status=_get_session_status(
-                row["scheduled_at"],
-                row["duration"],
-                row["is_cancelled"],
-            ),
-            created_at=row["created_at"],
-        )
+        return _session_summary_with_roster(cur, row)
 
     except ValueError:
         conn.rollback()
