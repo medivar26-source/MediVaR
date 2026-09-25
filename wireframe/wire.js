@@ -26,6 +26,7 @@
     { id: 'home', label: 'Home', href: 'home.html', icon: 'home' },
     { id: 'simulations', label: 'Simulations', href: 'simulations.html', icon: 'cube' },
     { id: 'cases', label: 'Cases', href: 'cases.html', icon: 'folder' },
+    { id: 'content', label: 'Content', href: 'content.html', icon: 'clip' },
     { id: 'assessments', label: 'Assessments', href: 'assessments.html', icon: 'clip' },
     { id: 'performance', label: 'Performance', href: 'performance.html', icon: 'chart' },
     { id: 'library', label: 'Library', href: 'library.html', icon: 'book' },

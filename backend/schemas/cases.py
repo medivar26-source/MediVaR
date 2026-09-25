@@ -173,6 +173,7 @@ class CaseCreate(BaseModel):
 
 class CaseUpdate(BaseModel):
     name: Optional[str] = None
+    status: Optional[str] = None
     difficulty: Optional[str] = None
     description: Optional[str] = None
     learning_objective: Optional[str] = None

@@ -76,3 +76,15 @@ A TKR planning feature is not complete until:
 - The final plan can be locked and transferred to VR.
 - Post-operative plan-vs-execution review is available to both resident and instructor.
 - Instructor step/error-specific feedback can be stored and later viewed by the resident.
+
+## Confirmed Content / Case Library implementation status (2026-09-21)
+
+The Instructor Contents / Case Library screen (`/content`):
+
+**Frontend gate — met.** UI with loading/empty/error/unauthorized states and inline validation; instructor/admin authorization enforced server-side on `/content` and `/content/[id]` (persona redirect), not just hidden from navigation; 38 tests.
+
+**Backend gate — met for cases, not for the rest.** `/cases` (list, create, get, patch — no delete) and `/procedures` (list) are implemented with institution scoping, role checks, validation, structured errors and a plain-language `503` when the tables are missing. Verified with a stubbed database layer (17 checks); **not yet verified against real tables**. Procedure steps, skills and assessment criteria have no API yet, and their tabs still read seed reference data.
+
+**Database gate — not met.** `backend/migrations/004_content_tables.sql` is written and has not been applied. Applying it to the shared Supabase project waits for the database owner's sign-off, and a `procedures` seed row is needed before a case can be created.
+
+**Known gaps, stated on the page rather than papered over:** no imaging table (the imaging card is empty and its upload form reports it saves nothing), no sessions table (usage shows "not tracked yet", not zero), and the schema has no knee side.

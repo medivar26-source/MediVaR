@@ -396,7 +396,17 @@ export type CaseRow = CaseSummary & {
   pathologyLabel: string;
   summary: string;
   patient: Record<string, string | number>;
-  imaging: { view: string; label: string; src?: string }[];
+  /**
+   * `ap` and `long_leg` carry their own matching generic plate from
+   * `public/` (`knee_xray_ap.jpg`, `full_leg_xray.jpg`). `lateral` and
+   * `skyline` have no distinct asset in the repo at all, so rather than
+   * leave them pending they reuse those same two plates with
+   * `placeholder: true` — visibly flagged in the UI as a stand-in, never
+   * presented as a real lateral or skyline film. The two SYNTH- cases are
+   * the exception: they carry their own generated FLAP/KLAT pair and are
+   * never placeholders.
+   */
+  imaging: { view: string; label: string; src?: string; placeholder?: boolean }[];
   objectives: string[];
   createdAt: string;
 };
@@ -431,10 +441,10 @@ export const CASES: CaseRow[] = [
       deformity: "8.2° varus, correctable",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
-      { view: "lateral", label: "Lateral" },
-      { view: "skyline", label: "Skyline" },
-      { view: "long_leg", label: "Full-length long-leg" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
+      { view: "skyline", label: "Skyline", src: "/full_leg_xray.jpg", placeholder: true },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
       "Recognise medial compartment OA with correctable varus on a long-leg film.",
@@ -472,9 +482,9 @@ export const CASES: CaseRow[] = [
       deformity: "12° valgus, partially correctable",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
-      { view: "lateral", label: "Lateral" },
-      { view: "long_leg", label: "Full-length long-leg" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
       "Recognise a valgus deformity with a contracted lateral sleeve.",
@@ -511,9 +521,9 @@ export const CASES: CaseRow[] = [
       deformity: "6° varus with a metaphyseal defect",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
-      { view: "lateral", label: "Lateral" },
-      { view: "long_leg", label: "Full-length long-leg" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
       "Classify a contained tibial defect using the AORI system.",
@@ -548,9 +558,9 @@ export const CASES: CaseRow[] = [
       deformity: "Neutral, balanced",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
-      { view: "lateral", label: "Lateral" },
-      { view: "skyline", label: "Skyline" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
+      { view: "skyline", label: "Skyline", src: "/full_leg_xray.jpg", placeholder: true },
     ],
     objectives: [
       "Adapt cutting technique to soft, osteopenic bone.",
@@ -585,9 +595,9 @@ export const CASES: CaseRow[] = [
       deformity: "18° varus, incompletely correctable",
     },
     imaging: [
-      { view: "ap", label: "AP standing" },
-      { view: "lateral", label: "Lateral" },
-      { view: "long_leg", label: "Full-length long-leg" },
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
     ],
     objectives: [
       "Sequence a medial release for an incompletely correctable varus knee.",
@@ -624,6 +634,199 @@ export const CASES: CaseRow[] = [
     imaging: [{ view: "ap", label: "AP standing" }],
     objectives: [],
     createdAt: daysAgo(40),
+  },
+  {
+    id: "CASE_007",
+    procedureId: "tkr",
+    title: "Medial OA — Left knee",
+    procedure: "tkr",
+    pathology: "primary_oa_varus",
+    pathologyLabel: "Osteoarthritis",
+    side: "left",
+    difficulty: "beginner",
+    isActive: true,
+    summary:
+      "58-year-old woman, early medial compartment wear, 4° correctable varus. A gentle introduction to the alignment workflow.",
+    patient: {
+      age: 58,
+      sex: "female",
+      bmi: 25.6,
+      occupation: "Shop assistant",
+      activity: "Community ambulant, no walking aid",
+      complaint: "Medial knee pain, 18 months",
+      history:
+        "Gradual-onset medial pain, worse with prolonged standing. No night pain.",
+      past_management: "Analgesia, weight loss advice, one physiotherapy course.",
+      walking_distance_m: 600,
+      fixed_flexion_deg: 0,
+      rom: "0°–125°",
+      deformity: "4° varus, correctable",
+    },
+    imaging: [
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
+    ],
+    objectives: [
+      "Recognise early-stage medial OA with a small, fully correctable varus deformity.",
+      "Plan a neutral mechanical axis with conservative resection depths.",
+      "Complete the eleven parts without a tolerance breach.",
+    ],
+    createdAt: daysAgo(60),
+  },
+  {
+    id: "CASE_008",
+    procedureId: "tkr",
+    title: "Lateral OA — Right knee",
+    procedure: "tkr",
+    pathology: "primary_oa_valgus",
+    pathologyLabel: "Osteoarthritis",
+    side: "right",
+    difficulty: "intermediate",
+    isActive: true,
+    summary:
+      "64-year-old man, moderate lateral compartment collapse, 9° valgus. CR design likely, PCL competence to be confirmed intra-operatively.",
+    patient: {
+      age: 64,
+      sex: "male",
+      bmi: 27.9,
+      occupation: "Retired engineer",
+      activity: "Community ambulant, walks with a stick",
+      complaint: "Lateral knee pain, 3 years",
+      history:
+        "Progressive lateral pain and a sense of the knee giving way on stairs.",
+      past_management: "Analgesia, a lateral wedge insole, physiotherapy.",
+      walking_distance_m: 300,
+      fixed_flexion_deg: 5,
+      rom: "5°–118°",
+      deformity: "9° valgus, correctable",
+    },
+    imaging: [
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
+      { view: "skyline", label: "Skyline", src: "/full_leg_xray.jpg", placeholder: true },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
+    ],
+    objectives: [
+      "Recognise a moderate valgus deformity with a contained lateral sleeve.",
+      "Assess PCL competence and decide between CR and PS intra-operatively.",
+      "Balance flexion and extension gaps to within 2 mm on the lateral side.",
+    ],
+    createdAt: daysAgo(50),
+  },
+  {
+    id: "CASE_009",
+    procedureId: "tkr",
+    title: "Post-traumatic stiffness — Left knee",
+    procedure: "tkr",
+    pathology: "post_traumatic",
+    pathologyLabel: "Post-traumatic",
+    side: "left",
+    difficulty: "expert",
+    isActive: false,
+    summary:
+      "Stiff post-traumatic knee, prior distal femoral fracture with malunion. Draft — assessment criteria not yet finalised.",
+    patient: {
+      age: 49,
+      sex: "male",
+      bmi: 28.7,
+      occupation: "Delivery driver",
+      activity: "Limited by stiffness rather than pain",
+      complaint: "Restricted flexion and anterior pain, 7 years after fracture",
+      history:
+        "Distal femoral fracture treated with plate fixation, healed in mild valgus malunion. Progressive post-traumatic arthrosis and stiffness.",
+      past_management: "Manipulation under anaesthesia, physiotherapy, analgesia.",
+      walking_distance_m: 200,
+      fixed_flexion_deg: 12,
+      rom: "12°–90°",
+      deformity: "5° valgus malunion, extra-articular",
+    },
+    imaging: [
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
+    ],
+    objectives: [
+      "Account for extra-articular deformity when planning the distal femoral cut.",
+      "Sequence soft-tissue releases for a stiff, previously operated knee.",
+    ],
+    createdAt: daysAgo(25),
+  },
+  {
+    id: "CASE_010",
+    procedureId: "tkr",
+    title: "Rheumatoid — Right knee",
+    procedure: "tkr",
+    pathology: "inflammatory",
+    pathologyLabel: "Inflammatory",
+    side: "right",
+    difficulty: "beginner",
+    isActive: true,
+    summary:
+      "61-year-old man, seropositive rheumatoid arthritis, balanced deformity and osteopenic bone. Companion case to CASE_004.",
+    patient: {
+      age: 61,
+      sex: "male",
+      bmi: 24.5,
+      occupation: "Retired postal worker",
+      activity: "Independent indoors, uses a stick outdoors",
+      complaint: "Bilateral knee pain and stiffness",
+      history:
+        "Seropositive rheumatoid arthritis for 14 years, moderately controlled on DMARDs.",
+      past_management: "DMARDs, analgesia, joint injections.",
+      walking_distance_m: 350,
+      fixed_flexion_deg: 5,
+      rom: "5°–115°",
+      deformity: "Neutral, mild bone loss",
+    },
+    imaging: [
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
+    ],
+    objectives: [
+      "Adapt cutting and impaction technique to osteopenic bone.",
+      "Recognise soft-tissue laxity typical of inflammatory arthropathy.",
+    ],
+    createdAt: daysAgo(20),
+  },
+  {
+    id: "CASE_011",
+    procedureId: "tkr",
+    title: "Severe combined deformity — Right knee",
+    procedure: "tkr",
+    pathology: "primary_oa_varus_severe",
+    pathologyLabel: "Osteoarthritis",
+    side: "right",
+    difficulty: "expert",
+    isActive: false,
+    summary:
+      "16° varus with a 20° fixed flexion contracture and mediolateral instability. Draft — pending review before release to cohorts.",
+    patient: {
+      age: 70,
+      sex: "male",
+      bmi: 31.4,
+      occupation: "Retired farmer",
+      activity: "Household ambulant only",
+      complaint: "Severe deformity and instability, worsening over 20 years",
+      history:
+        "Long-standing untreated medial OA with progressive bony deformity and attritional ligament laxity.",
+      past_management: "Analgesia, a hinged knee brace, walking aids.",
+      walking_distance_m: 50,
+      fixed_flexion_deg: 20,
+      rom: "20°–95°",
+      deformity: "16° varus with mediolateral instability, incompletely correctable",
+    },
+    imaging: [
+      { view: "ap", label: "AP standing", src: "/knee_xray_ap.jpg" },
+      { view: "lateral", label: "Lateral", src: "/knee_xray_ap.jpg", placeholder: true },
+      { view: "long_leg", label: "Full-length long-leg", src: "/full_leg_xray.jpg" },
+    ],
+    objectives: [
+      "Recognise when soft-tissue balancing alone will not stabilise the knee.",
+      "Plan for constrained implant options where ligament competence is in doubt.",
+      "Sequence a staged medial release for a severe, poorly correctable deformity.",
+    ],
+    createdAt: daysAgo(10),
   },
   {
     id: "SYNTH-VARUS-001",

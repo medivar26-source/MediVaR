@@ -51,6 +51,15 @@
 - Learning objectives
 - Assessment criteria
 
+Implemented at `/content` (instructor/admin only), distinct from two screens it is
+often confused with:
+- `/cases` is the learner-facing case browser — what a resident may attempt.
+  `/content` is where that catalogue is authored, and it is the only screen
+  that shows an inactive/draft case.
+- `/plan/[id]` is the TKR pre-operative planning workspace. `/content`
+  manages the case a plan is built from; it does not contain planning
+  controls itself.
+
 ### Settings
 - Program settings
 - Assessment settings

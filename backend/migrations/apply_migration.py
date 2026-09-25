@@ -36,6 +36,7 @@ def apply(migration_file: str):
     except Exception as e:
         conn.rollback()
         print(f"[ERROR] Migration failed: {e}")
+
         sys.exit(1)
     finally:
         conn.close()

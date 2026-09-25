@@ -142,7 +142,9 @@ export default async function CohortPage({
           <TBody>
             {learners.map((learner) => (
               <Tr key={learner.id}>
-                <Td head>{learner.displayName}</Td>
+                <Td head>
+                  <Link href={`/cohorts/learners/${learner.id}`}>{learner.displayName}</Link>
+                </Td>
                 <Td>{ROLE_LABEL[learner.role]}</Td>
                 <Td numeric>{learner.sessions}</Td>
                 <Td numeric>{learner.assessments}</Td>

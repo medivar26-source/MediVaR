@@ -124,6 +124,7 @@ def preview_case_as_learner(
 
 
 @router.put("/{case_id}", response_model=CaseDetailResponse)
+@router.patch("/{case_id}", response_model=CaseDetailResponse)
 def update_case(
     case_id: UUID,
     case_in: CaseUpdate,
@@ -291,6 +292,7 @@ async def upload_radiograph(
             )
             conn.commit()
     except HTTPException:
+        conn.rollback()
         raise
     except Exception as e:
         conn.rollback()
@@ -299,3 +301,4 @@ async def upload_radiograph(
         conn.close()
 
     return cases_service.get_instructor_case_detail(case_id, current_user.institution_id)
+

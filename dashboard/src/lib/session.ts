@@ -5,6 +5,19 @@ import type { Profile } from "./types";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 /**
+ * The raw session token, or undefined when there is none (or when called
+ * outside a request). Callers that need a signed-in user redirect themselves.
+ */
+export async function getSessionToken(): Promise<string | undefined> {
+  try {
+    const cookieStore = await cookies();
+    return cookieStore.get("mediver-token")?.value;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * The seam between the UI and authentication.
  *
  * Reads the session token from the httpOnly cookie, calls the backend

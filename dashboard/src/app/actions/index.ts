@@ -4,6 +4,14 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { PLANS, PLAN_BY_ID, type PlanRecord } from "@/lib/data/plans";
+import {
+  apiCreateCase,
+  apiUpdateCase,
+  ContentApiError,
+  type ApiDifficulty,
+} from "@/lib/data/content-api";
+import { getSessionToken } from "@/lib/session";
+
 
 /**
  * The write surface.
@@ -715,4 +723,360 @@ export async function saveInstructorConfig(
   }
 
   return { error: NOT_PERSISTED };
+}
+
+/* ------------------------- content / case library ------------------------- */
+
+/**
+ * Cases are persisted through the backend `/cases` API (migration 004). The
+ * remaining content forms — procedure steps, assessment criteria, imaging —
+ * have no table or storage behind them yet, so, like `saveAccount` and
+ * `saveInstructorConfig` above, they validate for real and then report
+ * plainly that nothing was saved. None of them invents a local store: an
+ * in-memory "save" would look live to one instructor and vanish for the next,
+ * which is worse than an honest failure.
+ */
+const CONTENT_NOT_PERSISTED =
+  "This part of the content library is not connected to storage yet, so it was validated but not saved.";
+
+function contentErrorMessage(err: unknown): string {
+  return err instanceof ContentApiError
+    ? err.message
+    : "Something went wrong. Try again in a moment.";
+}
+
+export type CaseFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+  saved?: boolean;
+};
+
+function readCaseForm(formData: FormData): {
+  values: {
+    title: string;
+    procedureId: string;
+    difficulty: ApiDifficulty;
+    description: string;
+    learningObjective: string;
+  };
+  fieldErrors: Record<string, string>;
+} {
+  const title = String(formData.get("title") ?? "").trim();
+  const procedureId = String(formData.get("procedureId") ?? "").trim();
+  const difficulty = String(formData.get("difficulty") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const learningObjective = String(formData.get("learningObjective") ?? "").trim();
+
+  const fieldErrors: Record<string, string> = {};
+  if (title.length < 3) {
+    fieldErrors.title = "Give the case a name of at least three characters.";
+  }
+  if (!procedureId) {
+    fieldErrors.procedureId = "Choose the procedure this case belongs to.";
+  }
+  if (!["beginner", "intermediate", "expert"].includes(difficulty)) {
+    fieldErrors.difficulty = "Choose a difficulty.";
+  }
+  if (learningObjective.length < 10) {
+    fieldErrors.learningObjective =
+      "Describe what a resident should be able to do after this case, in at least 10 characters.";
+  }
+
+  return {
+    values: {
+      title,
+      procedureId,
+      difficulty: difficulty as ApiDifficulty,
+      description,
+      learningObjective,
+    },
+    fieldErrors,
+  };
+}
+
+export async function createCase(
+  _prev: CaseFormState,
+  formData: FormData,
+): Promise<CaseFormState> {
+  const { values, fieldErrors } = readCaseForm(formData);
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, error: "Fix the highlighted fields and try again." };
+  }
+
+  const token = await getSessionToken();
+  if (!token) return { error: "Your session has expired. Sign in again." };
+
+  let id: string;
+  try {
+    const created = await apiCreateCase(token, {
+      name: values.title,
+      procedure_id: values.procedureId,
+      difficulty: values.difficulty,
+      learning_objective: values.learningObjective,
+      ...(values.description ? { description: values.description } : {}),
+    });
+    id = created.id;
+  } catch (err) {
+    return { error: contentErrorMessage(err) };
+  }
+
+  revalidatePath("/content");
+  redirect(`/content/${id}`);
+}
+
+export async function updateCase(
+  _prev: CaseFormState,
+  formData: FormData,
+): Promise<CaseFormState> {
+  const caseId = String(formData.get("caseId") ?? "");
+  if (!caseId) return { error: "This form is missing its case." };
+
+  const { values, fieldErrors } = readCaseForm(formData);
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, error: "Fix the highlighted fields and try again." };
+  }
+
+  const token = await getSessionToken();
+  if (!token) return { error: "Your session has expired. Sign in again." };
+
+  try {
+    await apiUpdateCase(token, caseId, {
+      name: values.title,
+      procedure_id: values.procedureId,
+      difficulty: values.difficulty,
+      description: values.description || null,
+      learning_objective: values.learningObjective,
+    });
+  } catch (err) {
+    return { error: contentErrorMessage(err) };
+  }
+
+  revalidatePath("/content");
+  revalidatePath(`/content/${caseId}`);
+  return { saved: true };
+}
+
+export type CaseStatusState = { error?: string; success?: boolean };
+
+export async function setCaseStatus(
+  _prev: CaseStatusState,
+  formData: FormData,
+): Promise<CaseStatusState> {
+  const caseId = String(formData.get("caseId") ?? "");
+  const nextStatus = String(formData.get("nextStatus") ?? "");
+
+  if (!caseId) return { error: "This form is missing its case." };
+  if (nextStatus !== "active" && nextStatus !== "inactive") {
+    return { error: "Choose whether the case should be active or inactive." };
+  }
+
+  const token = await getSessionToken();
+  if (!token) return { error: "Your session has expired. Sign in again." };
+
+  try {
+    await apiUpdateCase(token, caseId, { status: nextStatus });
+  } catch (err) {
+    return { error: contentErrorMessage(err) };
+  }
+
+  revalidatePath("/content");
+  revalidatePath(`/content/${caseId}`);
+  return { success: true };
+}
+
+export type ProcedureStepFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+export async function saveProcedureStep(
+  _prev: ProcedureStepFormState,
+  formData: FormData,
+): Promise<ProcedureStepFormState> {
+  const procedureId = String(formData.get("procedureId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+
+  const fieldErrors: Record<string, string> = {};
+  if (!procedureId) fieldErrors.procedureId = "This form is missing its procedure.";
+  if (name.length < 3) fieldErrors.name = "Give the step a name of at least three characters.";
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, error: "Fix the highlighted fields and try again." };
+  }
+
+  return { error: CONTENT_NOT_PERSISTED };
+}
+
+export type AssessmentCriterionFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+export async function saveAssessmentCriterion(
+  _prev: AssessmentCriterionFormState,
+  formData: FormData,
+): Promise<AssessmentCriterionFormState> {
+  const key = String(formData.get("key") ?? "");
+  const weight = String(formData.get("weight") ?? "").trim();
+
+  const fieldErrors: Record<string, string> = {};
+  if (!key) fieldErrors.key = "This form is missing its skill.";
+  const weightNum = Number(weight);
+  if (!weight || Number.isNaN(weightNum) || weightNum < 0 || weightNum > 100) {
+    fieldErrors.weight = "Enter a weight between 0 and 100.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, error: "Fix the highlighted fields and try again." };
+  }
+
+  return { error: CONTENT_NOT_PERSISTED };
+}
+
+export type CaseImagingFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+const IMAGING_VIEWS = ["ap", "lateral", "skyline", "long_leg", "flap", "klat"];
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Adds a radiograph view to a case's imaging package.
+ *
+ * There is no image bucket wired up yet (Supabase Storage is not
+ * configured — see 06_DATABASE_SCHEMA.md/14_DEPLOYMENT_AND_OPERATIONS.md),
+ * so a real upload is validated here — type, size, required fields — and
+ * then, like every other content write, reported as not persisted rather
+ * than accepted and silently dropped.
+ */
+export async function saveCaseImaging(
+  _prev: CaseImagingFormState,
+  formData: FormData,
+): Promise<CaseImagingFormState> {
+  const caseId = String(formData.get("caseId") ?? "");
+  const view = String(formData.get("view") ?? "");
+  const label = String(formData.get("label") ?? "").trim();
+  const file = formData.get("file");
+
+  const fieldErrors: Record<string, string> = {};
+  if (!caseId) return { error: "This form is missing its case." };
+  if (!IMAGING_VIEWS.includes(view)) {
+    fieldErrors.view = "Choose a view.";
+  }
+  if (label.length < 2) {
+    fieldErrors.label = "Give the view a label of at least two characters.";
+  }
+  if (file instanceof File && file.size > 0) {
+    if (!file.type.startsWith("image/")) {
+      fieldErrors.file = "Upload an image file.";
+    } else if (file.size > MAX_IMAGE_BYTES) {
+      fieldErrors.file = "Keep the image under 10 MB.";
+    }
+  } else {
+    fieldErrors.file = "Choose an image to upload.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, error: "Fix the highlighted fields and try again." };
+  }
+
+  return {
+    error:
+      "There is no image storage connected yet, so this view was validated but not uploaded or saved.",
+  };
+}
+
+/* --------------------- resident detail / case review ---------------------- */
+
+export type InstructorNoteFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+export async function addInstructorNote(
+  _prev: InstructorNoteFormState,
+  formData: FormData,
+): Promise<InstructorNoteFormState> {
+  const residentId = String(formData.get("residentId") ?? "");
+  const note = String(formData.get("note") ?? "").trim();
+
+  if (!residentId) return { error: "This form is missing its resident." };
+  if (note.length < 2) {
+    return { fieldErrors: { note: "Write at least a couple of words." } };
+  }
+
+  const { addResidentNote } = await import("@/lib/data/residents");
+  const { ResidentApiError } = await import("@/lib/data/residents-api");
+  try {
+    await addResidentNote(residentId, note);
+  } catch (err) {
+    return { error: err instanceof ResidentApiError ? err.message : "Could not save the note." };
+  }
+
+  revalidatePath(`/cohorts/learners/${residentId}`);
+  return {};
+}
+
+export type AssignPracticeFormState = {
+  error?: string;
+  saved?: boolean;
+};
+
+export async function assignPractice(
+  _prev: AssignPracticeFormState,
+  formData: FormData,
+): Promise<AssignPracticeFormState> {
+  const residentId = String(formData.get("residentId") ?? "");
+  const caseId = String(formData.get("caseId") ?? "");
+  const caseTitle = String(formData.get("caseTitle") ?? "");
+
+  if (!residentId || !caseId || !caseTitle) {
+    return { error: "This form is missing the case to assign." };
+  }
+
+  const { addResidentAssignment } = await import("@/lib/data/residents");
+  const { ResidentApiError } = await import("@/lib/data/residents-api");
+  try {
+    await addResidentAssignment(residentId, caseId, caseTitle);
+  } catch (err) {
+    return { error: err instanceof ResidentApiError ? err.message : "Could not assign the case." };
+  }
+
+  revalidatePath(`/cohorts/learners/${residentId}`);
+  return { saved: true };
+}
+
+export type InstructorFeedbackFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+  saved?: boolean;
+};
+
+export async function saveInstructorFeedback(
+  _prev: InstructorFeedbackFormState,
+  formData: FormData,
+): Promise<InstructorFeedbackFormState> {
+  const residentId = String(formData.get("residentId") ?? "");
+  const attemptId = String(formData.get("attemptId") ?? "") || undefined;
+  const feedback = String(formData.get("feedback") ?? "").trim();
+
+  if (!residentId) return { error: "This form is missing its resident." };
+  if (feedback.length < 2) {
+    return { fieldErrors: { feedback: "Write at least a couple of words." } };
+  }
+
+  const { addResidentFeedback } = await import("@/lib/data/residents");
+  const { ResidentApiError } = await import("@/lib/data/residents-api");
+  try {
+    await addResidentFeedback(residentId, feedback, attemptId);
+  } catch (err) {
+    return { error: err instanceof ResidentApiError ? err.message : "Could not save the feedback." };
+  }
+
+  if (attemptId) revalidatePath(`/sessions/${attemptId}/report`);
+  revalidatePath(`/cohorts/learners/${residentId}`);
+  return { saved: true };
 }

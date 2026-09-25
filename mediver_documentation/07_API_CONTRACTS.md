@@ -76,6 +76,11 @@ GET    /api/v1/cases/{id}/preview       (Instructor/Admin: previews exact saniti
 POST   /api/v1/cases/{id}/upload-radiograph (Instructor/Admin: multipart upload to private storage + dynamic calibration derivation)
 ```
 
+**Implementation status & Notes:** `GET /cases`, `POST /cases`,
+`GET /cases/{id}`, `PUT /cases/{id}`, `PATCH /cases/{id}`, and `POST /cases/{id}/publish` are implemented
+(`backend/api/v1/endpoints/cases.py`), plus `GET /procedures` for procedure catalog and picker.
+Supports multi-table versioned Case Library, full pre-operative planning, and soft-delete/archival.
+
 
 ## Sessions
 ```text

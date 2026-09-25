@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Users } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/shell";
 import {
@@ -84,7 +85,7 @@ export default async function LearnersPage() {
             <THead>
               <Tr>
                 <Th>Learner</Th>
-                <Th>Cohort</Th>
+                <Th>Program / cohort</Th>
                 <Th>Role</Th>
                 <Th numeric>Sessions</Th>
                 <Th numeric>Assessments</Th>
@@ -96,9 +97,18 @@ export default async function LearnersPage() {
             </THead>
             <TBody>
               {learners.map((learner) => (
-                <Tr key={`${learner.cohortId}-${learner.id}`}>
-                  <Td head>{learner.displayName}</Td>
-                  <Td>{learner.cohortName}</Td>
+                <Tr key={learner.id}>
+                  <Td head>
+                    <Link href={`/cohorts/learners/${learner.id}`}>{learner.displayName}</Link>
+                  </Td>
+                  <Td>
+                    {learner.cohorts.map((c) => (
+                      <div key={c.id}>
+                        {c.programName ? `${c.programName} — ${c.name}` : c.name}
+                      </div>
+                    ))}
+                  </Td>
+
                   <Td>{ROLE_LABEL[learner.role]}</Td>
                   <Td numeric>{learner.sessions}</Td>
                   <Td numeric>{learner.assessments}</Td>

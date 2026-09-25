@@ -2,6 +2,7 @@ import { SESSIONS } from "@/lib/seed";
 import { categoryAverages, cohortHotspots } from "./rollups";
 import type { CategoryAverage, LearnerSummary, SceneHotspot } from "@/lib/types";
 import { apiClient } from "@/lib/api-client";
+import { getPrograms } from "./programs";
 
 export type CohortSummary = {
   id: string;
@@ -114,25 +115,57 @@ export async function getCohort(id: string): Promise<CohortDetail | null> {
 }
 
 export type LearnerRow = LearnerSummary & {
-  cohortId: string;
-  cohortName: string;
+  /**
+   * Every cohort of the viewer's this learner belongs to, each named with the
+   * program above it — a cohort name alone ("TKR batch 2026") doesn't say
+   * which curriculum it belongs to, and a program name alone can't tell two
+   * of its own cohorts apart.
+   */
+  cohorts: { id: string; name: string; programName?: string }[];
 };
 
+/**
+ * Every learner the viewer supervises — **one row per person**, not per
+ * cohort membership.
+ *
+ * A learner can sit in several of an instructor's cohorts, and their
+ * sessions, scores and critical errors belong to the person, not to the
+ * membership: listing them once per cohort repeated the same figures under
+ * two names and gave React two rows with the same key. Their cohorts are
+ * collected onto the single row instead.
+ */
 export async function getSupervisedLearners(): Promise<LearnerRow[]> {
-  const cohorts = await getCohorts();
+  const [cohorts, programs] = await Promise.all([
+    getCohorts(),
+    // A failure here costs the program name, not the learner list.
+    getPrograms().catch(() => []),
+  ]);
+  const programName = new Map(programs.map((p) => [p.id, p.name]));
+
   const perCohort = await Promise.all(
     cohorts.map(async (cohort) => {
       const detail = await getCohort(cohort.id);
       if (!detail) return [];
-      return detail.learners.map((learner) => ({
-        ...learner,
-        cohortId: cohort.id,
-        cohortName: cohort.name,
-      }));
+      return detail.learners.map((learner) => ({ learner, cohort }));
     })
   );
 
-  return perCohort.flat().sort((a, b) => {
+  const byLearner = new Map<string, LearnerRow>();
+  for (const { learner, cohort } of perCohort.flat()) {
+    const entry = {
+      id: cohort.id,
+      name: cohort.name,
+      programName: programName.get(cohort.program_id),
+    };
+    const existing = byLearner.get(learner.id);
+    if (existing) {
+      existing.cohorts.push(entry);
+    } else {
+      byLearner.set(learner.id, { ...learner, cohorts: [entry] });
+    }
+  }
+
+  return [...byLearner.values()].sort((a, b) => {
     const rank = (l: LearnerRow) =>
       l.meanScore !== undefined && l.meanScore < 70 ? 0 : l.sessions === 0 ? 1 : 2;
     return rank(a) - rank(b) || a.displayName.localeCompare(b.displayName);
