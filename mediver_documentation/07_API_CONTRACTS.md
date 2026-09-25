@@ -9,18 +9,38 @@ Use REST/JSON for domain operations and WebSocket for live session updates. Vers
 POST /api/v1/auth/login
 GET  /api/v1/auth/me
 POST /api/v1/auth/logout
+POST /api/v1/auth/change-password
 ```
 
-These are the application-level authentication contracts. The underlying authentication provider is not yet fixed. Supabase is the database platform, but Supabase Auth is not yet a confirmed authentication choice. If Supabase Auth is selected later, the FastAPI layer must validate the provider-issued access token/session context and map it to the MediVeR user/institution/role model.
+- `POST /api/v1/auth/change-password`
+  - Requires Bearer token (`Authorization: Bearer <token>`).
+  - Request body:
+    ```json
+    {
+      "current_password": "string",
+      "new_password": "string (min 8 chars)",
+      "confirm_password": "string (min 8 chars)"
+    }
+    ```
+  - Response (`200 OK`):
+    ```json
+    {
+      "message": "Password changed successfully"
+    }
+    ```
+  - Error responses: `400 Bad Request` (invalid current password, mismatched confirmation, short password), `401 Unauthorized`.
+
 
 ## Programs
 ```text
-GET    /programs
-POST   /programs
-GET    /programs/{id}
+GET    /programs            (Instructors: institution programs; Learners: enrolled programs with cohort metadata)
+GET    /programs/enrolled   (Learner's enrolled programs with associated cohort metadata)
+POST   /programs            (Instructor/Admin only)
+GET    /programs/{id}       (Program detail; for learners, verified against active enrollment with cohort metadata)
 PATCH  /programs/{id}
 DELETE /programs/{id}
 ```
+
 
 ## Cohorts
 ```text
@@ -46,12 +66,16 @@ POST /residents/{id}/notes
 
 ## Cases
 ```text
-GET    /cases
-POST   /cases
-GET    /cases/{id}
-PATCH  /cases/{id}
-DELETE /cases/{id}
+GET    /api/v1/cases                    (Instructors: institution cases with draft/published version pointers; Learners: program-scoped published cases)
+POST   /api/v1/cases                    (Instructor/Admin: creates case with initial draft version)
+GET    /api/v1/cases/{id}               (Instructors: full detail with reference plan; Learners: sanitized view without reference plan)
+PUT    /api/v1/cases/{id}               (Instructor/Admin: mutates draft version or branches new draft from published)
+POST   /api/v1/cases/{id}/publish       (Instructor/Admin: pre-flight checklist validation, freezes draft to immutable published version)
+POST   /api/v1/cases/{id}/deactivate    (Instructor/Admin: deactivates case)
+GET    /api/v1/cases/{id}/preview       (Instructor/Admin: previews exact sanitized learner view)
+POST   /api/v1/cases/{id}/upload-radiograph (Instructor/Admin: multipart upload to private storage + dynamic calibration derivation)
 ```
+
 
 ## Sessions
 ```text

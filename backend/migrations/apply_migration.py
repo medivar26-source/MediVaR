@@ -32,10 +32,10 @@ def apply(migration_file: str):
         cur = conn.cursor()
         cur.execute(sql)
         conn.commit()
-        print(f"✓ Migration applied: {migration_file}")
+        print(f"[SUCCESS] Migration applied: {migration_file}")
     except Exception as e:
         conn.rollback()
-        print(f"✗ Migration failed: {e}")
+        print(f"[ERROR] Migration failed: {e}")
         sys.exit(1)
     finally:
         conn.close()

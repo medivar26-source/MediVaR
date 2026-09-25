@@ -9,10 +9,11 @@
 
 import { CURRENT_USER, sessionsFor, sessionsForCohort } from "@/lib/seed";
 import { personaFor } from "@/lib/roles";
-import type { SessionSummary } from "@/lib/types";
+import type { Profile, SessionSummary } from "@/lib/types";
 
-export function visibleSessions(): SessionSummary[] {
-  const persona = personaFor(CURRENT_USER.role);
-  if (persona === "learner") return sessionsFor(CURRENT_USER.id);
+export function visibleSessions(user?: Profile): SessionSummary[] {
+  const activeUser = user ?? CURRENT_USER;
+  const persona = personaFor(activeUser.role);
+  if (persona === "learner") return sessionsFor(activeUser.id);
   return sessionsForCohort();
 }

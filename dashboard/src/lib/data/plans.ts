@@ -310,7 +310,10 @@ export const PLANS: PlanRecord[] = [
   },
 ];
 
-export const PLAN_BY_ID = new Map(PLANS.map((p) => [p.id, p]));
+export const PLAN_BY_ID: Map<string, PlanRecord> = new Map(
+  PLANS.map((p) => [p.id, p]),
+);
+
 
 /**
  * Pairing PINs. A PIN lives for thirty minutes, so only the most recent one is
@@ -388,7 +391,7 @@ export async function getPlans(state?: PlanState): Promise<PlansView> {
             : "draft",
       stepsAnswered: STEP_KEYS.filter((key) => payload[key] !== undefined).length,
       secondsSpent: Object.values(plan.stepTimings).reduce(
-        (sum, value) => sum + (Number(value) || 0),
+        (sum: number, value: unknown) => sum + (Number(value) || 0),
         0,
       ),
       sessionId: session?.id,

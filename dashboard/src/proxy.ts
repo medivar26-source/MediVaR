@@ -29,11 +29,6 @@ export function proxy(request: NextRequest) {
 
   // Always allow public paths
   if (isPublicPath(pathname)) {
-    const token = getTokenFromRequest(request);
-    // Redirect authenticated users away from /login
-    if (token && pathname === "/login") {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
     return NextResponse.next();
   }
 

@@ -17,7 +17,7 @@ import type {
   ReportTimelineEntry,
   Verdict,
 } from "@/lib/report";
-import { PASS_MARK, type SessionSummary } from "@/lib/types";
+import { PASS_MARK, type Profile, type SessionSummary } from "@/lib/types";
 import {
   CASE_BY_ID,
   CATEGORY_BY_KEY,
@@ -89,8 +89,9 @@ export type SessionListStats = {
  */
 export async function getSessionList(
   filters: SessionFilters = {},
+  user?: Profile,
 ): Promise<{ sessions: SessionListItem[]; stats: SessionListStats }> {
-  const rows = visibleSessions().filter(
+  const rows = visibleSessions(user).filter(
     (row) =>
       (!filters.status || row.status === filters.status) &&
       (!filters.mode || row.mode === filters.mode) &&

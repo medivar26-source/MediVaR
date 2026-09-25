@@ -23,6 +23,7 @@ import {
 import { categoryAverages, marksLost as marksLostFor, weeklyActivity } from "./rollups";
 import { visibleSessions } from "./scope";
 import { slugForCategory } from "@/lib/skills";
+import type { Profile } from "@/lib/types";
 import { shortDate } from "@/lib/format";
 import type { SessionSummary, Verdict } from "@/lib/types";
 import { PASS_MARK } from "@/lib/types";
@@ -326,8 +327,8 @@ export type ReportRow = SessionSummary & {
  * from `./scope` — one answer, shared with the session list, so the two screens
  * cannot disagree about what the viewer is allowed to read.
  */
-export async function getReportsList(): Promise<ReportRow[]> {
-  return visibleSessions()
+export async function getReportsList(user?: Profile): Promise<ReportRow[]> {
+  return visibleSessions(user)
     .filter((session) => REPORT_BY_SESSION.has(session.id))
     .sort((a, b) => (b.endedAt ?? "").localeCompare(a.endedAt ?? ""))
     .map((session) => ({
