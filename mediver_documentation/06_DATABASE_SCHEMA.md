@@ -67,81 +67,17 @@ UNIQUE(cohort_id, user_id)
 ### cases
 ```text
 id UUID PK
-institution_id UUID FK -> institutions.id
-program_id UUID FK (nullable)
-procedure_id UUID FK -> procedures.id
+program_id UUID FK
+procedure_id UUID FK
 name TEXT
-difficulty TEXT CHECK (difficulty IN ('beginner', 'intermediate', 'expert'))
+difficulty TEXT
 description TEXT
 learning_objective TEXT
-status TEXT CHECK (status IN ('draft', 'active', 'inactive'))
+status TEXT
 version INTEGER
-draft_version_id UUID FK -> case_versions.id (mutable draft pointer)
-published_version_id UUID FK -> case_versions.id (immutable published pointer)
-created_at TIMESTAMPTZ
-updated_at TIMESTAMPTZ
+created_at TIMESTAMP
+updated_at TIMESTAMP
 ```
-
-### case_versions
-```text
-id UUID PK
-case_id UUID FK -> cases.id ON DELETE CASCADE
-version_number INTEGER NOT NULL
-title TEXT NOT NULL
-pathology TEXT
-pathology_label TEXT
-side TEXT CHECK (side IS NULL OR side IN ('left', 'right'))
-difficulty TEXT NOT NULL CHECK (difficulty IN ('beginner', 'intermediate', 'expert'))
-description TEXT
-patient JSONB NOT NULL DEFAULT '{}'::jsonb
-objectives JSONB NOT NULL DEFAULT '[]'::jsonb
-status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived'))
-is_immutable BOOLEAN NOT NULL DEFAULT false
-created_by UUID FK -> users.id
-created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-published_at TIMESTAMPTZ
-UNIQUE(case_id, version_number)
-```
-
-### case_imaging
-```text
-id UUID PK
-case_version_id UUID FK -> case_versions.id ON DELETE CASCADE
-view_type TEXT NOT NULL ('FLAP', 'KLAT')
-label TEXT NOT NULL
-storage_path TEXT NOT NULL (Private Supabase Storage reference in 'imaging' bucket)
-filename TEXT
-mimetype TEXT
-file_size BIGINT
-width INTEGER
-height INTEGER
-laterality TEXT CHECK (laterality IS NULL OR laterality IN ('left', 'right'))
-calibration JSONB NOT NULL (Derived dynamic calibration: mm_per_px, is_valid)
-created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-```
-
-### case_version_reference_plan (INSTRUCTOR-ONLY)
-```text
-id UUID PK
-case_version_id UUID UNIQUE FK -> case_versions.id ON DELETE CASCADE
-assessment JSONB NOT NULL (6 Canonical measurements: MAD_mm, AMA_deg, mHKA_deg, MPTA_deg, LDFA_deg, PTS_deg, alignment_type)
-tibial_component JSONB NOT NULL (implant_size 1-6, 2D coordinates, rotation, fit metrics)
-femoral_component JSONB NOT NULL (implant_size 1-8, 2D coordinates, rotation, fit metrics)
-scoring_criteria JSONB NOT NULL DEFAULT '{}'::jsonb
-instructor_notes TEXT
-calculation_metadata JSONB NOT NULL DEFAULT '{}'::jsonb
-created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-```
-
-### case_programs
-```text
-id UUID PK
-case_id UUID FK -> cases.id ON DELETE CASCADE
-program_id UUID FK -> programs.id ON DELETE CASCADE
-created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-UNIQUE(case_id, program_id)
-```
-
 
 ### procedures
 ```text

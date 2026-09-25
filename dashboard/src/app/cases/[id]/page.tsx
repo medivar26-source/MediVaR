@@ -18,7 +18,6 @@ import {
 } from "@/components/ui";
 import { StatCard, StatRow } from "@/components/viz";
 import { getCase, getCaseTitle, getInstructorConfigs } from "@/lib/data/cases";
-import { getPrograms } from "@/lib/data/programs";
 import { clock, longDuration, shortDate, titleCase } from "@/lib/format";
 import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
@@ -66,7 +65,6 @@ export default async function CaseDetailPage({
   const persona = personaFor(user.role);
   const canConfigure = persona === "instructor" || persona === "admin";
   const presets = canConfigure ? await getInstructorConfigs(detail.id) : [];
-  const programs = persona === "learner" ? await getPrograms().catch(() => []) : [];
 
   const passMark = PASS_MARK[detail.difficulty];
   const attempts = detail.attempts.length;
@@ -86,35 +84,15 @@ export default async function CaseDetailPage({
         eyebrow={`${detail.procedureName} · ${detail.id}`}
         title={detail.title}
         lede={detail.summary}
-        actions={
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            {canConfigure && (
-              <Button variant="secondary" href={`/cases/${detail.id}/edit`}>
-                Edit Draft
-              </Button>
-            )}
-            <StartPlanning caseId={detail.id} config={config} />
-          </div>
-        }
+        actions={<StartPlanning caseId={detail.id} config={config} />}
       />
 
       <div className={s.chips}>
         <Chip tone="muted">{detail.pathologyLabel}</Chip>
         <Chip tone="muted">{titleCase(detail.side)} knee</Chip>
         <Chip tone="muted">{titleCase(detail.difficulty)}</Chip>
-        {detail.status && (
-          <Chip tone={detail.status === "active" ? "muted" : "default"}>
-            {detail.status === "active" ? `v${detail.version ?? 1} Published` : detail.status.toUpperCase()}
-          </Chip>
-        )}
-
-        {programs.length > 0 && programs[0].cohort_name && (
-          <Chip tone="muted">Cohort: {programs[0].cohort_name}</Chip>
-        )}
         <span className={s.caseId}>{detail.id}</span>
       </div>
-
-
 
       {/* Where this viewer stands on this case. Every figure is derived from
           their own sessions, and only ever their own.
@@ -290,42 +268,18 @@ export default async function CaseDetailPage({
               <ul className={s.views}>
                 {detail.imaging.map((view) => (
                   <li key={view.view} className={s.view}>
-                    {view.url ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", width: "100%" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span className={s.viewLabel}>{view.label}</span>
-                          <span className={s.viewNote}>
-                            {view.calibration?.is_valid ? "Calibrated (25mm)" : "Pending calibration"}
-                          </span>
-                        </div>
-                        <img
-                          src={view.url}
-                          alt={view.label}
-                          style={{
-                            width: "100%",
-                            maxHeight: "220px",
-                            objectFit: "contain",
-                            background: "#000",
-                            borderRadius: "var(--r-sm)",
-                            border: "var(--bw) solid var(--border)",
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        <span className={s.plate} aria-hidden="true">
-                          <ImageOff width={20} height={20} strokeWidth={1.5} />
-                        </span>
-                        <span className={s.viewLabel}>{view.label}</span>
-                        <span className={s.viewNote}>Asset pending</span>
-                      </>
-                    )}
+                    {/* The manifest names the views; the files are not in the
+                        imaging bucket yet. A labelled plate says so. */}
+                    <span className={s.plate} aria-hidden="true">
+                      <ImageOff width={20} height={20} strokeWidth={1.5} />
+                    </span>
+                    <span className={s.viewLabel}>{view.label}</span>
+                    <span className={s.viewNote}>Asset pending</span>
                   </li>
                 ))}
               </ul>
             )}
           </Card>
-
 
           {detail.scoring.length > 0 && (
             <Card padding="lg">
@@ -373,56 +327,8 @@ export default async function CaseDetailPage({
               </ul>
             </Card>
           )}
-
-          {canConfigure && detail.reference_plan && (
-            <Card padding="lg">
-              <CardHeader
-                title="Authoritative Reference Plan"
-                subtitle="Instructor Reference Layer · Strictly omitted from learner views."
-              />
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem", fontSize: "0.85rem" }}>
-                <div>
-                  <h4 style={{ color: "#f0f6fc", margin: "0 0 0.5rem 0" }}>6 Canonical Measurements</h4>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.5rem", background: "rgba(255,255,255,0.03)", padding: "0.75rem", borderRadius: "6px" }}>
-                    <div>MAD: <strong>{detail.reference_plan.assessment?.MAD_mm ?? "—"} mm</strong></div>
-                    <div>AMA: <strong>{detail.reference_plan.assessment?.AMA_deg ?? "—"}°</strong></div>
-                    <div>mHKA: <strong>{detail.reference_plan.assessment?.mHKA_deg ?? "—"}°</strong></div>
-                    <div>MPTA: <strong>{detail.reference_plan.assessment?.MPTA_deg ?? "—"}°</strong></div>
-                    <div>LDFA: <strong>{detail.reference_plan.assessment?.LDFA_deg ?? "—"}°</strong></div>
-                    <div>PTS: <strong>{detail.reference_plan.assessment?.PTS_deg ?? "—"}°</strong></div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 style={{ color: "#f0f6fc", margin: "0 0 0.5rem 0" }}>Reference Component Templates</h4>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-                    <div style={{ padding: "0.75rem", background: "rgba(255,255,255,0.03)", borderRadius: "6px" }}>
-                      <div>Tibial Baseplate: <strong>Size {detail.reference_plan.tibial_component?.implant_size}</strong></div>
-                      <div style={{ color: "#768390", fontSize: "0.8rem", marginTop: "0.25rem" }}>
-                        Coverage: {detail.reference_plan.tibial_component?.cortical_coverage_pct}% · Overhang: {detail.reference_plan.tibial_component?.medial_overhang_mm}mm
-                      </div>
-                    </div>
-                    <div style={{ padding: "0.75rem", background: "rgba(255,255,255,0.03)", borderRadius: "6px" }}>
-                      <div>Femoral Component: <strong>Size {detail.reference_plan.femoral_component?.implant_size}</strong></div>
-                      <div style={{ color: "#768390", fontSize: "0.8rem", marginTop: "0.25rem" }}>
-                        AP/ML: {detail.reference_plan.femoral_component?.ap_coverage_pct}% / {detail.reference_plan.femoral_component?.ml_coverage_pct}% · Notch: {detail.reference_plan.femoral_component?.notching_risk_mm}mm
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {detail.reference_plan.instructor_notes && (
-                  <div>
-                    <h4 style={{ color: "#f0f6fc", margin: "0 0 0.25rem 0" }}>Instructor Notes</h4>
-                    <p style={{ margin: 0, color: "#adbac7" }}>{detail.reference_plan.instructor_notes}</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-          )}
         </div>
       </div>
-
 
       {canConfigure && (
         <div className={s.configureWrap}>

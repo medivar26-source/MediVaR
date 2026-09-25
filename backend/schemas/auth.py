@@ -47,16 +47,3 @@ class MeResponse(BaseModel):
 class LogoutRequest(BaseModel):
     """Optional body for logout (token can also come from Authorization header)."""
     pass
-
-
-class ChangePasswordRequest(BaseModel):
-    """Request payload for changing an authenticated user's password."""
-    current_password: str = Field(..., min_length=1, description="Current password for verification")
-    new_password: str = Field(..., min_length=8, description="New password, minimum 8 characters")
-    confirm_password: str = Field(..., min_length=8, description="Confirm new password")
-
-
-class ChangePasswordResponse(BaseModel):
-    """Response returned when password change succeeds."""
-    message: str = "Password changed successfully"
-

@@ -23,7 +23,7 @@ export default async function ProgramCohortsPage({
   const user = await getCurrentUser();
   const persona = personaFor(user.role);
 
-  if (persona === "learner") redirect(`/programs/${id}`);
+  if (persona === "learner") redirect("/");
 
   const program = await getProgramDetail(id).catch(() => null);
   if (!program) notFound();

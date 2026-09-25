@@ -55,7 +55,7 @@ export default async function SessionsPage({
   // The list and its figures arrive together from one accessor, counted over
   // the same filtered query — so the stats and the table can never disagree,
   // and a filter changes both together.
-  const { sessions, stats } = await getSessionList(filters, user);
+  const { sessions, stats } = await getSessionList(filters);
 
   const filtered = Boolean(filters.status || filters.mode || filters.caseId);
 

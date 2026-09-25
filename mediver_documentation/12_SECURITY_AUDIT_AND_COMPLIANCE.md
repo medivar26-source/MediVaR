@@ -1,13 +1,10 @@
 # Security, Audit and Clinical-Safety Controls
 
-## Authentication & Credential Management
+## Authentication
 
-- **Instructor-Provisioned Accounts**: Learners are provisioned with permanent Learner IDs (`MVR-XXXXXX`) and temporary passwords by their instructors.
-- **Self-Service Password Update**: Authenticated learners can change their password at any time via Account Settings.
-- **Verification Before Update**: Changing credentials requires re-authenticating the current password before any modification is applied.
-- **Ownership Scoping**: Users may only update credentials for their own authenticated account (`current_user.id`). Cross-user password modifications are rejected.
-- **Complexity Requirements**: Minimum 8 characters, confirmation match, and different from the current password.
-- **Zero Exposure**: Plaintext passwords are never logged, stored in application tables, or transmitted in unencrypted formats. Supabase Auth manages hashing and credential storage.
+Authentication is an early implementation priority. The project will use the chosen authentication mechanism to provide secure sign-in, session/token handling, logout/revocation, password reset if required, account-status checks, and server-side authorization. The authentication provider and exact configuration are not yet locked by this documentation.
+
+If Supabase Auth is selected later, its JWT/session model and integration with database authorization must be documented before implementation is treated as final.
 
 ## Authorization
 
