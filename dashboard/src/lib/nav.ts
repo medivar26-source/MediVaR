@@ -196,18 +196,9 @@ export const SECTIONS: NavSection[] = [
           { label: "Library", href: "/library" },
         ],
       },
-      {
-        label: "Authoring",
-        items: [
-          {
-            label: "Manage content",
-            href: "/content",
-            personas: ["instructor", "admin"],
-          },
-        ],
-      },
     ],
   },
+
 ];
 
 /** Pinned to the bottom of the rail, below the divider. */
