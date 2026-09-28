@@ -41,8 +41,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={jakarta.variable}>
-      <body>{children}</body>
+    <html lang="en" className={jakarta.variable} suppressHydrationWarning>
+      <body suppressHydrationWarning>{children}</body>
     </html>
+
   );
 }
