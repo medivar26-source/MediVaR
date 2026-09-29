@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useRef } from "react";
 import type { Point2D } from "../assessment/AssessmentWorkspace";
 import type { FemoralViewMode } from "./FemoralWorkspace";
-import { ScanViewport } from "../components/ScanViewport";
+import { ScanViewport, type ViewportContext } from "../components/ScanViewport";
 import { getFemoralTemplate } from "@/lib/data/tkr_templates";
-import type { V1FemoralComponent } from "@/lib/plan";
+import { FEMORAL_GEOMETRY_CATALOG } from "@/lib/data/femoral_geometry";
+import type { V1FemoralComponent, V1Calibration } from "@/lib/plan";
+import { DEFAULT_CALIBRATION } from "@/lib/data/calibration";
+import { screenDeltaToPhysicalMm } from "@/lib/data/coordinates";
 
 interface FemoralCanvasProps {
   viewMode: FemoralViewMode;
@@ -14,6 +17,7 @@ interface FemoralCanvasProps {
   assessmentLandmarks: Record<string, Point2D>;
   isReadOnly?: boolean;
   src?: string;
+  calibration?: V1Calibration;
 }
 
 export function FemoralCanvas({
@@ -23,55 +27,47 @@ export function FemoralCanvas({
   assessmentLandmarks,
   isReadOnly = false,
   src,
+  calibration = DEFAULT_CALIBRATION,
 }: FemoralCanvasProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<{ clientX: number; clientY: number } | null>(null);
+  const dragStartRef = useRef<{ clientX: number; clientY: number } | null>(null);
 
   const defaultImgSrc = viewMode === "FLAP" ? "/flap.jpg" : "/klat.jpg";
   const imgSrc = src || defaultImgSrc;
 
   const template = getFemoralTemplate(femoralComponent.implant_size);
+  const geom = FEMORAL_GEOMETRY_CATALOG[template.size] ?? FEMORAL_GEOMETRY_CATALOG[4];
 
-  // Position base around the distal femur center (around 46% Y in FLAP)
-  const baseKnee = assessmentLandmarks.kneeCenter || { x: 50, y: 46 };
-
-  // Offset in percent: 1 mm is approx 0.38% on a 1000px FLAP view (0.264 mm/px)
-  const pxPerMm = 1 / 0.264; // ~3.788 px/mm
-  const xOffsetPct = (femoralComponent.position_2d.x_offset_mm * pxPerMm) / 10;
-  const yOffsetPct = (femoralComponent.position_2d.y_offset_mm * pxPerMm) / 10;
-
-  // Center of template in percentage coordinates
-  const templateCenterX = baseKnee.x + xOffsetPct;
-  const templateCenterY = (viewMode === "FLAP" ? baseKnee.y - 2 : baseKnee.y - 4) + yOffsetPct;
-
-  // Template visual size in percentage
-  const templateWidthPct = (template.mlMm * pxPerMm) / 10;
-  const templateHeightPct = (template.apMm * pxPerMm) / 10;
+  // Clinical physical calibration scale
+  const mmPerPx = calibration?.mm_per_px > 0 ? calibration.mm_per_px : DEFAULT_CALIBRATION.mm_per_px;
+  const pxPerMm = 1 / mmPerPx;
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (isReadOnly) return;
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
     setIsDragging(true);
-    setDragStart({ clientX: e.clientX, clientY: e.clientY });
+    dragStartRef.current = { clientX: e.clientX, clientY: e.clientY };
   };
 
-  const handlePointerMove = (stageElement: HTMLElement | null, e: React.PointerEvent) => {
-    if (!isDragging || !dragStart || !stageElement || isReadOnly) return;
+  const handlePointerMove = (viewport: ViewportContext, e: React.PointerEvent) => {
+    if (!isDragging || !dragStartRef.current || isReadOnly) return;
 
-    const dx = e.clientX - dragStart.clientX;
-    const dy = e.clientY - dragStart.clientY;
+    const screenDelta = {
+      x: e.clientX - dragStartRef.current.clientX,
+      y: e.clientY - dragStartRef.current.clientY,
+    };
 
-    const mmDx = Number((dx * 0.264).toFixed(1));
-    const mmDy = Number((dy * 0.264).toFixed(1));
+    // Canonical screen delta -> physical mm transformation
+    const { x: dxMm, y: dyMm } = screenDeltaToPhysicalMm(screenDelta, viewport, mmPerPx);
 
-    if (Math.abs(mmDx) >= 0.2 || Math.abs(mmDy) >= 0.2) {
+    if (Math.abs(dxMm) >= 0.1 || Math.abs(dyMm) >= 0.1) {
       onPositionChange({
-        x_offset_mm: Number((femoralComponent.position_2d.x_offset_mm + mmDx).toFixed(1)),
-        y_offset_mm: Number((femoralComponent.position_2d.y_offset_mm + mmDy).toFixed(1)),
+        x_offset_mm: Number((femoralComponent.position_2d.x_offset_mm + dxMm).toFixed(1)),
+        y_offset_mm: Number((femoralComponent.position_2d.y_offset_mm + dyMm).toFixed(1)),
         rotation_deg: femoralComponent.position_2d.rotation_deg,
       });
-      setDragStart({ clientX: e.clientX, clientY: e.clientY });
+      dragStartRef.current = { clientX: e.clientX, clientY: e.clientY };
     }
   };
 
@@ -80,132 +76,183 @@ export function FemoralCanvas({
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
       } catch {
-        // ignore
+        // pointer capture already released
       }
       setIsDragging(false);
-      setDragStart(null);
+      dragStartRef.current = null;
     }
   };
 
   return (
     <ScanViewport src={imgSrc} alt={`${viewMode} Scan`}>
-      {({ zoom }) => (
-        <>
-          {/* Read-Only Assessment Landmarks */}
-          {Object.entries(assessmentLandmarks).map(([key, pos]) => {
-            if (!pos) return null;
-            return (
+      {(viewport) => {
+        const { naturalWidth, naturalHeight, zoom } = viewport;
+
+        // Position base around the knee joint center
+        const baseKnee = assessmentLandmarks.kneeCenter || { x: 50, y: 52 };
+        const kneeX_img = (baseKnee.x / 100) * naturalWidth;
+        const kneeY_img = (baseKnee.y / 100) * naturalHeight;
+
+        // Origin in image pixels: distal condyles sit directly against joint line
+        const centerX_img = kneeX_img + femoralComponent.position_2d.x_offset_mm * pxPerMm;
+        const centerY_img = kneeY_img + femoralComponent.position_2d.y_offset_mm * pxPerMm - (viewMode === "FLAP" ? 26 * pxPerMm : 4 * pxPerMm);
+
+        const currentPolygon = viewMode === "FLAP" ? geom.flapPolygon : geom.klatPolygon;
+
+        return (
+          <>
+            {/* Anterior Condylar Flush Reference Line on KLAT */}
+            {viewMode === "KLAT" && (
               <div
-                key={`landmark-${key}`}
                 style={{
                   position: "absolute",
-                  left: `${pos.x}%`,
-                  top: `${pos.y}%`,
-                  width: "10px",
-                  height: "10px",
-                  backgroundColor: "#f59e0b",
-                  border: "2px solid white",
-                  borderRadius: "50%",
-                  transform: `translate(-50%, -50%) scale(${1 / zoom})`,
-                  opacity: 0.6,
+                  left: "35%",
+                  top: "20%",
+                  width: "2px",
+                  height: "35%",
+                  background: "#10b981",
+                  boxShadow: "0 0 4px #10b981",
                   pointerEvents: "none",
+                  opacity: 0.7,
                 }}
-                title={key}
-              />
-            );
-          })}
+                title="Anterior condylar cortex flush reference line"
+              >
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "-18px",
+                    left: "-25px",
+                    fontSize: "0.625rem",
+                    fontWeight: 700,
+                    color: "#10b981",
+                    whiteSpace: "nowrap",
+                    transform: `scale(${1 / zoom})`,
+                  }}
+                >
+                  Anterior Cortex Line
+                </span>
+              </div>
+            )}
 
-          {/* Anterior Condylar Flush Reference Line on KLAT */}
-          {viewMode === "KLAT" && (
-            <div
+            {/* Canonical SVG Overlay strictly aligned with Natural Image Raster */}
+            <svg
+              width="100%"
+              height="100%"
+              viewBox={`0 0 ${naturalWidth} ${naturalHeight}`}
+              preserveAspectRatio="none"
               style={{
                 position: "absolute",
-                left: "35%",
-                top: "20%",
-                width: "2px",
-                height: "35%",
-                background: "#10b981",
-                boxShadow: "0 0 4px #10b981",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
                 pointerEvents: "none",
-                opacity: 0.7,
+                overflow: "visible",
               }}
-              title="Anterior condylar cortex flush reference line"
             >
-              <span
+              <defs>
+                <radialGradient id="femoralGlow" cx="50%" cy="40%" r="60%">
+                  <stop offset="0%" stopColor="rgba(255, 255, 255, 0.4)" />
+                  <stop offset="60%" stopColor="rgba(59, 130, 246, 0.2)" />
+                  <stop offset="100%" stopColor="rgba(59, 130, 246, 0.35)" />
+                </radialGradient>
+                <filter id="femoralShadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="#3b82f6" floodOpacity="0.45" />
+                </filter>
+              </defs>
+
+              {/* Implant Component Group placed in Image Space, scaled strictly by pxPerMm */}
+              <g
+                transform={`translate(${centerX_img}, ${centerY_img}) rotate(${femoralComponent.position_2d.rotation_deg}) scale(${pxPerMm})`}
+                filter="url(#femoralShadow)"
+              >
+                {/* Anatomical Femoral Component Silhouette mathematically matching fit calculations */}
+                <polygon
+                  points={currentPolygon.map((p) => `${p.x},${p.y}`).join(" ")}
+                  fill="url(#femoralGlow)"
+                  stroke="#3b82f6"
+                  strokeWidth={1.5 / pxPerMm}
+                  strokeLinejoin="round"
+                />
+
+                {/* Translation handle target */}
+                <circle
+                  cx={0}
+                  cy={0}
+                  r={3.5}
+                  fill="#ffffff"
+                  stroke="#3b82f6"
+                  strokeWidth={1.2 / pxPerMm}
+                />
+              </g>
+            </svg>
+
+            {/* Interactive Drag & Position Target Overlay (rendered in stage coords) */}
+            <div
+              onPointerDown={handlePointerDown}
+              onPointerMove={(e) => handlePointerMove(viewport, e)}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              style={{
+                position: "absolute",
+                left: `${(centerX_img / naturalWidth) * 100}%`,
+                top: `${(centerY_img / naturalHeight) * 100}%`,
+                width: `${(template.mlMm * pxPerMm * viewport.fitScale)}px`,
+                height: `${(template.apMm * pxPerMm * viewport.fitScale)}px`,
+                transform: `translate(-50%, -50%) rotate(${femoralComponent.position_2d.rotation_deg}deg)`,
+                cursor: isReadOnly ? "default" : isDragging ? "grabbing" : "grab",
+                zIndex: 30,
+                userSelect: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {/* Leader Line & HUD Tag: "Femoral Size 4" matching clinical reference */}
+              <div
                 style={{
                   position: "absolute",
-                  top: "-18px",
-                  left: "-25px",
-                  fontSize: "0.625rem",
-                  fontWeight: 700,
-                  color: "#10b981",
-                  whiteSpace: "nowrap",
-                  transform: `scale(${1 / zoom})`,
+                  top: "40%",
+                  left: "-12px",
+                  transform: `translate(-100%, -50%) scale(${1 / zoom})`,
+                  transformOrigin: "right center",
+                  pointerEvents: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  zIndex: 40,
                 }}
               >
-                Anterior Cortex Line
-              </span>
+                <div
+                  style={{
+                    background: "#0f172a",
+                    border: "1.5px solid #3b82f6",
+                    color: "white",
+                    padding: "6px 12px",
+                    fontSize: "0.875rem",
+                    fontWeight: 700,
+                    borderRadius: "6px",
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.6)",
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  Femoral Size {template.size}
+                </div>
+                <div style={{ width: "24px", height: "2px", background: "#3b82f6" }} />
+                <div
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    background: "#3b82f6",
+                    marginLeft: "-4px",
+                  }}
+                />
+              </div>
             </div>
-          )}
-
-          {/* 2D CAD Femoral Template Overlay */}
-          <div
-            onPointerDown={handlePointerDown}
-            onPointerMove={(e) => handlePointerMove(e.currentTarget.parentElement, e)}
-            onPointerUp={handlePointerUp}
-            style={{
-              position: "absolute",
-              left: `${templateCenterX}%`,
-              top: `${templateCenterY}%`,
-              width: `${viewMode === "FLAP" ? templateWidthPct : templateHeightPct}%`,
-              height: `${viewMode === "FLAP" ? templateHeightPct * 0.45 : templateHeightPct * 0.9}%`,
-              transform: `translate(-50%, -50%) rotate(${femoralComponent.position_2d.rotation_deg}deg)`,
-              border: "2px solid #0284c7",
-              background: "rgba(2, 132, 199, 0.18)",
-              borderRadius: viewMode === "FLAP" ? "12px 12px 6px 6px" : "16px 4px 12px 12px",
-              boxShadow: "0 0 8px rgba(2, 132, 199, 0.5)",
-              cursor: isReadOnly ? "default" : isDragging ? "grabbing" : "grab",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              userSelect: "none",
-              zIndex: 30,
-            }}
-          >
-            {/* Center Translation Handle */}
-            <div
-              style={{
-                width: "14px",
-                height: "14px",
-                borderRadius: "50%",
-                background: "#0284c7",
-                border: "2px solid white",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.5)",
-                transform: `scale(${1 / zoom})`,
-              }}
-            />
-
-            {/* Template Dimension Label HUD */}
-            <div
-              style={{
-                position: "absolute",
-                top: "-24px",
-                padding: "2px 6px",
-                background: "rgba(15, 23, 42, 0.85)",
-                color: "white",
-                fontSize: "0.6875rem",
-                fontWeight: 700,
-                borderRadius: "3px",
-                whiteSpace: "nowrap",
-                transform: `scale(${1 / zoom})`,
-                pointerEvents: "none",
-              }}
-            >
-              Femoral Size {template.size} ({template.apMm} × {template.mlMm} mm)
-            </div>
-          </div>
-        </>
-      )}
+          </>
+        );
+      }}
     </ScanViewport>
   );
 }

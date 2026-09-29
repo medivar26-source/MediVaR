@@ -2,13 +2,23 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
+export interface ViewportContext {
+  zoom: number;
+  pan: { x: number; y: number };
+  naturalWidth: number;
+  naturalHeight: number;
+  fittedWidth: number;
+  fittedHeight: number;
+  fitScale: number;
+  containerSize: { width: number; height: number };
+  stageRef: React.RefObject<HTMLDivElement | null>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+}
+
 interface ScanViewportProps {
   src: string;
   alt?: string;
-  children: (props: {
-    zoom: number;
-    stageRef: React.RefObject<HTMLDivElement | null>;
-  }) => React.ReactNode;
+  children: (props: ViewportContext) => React.ReactNode;
 }
 
 export function ScanViewport({ src, alt = "Scan Image", children }: ScanViewportProps) {
@@ -316,7 +326,18 @@ export function ScanViewport({ src, alt = "Scan Image", children }: ScanViewport
         />
 
         {/* Children (SVGs, Landmark Markers, Component Overlays) */}
-        {children({ zoom, stageRef })}
+        {children({
+          zoom,
+          pan,
+          naturalWidth: naturalSize?.width || fittedWidth || 800,
+          naturalHeight: naturalSize?.height || fittedHeight || 800,
+          fittedWidth,
+          fittedHeight,
+          fitScale: naturalSize && naturalSize.width > 0 ? fittedWidth / naturalSize.width : 1,
+          containerSize,
+          stageRef,
+          containerRef,
+        })}
       </div>
     </div>
   );

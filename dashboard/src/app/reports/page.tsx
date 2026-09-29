@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { FileText } from "lucide-react";
-import { AppShell, PageHeader } from "@/components/shell";
+import { AppShell, Breadcrumbs, PageHeader } from "@/components/shell";
 import {
   Badge,
   Button,
@@ -32,8 +32,15 @@ export default async function ReportsPage() {
 
   return (
     <AppShell user={user} searchHint='Try searching "reports"'>
+      <Breadcrumbs
+        items={[
+          { label: persona === "learner" ? "Overview" : "Reports" },
+          { label: persona === "learner" ? "Your Assessment Reports" : "Global Reports" },
+        ]}
+      />
+
       <PageHeader
-        title={persona === "learner" ? "Your Assessment Reports" : "Reports"}
+        title={persona === "learner" ? "Your Assessment Reports" : "Global Reports"}
         lede={
           persona === "learner"
             ? "Every generated surgical case evaluation report for your completed simulation sessions. Review detailed scores, errors, and surgical accuracy."

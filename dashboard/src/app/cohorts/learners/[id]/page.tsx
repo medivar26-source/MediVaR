@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ListChecks, Users } from "lucide-react";
-import { AppShell, PageHeader, SectionHeader } from "@/components/shell";
+import { AppShell, Breadcrumbs, PageHeader, SectionHeader } from "@/components/shell";
 import {
   Badge,
   Banner,
@@ -80,7 +80,13 @@ export default async function ResidentDetailPage({
 
   return (
     <AppShell user={user} searchHint='Try searching "learners"'>
-      <BackLink />
+      <Breadcrumbs
+        items={[
+          { label: "Programs", href: "/programs" },
+          { label: "Supervised Residents", href: "/cohorts/learners" },
+          { label: detail.displayName },
+        ]}
+      />
 
       <PageHeader
         eyebrow={detail.cohortName ?? "No cohort"}

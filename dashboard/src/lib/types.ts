@@ -20,7 +20,7 @@ export type Difficulty = "beginner" | "intermediate" | "expert";
 export type SimMode = "training" | "assessment";
 export type ImplantDesign = "CR" | "PS";
 export type FixationType = "cemented" | "cementless";
-export type SessionStatus = "pending" | "live" | "completed" | "aborted";
+export type SessionStatus = "scheduled" | "pending" | "live" | "completed" | "aborted" | "cancelled" | "in_progress";
 export type Verdict = "pass" | "borderline" | "fail";
 export type Side = "left" | "right";
 
@@ -199,23 +199,28 @@ export type CaseSummary = {
 
 export type SessionSummary = {
   id: string;
-  planId: string;
-  userId: string;
-  caseId: string;
+  planId?: string;
+  userId?: string;
+  cohortId?: string;
+  caseId?: string;
   caseTitle: string;
   mode: SimMode;
   difficulty: Difficulty;
   design: ImplantDesign;
   fixation: FixationType;
   status: SessionStatus;
-  /** Set while status is 'live', e.g. "6.1". */
   currentScene?: string;
+  scheduledAt?: string;
   startedAt?: string;
   endedAt?: string;
+  createdAt?: string;
+  duration?: number;
   durationS?: number;
-  criticalErrors: number;
-  /** From reports.total_score. Absent until the report is generated. */
+  description?: string;
+  criticalErrors?: number;
   totalScore?: number;
+  residentCount?: number;
+  completedCount?: number;
 };
 
 export type SceneResult = {

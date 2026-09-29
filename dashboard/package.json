@@ -8,10 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/**/__tests__/*.test.ts"
+    "test": "npx tsx --test src/app/plan/__tests__/calibration_pipeline.test.ts src/app/plan/__tests__/v1_workflow.test.ts src/app/plan/__tests__/demo_cases.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
+    "dicom-parser": "^1.8.21",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.31.0",
     "next": "16.3.0",

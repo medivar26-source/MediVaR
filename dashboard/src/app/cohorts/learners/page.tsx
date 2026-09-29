@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Users } from "lucide-react";
-import { AppShell, PageHeader } from "@/components/shell";
+import { AppShell, Breadcrumbs, PageHeader } from "@/components/shell";
 import {
   Badge,
   Button,
@@ -44,12 +44,19 @@ export default async function LearnersPage() {
 
   return (
     <AppShell user={user} searchHint='Try searching "learners"'>
+      <Breadcrumbs
+        items={[
+          { label: "Programs", href: "/programs" },
+          { label: "Supervised Residents" },
+        ]}
+      />
+
       <PageHeader
-        title="Learners"
+        title="Supervised Residents"
         lede="Everybody in the cohorts you teach, ordered by who needs you: below the pass mark first, then anybody who has never started a session."
         actions={
-          <Button href="/cohorts" variant="secondary">
-            By cohort
+          <Button href="/programs" variant="secondary">
+            All Programs
           </Button>
         }
       />

@@ -208,7 +208,7 @@ export type SessionSummary = {
   completedCount: number;
 };
 
-function toSessionSummary(s: any): SessionSummary {
+export function toSessionSummary(s: any): SessionSummary {
   return {
     id: s.id,
     cohortId: s.cohort_id,
@@ -219,8 +219,11 @@ function toSessionSummary(s: any): SessionSummary {
     status: s.status,
     createdAt: s.created_at,
     caseId: s.case_id ?? undefined,
-    caseName: s.case_name ?? undefined,
+    caseTitle: s.case_name ?? "Unknown Case",
     mode: s.mode ?? "training",
+    difficulty: s.difficulty ?? "beginner",
+    design: s.design ?? "CR",
+    fixation: s.fixation ?? "cemented",
     residentCount: s.resident_count ?? 0,
     completedCount: s.completed_count ?? 0,
   };

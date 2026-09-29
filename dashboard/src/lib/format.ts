@@ -72,7 +72,8 @@ export function count(n: number): string {
   return n.toLocaleString("en-GB");
 }
 
-export function titleCase(value: string): string {
+export function titleCase(value?: string | null): string {
+  if (!value) return "—";
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 

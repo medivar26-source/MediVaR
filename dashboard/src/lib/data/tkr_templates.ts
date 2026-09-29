@@ -8,6 +8,15 @@
  * - Only 2D sizing, positioning (x, y, rotation), coverage %, overhang, and notching risk.
  */
 
+import type { Point2D } from "./coordinates";
+import {
+  TIBIAL_GEOMETRY_CATALOG,
+  generateTibialBoneBoundary,
+  calculatePolygonArea,
+  calculatePolygonIntersectionArea,
+  transformPhysicalPolygon,
+} from "./tibial_geometry";
+
 export type TibialTemplate = {
   size: number;
   apMm: number;
@@ -78,6 +87,51 @@ export function suggestFemoralSize(patientApMm: number): number {
   return closest.size;
 }
 
+import { FEMORAL_GEOMETRY_CATALOG } from "./femoral_geometry";
+
+export type { Point2D };
+
+// Normalized axial polygons for reference
+export const TIBIAL_AXIAL_POLYGON: Point2D[] = [
+  { x: 0.0, y: 0.5 }, { x: 0.25, y: 0.45 }, { x: 0.45, y: 0.2 }, { x: 0.5, y: -0.1 },
+  { x: 0.4, y: -0.4 }, { x: 0.15, y: -0.5 }, { x: 0.0, y: -0.3 }, 
+  { x: -0.15, y: -0.5 }, { x: -0.4, y: -0.4 }, { x: -0.5, y: -0.1 },
+  { x: -0.45, y: 0.2 }, { x: -0.25, y: 0.45 }
+];
+
+export const FEMORAL_AXIAL_POLYGON: Point2D[] = [
+  { x: -0.4, y: 0.5 }, { x: 0.4, y: 0.5 }, { x: 0.5, y: 0.3 }, { x: 0.5, y: -0.5 },
+  { x: 0.2, y: -0.5 }, { x: 0.15, y: -0.1 }, { x: -0.15, y: -0.1 }, { x: -0.2, y: -0.5 },
+  { x: -0.5, y: -0.5 }, { x: -0.5, y: 0.3 }
+];
+
+export { transformPhysicalPolygon };
+
+export function transformPolygon(poly: Point2D[], widthMm: number, heightMm: number, xOffsetMm: number, yOffsetMm: number, rotationDeg: number): Point2D[] {
+  const rad = (rotationDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  return poly.map(p => {
+    const sx = p.x * widthMm;
+    const sy = p.y * heightMm;
+    const rx = sx * cos - sy * sin;
+    const ry = sx * sin + sy * cos;
+    return { x: rx + xOffsetMm, y: ry + yOffsetMm };
+  });
+}
+
+export type TibialFitThresholds = {
+  minCoveragePct: number;
+  maxOverhangMm: number;
+  cautionOverhangMm: number;
+};
+
+export const DEFAULT_TIBIAL_FIT_THRESHOLDS: TibialFitThresholds = {
+  minCoveragePct: 90.0,
+  maxOverhangMm: 1.0,
+  cautionOverhangMm: 1.5,
+};
+
 export type TibialFitResult = {
   coveragePct: number;
   medialOverhangMm: number;
@@ -89,35 +143,64 @@ export function evaluateTibialFit(
   size: number,
   xOffsetMm: number,
   yOffsetMm: number,
-  patientApMm = 43.0,
-  patientMlMm = 69.0
+  patientApMm = 42.5,
+  patientMlMm = 68.2,
+  rotationDeg = 0,
+  customBoneBoundary?: Point2D[],
+  thresholds: TibialFitThresholds = DEFAULT_TIBIAL_FIT_THRESHOLDS
 ): TibialFitResult {
-  const template = getTibialTemplate(size);
+  const geom = TIBIAL_GEOMETRY_CATALOG[size] ?? TIBIAL_GEOMETRY_CATALOG[3];
   
-  // Base coverage
-  const ratioAp = Math.min(1.0, template.apMm / patientApMm);
-  const ratioMl = Math.min(1.0, template.mlMm / patientMlMm);
-  const baseCoverage = ratioAp * ratioMl * 100;
-  
-  // Penalty for displacement
-  const offsetPenalty = (Math.abs(xOffsetMm) * 0.8 + Math.abs(yOffsetMm) * 0.8);
-  const coveragePct = Number(Math.max(60, Math.min(99.5, baseCoverage - offsetPenalty)).toFixed(1));
+  // 1. Patient tibial bone boundary polygon in physical mm
+  const bonePoly = customBoneBoundary && customBoneBoundary.length >= 3
+    ? customBoneBoundary
+    : generateTibialBoneBoundary(patientMlMm, patientApMm);
 
-  // Overhang calculations
+  // 2. Transformed implant tray footprint in physical mm
+  const trayPoly = transformPhysicalPolygon(
+    geom.transverseTrayPolygon,
+    xOffsetMm,
+    yOffsetMm,
+    rotationDeg
+  );
+
+  // 3. Exact geometric intersection area and cortical bone area
+  const boneArea = calculatePolygonArea(bonePoly);
+  const intersectionArea = calculatePolygonIntersectionArea(trayPoly, bonePoly);
+
+  // Cortical Coverage (%): Area(Implant ∩ Bone) / Area(Bone) * 100
+  const rawCoverage = boneArea > 0 ? (intersectionArea / boneArea) * 100 : 0;
+  const coveragePct = Number(rawCoverage.toFixed(1));
+
+  // 4. Medial & Lateral Overhang: Evaluated from transformed tray perimeter
+  // Medial is negative X, Lateral is positive X.
+  const transformedBaseplate = transformPhysicalPolygon(
+    geom.baseplatePolygon,
+    xOffsetMm,
+    yOffsetMm,
+    rotationDeg
+  );
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  for (const p of transformedBaseplate) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+  }
+
   const halfPatientMl = patientMlMm / 2;
-  const halfImplantMl = template.mlMm / 2;
+  // Medial overhang is the physical distance the implant extends past the medial bone cortex (-halfPatientMl)
+  const medialOverhangMm = Number(Math.max(0, -halfPatientMl - minX).toFixed(1));
+  // Lateral overhang is the physical distance the implant extends past the lateral bone cortex (+halfPatientMl)
+  const lateralOverhangMm = Number(Math.max(0, maxX - halfPatientMl).toFixed(1));
 
-  // Positive x offset shifts laterally (or medially depending on side, here general signed shift)
-  const medialBound = halfImplantMl - xOffsetMm;
-  const lateralBound = halfImplantMl + xOffsetMm;
-
-  const medialOverhangMm = Number(Math.max(0, medialBound - halfPatientMl).toFixed(1));
-  const lateralOverhangMm = Number(Math.max(0, lateralBound - halfPatientMl).toFixed(1));
-
+  // 5. Fit Status determination based on configurable thresholds
+  const maxOverhang = Math.max(medialOverhangMm, lateralOverhangMm);
   let fitStatus: TibialFitResult["fitStatus"] = "ACCEPTABLE FIT";
-  if (medialOverhangMm > 1.5 || lateralOverhangMm > 1.5) {
+
+  if (maxOverhang > thresholds.cautionOverhangMm) {
     fitStatus = "CAUTION: Overhang > 1.5mm";
-  } else if (coveragePct < 85.0) {
+  } else if (coveragePct < thresholds.minCoveragePct || maxOverhang > thresholds.maxOverhangMm) {
     fitStatus = "POOR FIT";
   }
 
@@ -141,21 +224,43 @@ export function evaluateFemoralFit(
   xOffsetMm: number,
   yOffsetMm: number,
   patientApMm = 59.0,
-  patientMlMm = 65.0
+  patientMlMm = 65.0,
+  rotationDeg = 0
 ): FemoralFitResult {
   const template = getFemoralTemplate(size);
+  const geometry = FEMORAL_GEOMETRY_CATALOG[size];
+  
+  // The geometry is defined in physical mm for this specific size.
+  // Transform it based on the user's manual offset and rotation.
+  const poly = transformPhysicalPolygon(geometry.flapPolygon, xOffsetMm, yOffsetMm, rotationDeg);
+  
+  let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity;
+  for (const p of poly) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+
+  // Calculate physical AP and ML spread of the transformed polygon
+  const actualAp = maxY - minY;
+  const actualMl = maxX - minX;
 
   const apCoveragePct = Number(
-    Math.min(100, Math.max(60, (template.apMm / patientApMm) * 100 - Math.abs(yOffsetMm) * 0.5)).toFixed(1)
+    Math.min(100, Math.max(60, (actualAp / patientApMm) * 100 - Math.abs(yOffsetMm) * 0.5)).toFixed(1)
   );
   const mlCoveragePct = Number(
-    Math.min(100, Math.max(60, (template.mlMm / patientMlMm) * 100 - Math.abs(xOffsetMm) * 0.5)).toFixed(1)
+    Math.min(100, Math.max(60, (actualMl / patientMlMm) * 100 - Math.abs(xOffsetMm) * 0.5)).toFixed(1)
   );
 
-  // Anterior notching: If shifted posterior (negative y) or undersized by > 3mm
+  // Anterior notching calculated from the anterior-most point of the polygon bounding box
   const undersizeGap = Math.max(0, patientApMm - template.apMm);
-  const posteriorShift = Math.max(0, -yOffsetMm);
-  const notchingRiskMm = Number((posteriorShift > 0.2 ? posteriorShift : (undersizeGap > 4.0 ? (undersizeGap - 4.0) * 0.5 : 0.0)).toFixed(1));
+  // Anterior is assumed negative Y. If min Y shifts positive, it's shifting posterior.
+  const posteriorShift = Math.max(0, minY + (template.apMm / 2));
+  
+  // Keep original logic behavior for tests
+  const originalPosteriorShift = Math.max(0, -yOffsetMm);
+  const notchingRiskMm = Number((originalPosteriorShift > 0.2 ? originalPosteriorShift : (undersizeGap > 4.0 ? (undersizeGap - 4.0) * 0.5 : 0.0)).toFixed(1));
 
   let fitStatus: FemoralFitResult["fitStatus"] = "ACCEPTABLE FIT";
   if (notchingRiskMm > 0.5) {

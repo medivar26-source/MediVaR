@@ -192,8 +192,18 @@ export type CaseAuthoringUsageRow = {
 
 export type CaseAuthoringDetail = CaseCatalogueRow & {
   objectives: string[];
-  /** Always empty for now — there is no imaging table or storage bucket. */
-  imaging: { view: string; label: string; src?: string; placeholder?: boolean }[];
+  imaging: {
+    view: string;
+    label: string;
+    src?: string;
+    placeholder?: boolean;
+    calibration?: {
+      mmPerPx: number;
+      markerMm?: number;
+      detectedPx?: number;
+      pxPerMm?: number;
+    };
+  }[];
   /** `null` = usage is not tracked yet, as opposed to an empty list (tracked, nobody has used it). */
   usage: CaseAuthoringUsageRow[] | null;
   scoring: { key: string; label: string; max: number }[];

@@ -360,8 +360,8 @@ export default async function CaseDetailPage({
             <Card padding="lg">
               <CardHeader title="Learning objectives" />
               <ul className={s.objectives}>
-                {detail.objectives.map((objective) => (
-                  <li key={objective} className={s.objective}>
+                {detail.objectives.map((objective, idx) => (
+                  <li key={`${objective}-${idx}`} className={s.objective}>
                     <ListChecks
                       className={s.objectiveIcon}
                       strokeWidth={2}

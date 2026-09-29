@@ -102,6 +102,7 @@ export type LearnerDashboard = {
   weakest?: CategoryAverage;
   details: SessionDetail[];
   suggestedCases: CaseSummary[];
+  scheduledSessions?: SessionSummary[];
 };
 
 export async function getLearnerDashboard(
@@ -109,6 +110,19 @@ export async function getLearnerDashboard(
   weeks = 7,
 ): Promise<LearnerDashboard> {
   const now = Date.now();
+  
+  let scheduledSessions: SessionSummary[] = [];
+  try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const token = cookieStore.get("mediver-token")?.value;
+    if (token) {
+      const { apiListSessions } = await import("./residents-api");
+      scheduledSessions = await apiListSessions(token, userId);
+    }
+  } catch (err) {
+    console.warn("Failed to fetch scheduled sessions:", err);
+  }
 
   const mine = sessionsFor(userId);
   const completed = mine.filter(
@@ -226,6 +240,7 @@ export async function getLearnerDashboard(
         isActive: row.isActive,
         attempts: 0,
       })),
+    scheduledSessions,
   };
 }
 

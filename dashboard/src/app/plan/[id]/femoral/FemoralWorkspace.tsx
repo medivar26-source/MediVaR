@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { PlanDetail, V1FemoralComponent } from "@/lib/plan";
 import { getFemoralTemplate, evaluateFemoralFit } from "@/lib/data/tkr_templates";
+import { normalizeCalibration } from "@/lib/data/coordinates";
 import s from "../plan.module.css";
 import { FemoralCanvas } from "./FemoralCanvas";
 import { FemoralControlsPanel } from "./FemoralControlsPanel";
@@ -71,10 +72,21 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
     ankleCenter: rawLandmarks.ankleCenter || rawLandmarks.ankle_center,
   };
 
-  const imageMatch = plan.case?.imaging?.find(
-    (img) => img.view.toLowerCase() === viewMode.toLowerCase()
+  const apImage =
+    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "ap") ||
+    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "flap") ||
+    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "long_leg");
+
+  const klatImage =
+    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "klat") ||
+    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "lateral");
+
+  const imageMatch = viewMode === "FLAP" ? apImage : klatImage;
+  const currentImgSrc = imageMatch?.src || (viewMode === "FLAP" ? "/knee_xray_ap.jpg" : "/klat.jpg");
+  const activeCalibration = normalizeCalibration(
+    imageMatch?.calibration || plan.payload.calibration,
+    `${viewMode} ${currentImgSrc}`
   );
-  const currentImgSrc = imageMatch?.src || (viewMode === "FLAP" ? "/flap.jpg" : "/klat.jpg");
 
   const handlePositionChange = (newPos: { x_offset_mm: number; y_offset_mm: number; rotation_deg: number }) => {
     if (isReadOnly) return;
@@ -97,29 +109,29 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
             onClick={() => setViewMode("FLAP")}
             style={{
               padding: "0.5rem 1rem",
-              background: viewMode === "FLAP" ? "var(--accent)" : "var(--surface)",
-              color: viewMode === "FLAP" ? "white" : "inherit",
+              background: viewMode === "FLAP" ? "var(--brand)" : "var(--surface)",
+              color: viewMode === "FLAP" ? "var(--on-brand)" : "var(--ink)",
               border: "1px solid var(--border)",
               borderRadius: "4px",
               cursor: "pointer",
               fontWeight: 600,
             }}
           >
-            FLAP View (Full-Length AP)
+            AP View (Coronal Sizing)
           </button>
           <button
             onClick={() => setViewMode("KLAT")}
             style={{
               padding: "0.5rem 1rem",
-              background: viewMode === "KLAT" ? "var(--accent)" : "var(--surface)",
-              color: viewMode === "KLAT" ? "white" : "inherit",
+              background: viewMode === "KLAT" ? "var(--brand)" : "var(--surface)",
+              color: viewMode === "KLAT" ? "var(--on-brand)" : "var(--ink)",
               border: "1px solid var(--border)",
               borderRadius: "4px",
               cursor: "pointer",
               fontWeight: 600,
             }}
           >
-            KLAT View (Localized Knee)
+            KLAT View (Localized Lateral)
           </button>
         </div>
 
@@ -133,6 +145,7 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
               assessmentLandmarks={assessmentLandmarks}
               isReadOnly={isReadOnly}
               src={currentImgSrc}
+              calibration={activeCalibration}
             />
           </div>
 

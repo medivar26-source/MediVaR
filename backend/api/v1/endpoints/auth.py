@@ -50,17 +50,51 @@ async def login(payload: LoginRequest):
             detail="login_type must be 'instructor' or 'learner'.",
         )
 
+    ident = payload.identifier.strip()
     try:
         if login_type == "instructor":
-            result = auth_service.authenticate_instructor(
-                email=payload.identifier.strip().lower(),
-                password=payload.password,
-            )
+            # If the user inadvertently entered a Learner ID on the Instructor tab
+            if "@" not in ident and (ident.upper().startswith("MVR-") or auth_service.get_user_by_learner_id(ident.upper())):
+                result = auth_service.authenticate_learner(
+                    learner_id=ident.upper(),
+                    password=payload.password,
+                )
+            else:
+                try:
+                    result = auth_service.authenticate_instructor(
+                        email=ident.lower(),
+                        password=payload.password,
+                    )
+                except ValueError as exc:
+                    # Fallback to learner if user exists as learner
+                    if auth_service.get_user_by_learner_id(ident.upper()):
+                        result = auth_service.authenticate_learner(
+                            learner_id=ident.upper(),
+                            password=payload.password,
+                        )
+                    else:
+                        raise exc
         else:
-            result = auth_service.authenticate_learner(
-                learner_id=payload.identifier.strip().upper(),
-                password=payload.password,
-            )
+            # If the user inadvertently entered an email on the Learner tab
+            if "@" in ident:
+                result = auth_service.authenticate_instructor(
+                    email=ident.lower(),
+                    password=payload.password,
+                )
+            else:
+                try:
+                    result = auth_service.authenticate_learner(
+                        learner_id=ident.upper(),
+                        password=payload.password,
+                    )
+                except ValueError as exc:
+                    if auth_service.get_user_by_email(ident.lower()):
+                        result = auth_service.authenticate_instructor(
+                            email=ident.lower(),
+                            password=payload.password,
+                        )
+                    else:
+                        raise exc
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

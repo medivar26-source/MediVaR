@@ -426,8 +426,9 @@ export async function createProgram(
     return { error: "Failed to connect to the server." };
   }
 
+  revalidatePath("/programs");
   revalidatePath("/cohorts");
-  redirect("/cohorts");
+  redirect("/programs");
 }
 
 export async function createCohort(
@@ -465,9 +466,10 @@ export async function createCohort(
     return { error: "Failed to connect to the server." };
   }
 
+  revalidatePath(`/programs/${program_id}`);
   revalidatePath(`/cohorts/program/${program_id}`);
   revalidatePath("/cohorts");
-  redirect(`/cohorts/program/${program_id}`);
+  redirect(`/programs/${program_id}?tab=cohorts`);
 }
 
 export type LearnerProvisionState = {

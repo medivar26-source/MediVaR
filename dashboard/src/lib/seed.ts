@@ -23,6 +23,7 @@ import type {
   UserRole,
   Verdict,
 } from "./types";
+import type { V1Calibration } from "./plan";
 
 const DAY = 86_400_000;
 const MINUTE = 60_000;
@@ -406,7 +407,13 @@ export type CaseRow = CaseSummary & {
    * the exception: they carry their own generated FLAP/KLAT pair and are
    * never placeholders.
    */
-  imaging: { view: string; label: string; src?: string; placeholder?: boolean }[];
+  imaging: {
+    view: string;
+    label: string;
+    src?: string;
+    placeholder?: boolean;
+    calibration?: V1Calibration;
+  }[];
   objectives: string[];
   createdAt: string;
 };
@@ -850,8 +857,28 @@ export const CASES: CaseRow[] = [
       deformity: "7.0° Varus",
     },
     imaging: [
-      { view: "flap", label: "FLAP", src: "/synth_varus_flap.jpg" },
-      { view: "klat", label: "KLAT", src: "/synth_varus_klat.jpg" },
+      {
+        view: "flap",
+        label: "FLAP",
+        src: "/synth_varus_flap.jpg",
+        calibration: {
+          marker_type: "sphere_25mm",
+          marker_diameter_mm: 25.0,
+          measured_pixel_diameter: 32.5,
+          mm_per_px: 25.0 / 32.5, // 0.7692 mm/px
+        },
+      },
+      {
+        view: "klat",
+        label: "KLAT",
+        src: "/synth_varus_klat.jpg",
+        calibration: {
+          marker_type: "sphere_25mm",
+          marker_diameter_mm: 25.0,
+          measured_pixel_diameter: 94.7,
+          mm_per_px: 25.0 / 94.7, // 0.264 mm/px
+        },
+      },
     ],
     objectives: [],
     createdAt: daysAgo(1),
@@ -878,8 +905,28 @@ export const CASES: CaseRow[] = [
       deformity: "5.0° Valgus",
     },
     imaging: [
-      { view: "flap", label: "FLAP", src: "/synth_valgus_flap.jpg" },
-      { view: "klat", label: "KLAT", src: "/synth_valgus_klat.jpg" },
+      {
+        view: "flap",
+        label: "FLAP",
+        src: "/synth_valgus_flap.jpg",
+        calibration: {
+          marker_type: "sphere_25mm",
+          marker_diameter_mm: 25.0,
+          measured_pixel_diameter: 32.5,
+          mm_per_px: 25.0 / 32.5, // 0.7692 mm/px
+        },
+      },
+      {
+        view: "klat",
+        label: "KLAT",
+        src: "/synth_valgus_klat.jpg",
+        calibration: {
+          marker_type: "sphere_25mm",
+          marker_diameter_mm: 25.0,
+          measured_pixel_diameter: 94.7,
+          mm_per_px: 25.0 / 94.7, // 0.264 mm/px
+        },
+      },
     ],
     objectives: [],
     createdAt: daysAgo(1),

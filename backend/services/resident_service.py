@@ -210,6 +210,45 @@ def list_assignments(resident_id: str, instructor_id: str) -> List[Dict[str, Any
         return [_assignment_row(r) for r in cur.fetchall()]
 
 
+def list_sessions(resident_id: str) -> List[Dict[str, Any]]:
+    from services.cohorts_service import _get_session_status
+    with _cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.id, s.cohort_id, s.name, s.scheduled_at, s.duration, s.description,
+                   s.is_cancelled, s.created_at, s.case_id, s.mode, s.instructor_id,
+                   c.name as case_name,
+                   (SELECT COUNT(*) FROM session_residents WHERE session_id = s.id) as resident_count,
+                   (SELECT COUNT(*) FROM session_residents WHERE session_id = s.id AND status = 'completed') as completed_count
+            FROM sessions s
+            JOIN session_residents sr ON s.id = sr.session_id
+            LEFT JOIN cases c ON c.id = s.case_id
+            WHERE sr.resident_id = %s
+            ORDER BY s.scheduled_at ASC
+            """,
+            (resident_id,)
+        )
+        
+        sessions = []
+        for row in cur.fetchall():
+            sessions.append({
+                "id": str(row["id"]),
+                "cohort_id": str(row["cohort_id"]),
+                "name": row["name"],
+                "scheduled_at": row["scheduled_at"],
+                "duration": row["duration"],
+                "description": row["description"],
+                "status": _get_session_status(row["scheduled_at"], row["duration"], row["is_cancelled"]),
+                "created_at": row["created_at"],
+                "case_id": str(row["case_id"]) if row["case_id"] else None,
+                "case_name": row["case_name"],
+                "mode": row["mode"] or "training",
+                "instructor_id": str(row["instructor_id"]) if row["instructor_id"] else None,
+                "resident_count": row["resident_count"],
+                "completed_count": row["completed_count"]
+            })
+        return sessions
+
 def add_assignment(
     resident_id: str,
     instructor_id: str,

@@ -47,7 +47,7 @@ export type SessionFilters = {
   caseId?: string;
 };
 
-const STATUSES: SessionStatus[] = ["pending", "live", "completed", "aborted"];
+const STATUSES: SessionStatus[] = ["scheduled", "pending", "live", "completed", "aborted", "cancelled", "in_progress"];
 const MODES: SessionSummary["mode"][] = ["training", "assessment"];
 
 /** A search param, or undefined if it is not a value the column can hold. */
@@ -91,7 +91,26 @@ export async function getSessionList(
   filters: SessionFilters = {},
   user?: Profile,
 ): Promise<{ sessions: SessionListItem[]; stats: SessionListStats }> {
-  const rows = visibleSessions(user).filter(
+  let dbRows: SessionSummary[] = [];
+  try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const token = cookieStore.get("mediver-token")?.value;
+    if (token && user) {
+      const { apiListSessions } = await import("./residents-api");
+      const { toSessionSummary } = await import("./cohorts");
+      
+      const persona = personaFor(user.role);
+      if (persona === "learner") {
+        const raw = await apiListSessions(token, user.id);
+        dbRows = raw.map(toSessionSummary);
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to fetch sessions from API:", err);
+  }
+
+  const rows = [...dbRows, ...visibleSessions(user)].filter(
     (row) =>
       (!filters.status || row.status === filters.status) &&
       (!filters.mode || row.mode === filters.mode) &&
@@ -125,7 +144,27 @@ export async function getSessionList(
 }
 
 export async function getSession(id: string): Promise<SessionSummary | null> {
-  return SESSION_BY_ID.get(id) ?? null;
+  const local = SESSION_BY_ID.get(id);
+  if (local) return local;
+
+  try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const token = cookieStore.get("mediver-token")?.value;
+    if (token) {
+      const { getCurrentUser } = await import("@/lib/session");
+      const user = await getCurrentUser();
+      const { apiListSessions } = await import("./residents-api");
+      const { toSessionSummary } = await import("./cohorts");
+      const dbRows = await apiListSessions(token, user.id);
+      const found = dbRows.find((s: any) => s.id === id);
+      if (found) return toSessionSummary(found);
+    }
+  } catch (err) {
+    console.warn("Failed to fetch session from API:", err);
+  }
+
+  return null;
 }
 
 /* ---------- how far through the operation a session is ---------- */
@@ -139,7 +178,7 @@ export type SessionProgress = {
 };
 
 export async function getSessionProgress(id: string): Promise<SessionProgress | null> {
-  const session = SESSION_BY_ID.get(id);
+  const session = await getSession(id);
   if (!session) return null;
 
   const scenes = scenesForVariant(session.design, session.fixation);
@@ -168,7 +207,7 @@ export type SessionScene = {
 };
 
 export async function getSessionScenes(id: string): Promise<SessionScene[]> {
-  const session = SESSION_BY_ID.get(id);
+  const session = await getSession(id);
   if (!session) return [];
 
   return scenesForVariant(session.design, session.fixation).map((scene, i) => ({

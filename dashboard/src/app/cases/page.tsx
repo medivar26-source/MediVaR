@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { FolderOpen, Play, Plus } from "lucide-react";
-import { AppShell, PageHeader } from "@/components/shell";
+import { AppShell, Breadcrumbs, PageHeader } from "@/components/shell";
 import { Badge, Button, Card, Chip, EmptyState, Skeleton } from "@/components/ui";
 import { listCases, type AttemptedFilter } from "@/lib/data/cases";
 import { titleCase } from "@/lib/format";
@@ -12,7 +12,7 @@ import { PASS_MARK } from "@/lib/types";
 import { CaseFilters } from "./CaseFilters";
 import s from "./cases.module.css";
 
-export const metadata: Metadata = { title: "Cases" };
+export const metadata: Metadata = { title: "Case Library" };
 
 const ATTEMPTED: AttemptedFilter[] = ["all", "attempted", "unattempted"];
 
@@ -46,9 +46,20 @@ export default async function CasesPage({
 
   return (
     <AppShell user={user} searchHint='Try searching "varus"'>
+      <Breadcrumbs
+        items={[
+          { label: "Content Library" },
+          { label: isInstructor ? "Case Library" : "Practice Cases" },
+        ]}
+      />
+
       <PageHeader
-        title="Cases"
-        lede="Every case is synthetic. No patient data is stored anywhere in the product."
+        title={isInstructor ? "Case Library" : "Practice Cases"}
+        lede={
+          isInstructor
+            ? "Author, manage, and configure surgical simulation cases and reference planning criteria. Every case is synthetic."
+            : "Every case is synthetic. No patient data is stored anywhere in the product."
+        }
         actions={
           <div style={{ display: "flex", gap: "0.5rem" }}>
             {isInstructor && (

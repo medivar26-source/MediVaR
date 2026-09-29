@@ -17,6 +17,7 @@ interface TibialControlsPanelProps {
   setTibialComponent: React.Dispatch<React.SetStateAction<V1TibialComponent>>;
   fitResult: TibialFitResult;
   plan: PlanDetail;
+  patientBone?: { mlMm: number; apMm: number };
 }
 
 export function TibialControlsPanel({
@@ -24,6 +25,7 @@ export function TibialControlsPanel({
   setTibialComponent,
   fitResult,
   plan,
+  patientBone = { mlMm: 68.2, apMm: 42.5 },
 }: TibialControlsPanelProps) {
   const router = useRouter();
   const params = useParams();
@@ -38,7 +40,10 @@ export function TibialControlsPanel({
     const fit = evaluateTibialFit(
       newSize,
       tibialComponent.position_2d.x_offset_mm,
-      tibialComponent.position_2d.y_offset_mm
+      tibialComponent.position_2d.y_offset_mm,
+      patientBone.apMm,
+      patientBone.mlMm,
+      tibialComponent.position_2d.rotation_deg
     );
     setTibialComponent((prev) => ({
       ...prev,
@@ -66,7 +71,10 @@ export function TibialControlsPanel({
       const fit = evaluateTibialFit(
         prev.implant_size,
         newPos.x_offset_mm,
-        newPos.y_offset_mm
+        newPos.y_offset_mm,
+        patientBone.apMm,
+        patientBone.mlMm,
+        newPos.rotation_deg
       );
       return {
         ...prev,
@@ -146,6 +154,10 @@ export function TibialControlsPanel({
 
       {/* Sizing Toolbar: Discrete Sizes 1 to 6 */}
       <div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem", padding: "6px 8px", background: "rgba(0,0,0,0.02)", borderRadius: "4px", fontSize: "0.75rem", border: "1px solid var(--border)" }}>
+          <span>Patient Radiographic AP: <strong>{patientBone.apMm.toFixed(1)} mm</strong></span>
+          <span>Radiographic ML: <strong>{patientBone.mlMm.toFixed(1)} mm</strong></span>
+        </div>
         <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: "600", marginBottom: "0.5rem", color: "var(--text-muted)" }}>
           IMPLANT SIZE (1 to 6)
         </label>

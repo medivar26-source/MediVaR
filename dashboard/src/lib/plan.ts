@@ -257,7 +257,7 @@ export type PlanCase = {
   pathologyLabel: string;
   patient: { label: string; value: string }[];
   narrative: { label: string; value: string }[];
-  imaging: { view: string; label: string; src?: string }[];
+  imaging: { view: string; label: string; src?: string; calibration?: V1Calibration }[];
   objectives: string[];
   referenceRanges: Partial<Record<MeasurementKey, [number, number]>>;
 };

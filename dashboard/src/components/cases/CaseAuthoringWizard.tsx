@@ -28,6 +28,7 @@ import {
   publishCaseAction,
   uploadAssetAction,
 } from "@/app/actions/cases";
+import dicomParser from "dicom-parser";
 import {
   Badge,
   Banner,
@@ -371,12 +372,39 @@ export function CaseAuthoringWizard({
   const handleImageUpload = async (index: number, file: File) => {
     try {
       setUploadingImageId(images[index].id);
+
+      let detectedPixelDiameter = 0;
+      if (file.name.toLowerCase().endsWith(".dcim") || file.name.toLowerCase().endsWith(".dcm")) {
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const byteArray = new Uint8Array(arrayBuffer);
+          const dataSet = dicomParser.parseDicom(byteArray);
+          
+          const pixelSpacingStr = dataSet.string('x00280030') || dataSet.string('x00280100');
+          if (pixelSpacingStr) {
+            const spacing = parseFloat(pixelSpacingStr.split('\\')[0]);
+            if (spacing > 0) {
+              detectedPixelDiameter = Number((25.0 / spacing).toFixed(1));
+            }
+          }
+        } catch (parseErr) {
+          console.warn("Failed to parse DICOM metadata", parseErr);
+        }
+      }
+
       const formData = new FormData();
       formData.append("file", file);
       const res = await uploadAssetAction(formData);
       if (res.success && res.data?.storage_path) {
         const newImgs = [...images];
         newImgs[index].storage_path = res.data.storage_path;
+        if (detectedPixelDiameter > 0) {
+          if (!newImgs[index].calibration) {
+            newImgs[index].calibration = { is_required: true, physical_marker_diameter_mm: 25.0, detected_marker_pixel_diameter: 0 };
+          }
+          newImgs[index].calibration.detected_marker_pixel_diameter = detectedPixelDiameter;
+          newImgs[index].calibration.is_required = true;
+        }
         setImages(newImgs);
       } else {
         alert("Failed to upload image: " + (res.error || "Unknown error"));
@@ -1026,7 +1054,7 @@ export function CaseAuthoringWizard({
                         </label>
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/*,.dcim,.dcm"
                           onChange={(e) => {
                             if (e.target.files && e.target.files[0]) {
                               handleImageUpload(index, e.target.files[0]);
@@ -1077,11 +1105,11 @@ export function CaseAuthoringWizard({
                           />
 
                           <div className={s.calibrationBadgeRow}>
-                            <span style={{ color: "var(--text-muted)" }}>
-                              Derived Scale (25mm / {pix}px):
+                            <span style={{ color: "var(--text-muted)", fontSize: "0.8125rem" }}>
+                              Physical marker: <strong>25.0 mm</strong> • Detected: <strong>{pix || "—"} px</strong> (image space)
                             </span>
                             <Badge status={isValid ? "pass" : "warn"}>
-                              {scale} mm/px
+                              Derived scale: {scale > 0 ? `${scale.toFixed(4)} mm/px` : "Pending measurement"}
                             </Badge>
                           </div>
                         </div>

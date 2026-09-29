@@ -159,21 +159,23 @@ export default async function SessionsPage({
 
                 return (
                   <Tr key={session.id}>
-                    <Td head>{shortDate(session.endedAt ?? session.startedAt)}</Td>
+                    <Td head>{shortDate(session.scheduledAt ?? session.endedAt ?? session.startedAt)}</Td>
                     <Td>{session.caseTitle}</Td>
                     <Td>{titleCase(session.mode)}</Td>
                     <Td>
-                      {session.design} · {titleCase(session.fixation)}
+                      {session.design ?? "—"} · {session.fixation ? titleCase(session.fixation) : "—"}
                     </Td>
-                    <Td numeric>{clock(session.durationS)}</Td>
+                    <Td numeric>{session.durationS ? clock(session.durationS) : session.duration ? `${session.duration}m` : "—"}</Td>
                     <Td numeric>{score ?? "—"}</Td>
                     <Td>
                       {/* A Badge announces a verdict; "Interrupted" and "No
                           report" are lifecycle facts, so they are Chips The verdict itself is the one the
                           report stored, not a re-marking. */}
-                      {session.status === "live" ? (
+                      {session.status === "scheduled" ? (
+                        <Badge status="warn">Upcoming</Badge>
+                      ) : session.status === "live" ? (
                         <Badge status="active">In progress</Badge>
-                      ) : session.status === "aborted" ? (
+                      ) : session.status === "aborted" || session.status === "cancelled" ? (
                         <Chip tone="muted">Interrupted</Chip>
                       ) : score === undefined ? (
                         <Chip tone="muted">No report</Chip>
@@ -193,12 +195,14 @@ export default async function SessionsPage({
                         variant="ghost"
                         size="sm"
                         href={
-                          score !== undefined
-                            ? `/sessions/${session.id}/report`
-                            : `/sessions/${session.id}`
+                          session.status === "scheduled" && session.caseId
+                            ? `/cases/${session.caseId}`
+                            : score !== undefined
+                              ? `/sessions/${session.id}/report`
+                              : `/sessions/${session.id}`
                         }
                       >
-                        {score !== undefined ? "Report" : "Open"}
+                        {session.status === "scheduled" ? "Prepare" : score !== undefined ? "Report" : "Open"}
                       </Button>
                     </Td>
                   </Tr>

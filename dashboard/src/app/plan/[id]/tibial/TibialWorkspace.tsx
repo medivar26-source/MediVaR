@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { PlanDetail, V1TibialComponent } from "@/lib/plan";
 import { getTibialTemplate, evaluateTibialFit } from "@/lib/data/tkr_templates";
+import { normalizeCalibration } from "@/lib/data/coordinates";
 import s from "../plan.module.css";
 import { TibialCanvas } from "./TibialCanvas";
 import { TibialControlsPanel } from "./TibialControlsPanel";
@@ -30,6 +31,18 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
 
   const isReadOnly = plan.isReadyForVr || plan.lockedVersion !== undefined;
 
+  const patientBone = (() => {
+    const tp = plan.payload?.tibial_planning as Record<string, any> | undefined;
+    if (tp?.patient_ml_mm && tp?.patient_ap_mm) {
+      return { mlMm: Number(tp.patient_ml_mm), apMm: Number(tp.patient_ap_mm) };
+    }
+    const v1Ass = plan.payload?.v1_assessment as Record<string, any> | undefined;
+    if (v1Ass?.patient_tibial_ml_mm && v1Ass?.patient_tibial_ap_mm) {
+      return { mlMm: Number(v1Ass.patient_tibial_ml_mm), apMm: Number(v1Ass.patient_tibial_ap_mm) };
+    }
+    return { mlMm: 68.2, apMm: 42.5 };
+  })();
+
   const initialComponent: V1TibialComponent = (() => {
     if (isReadOnly && plan.lockedVersion?.payload.v1_tibial) {
       return { ...plan.lockedVersion.payload.v1_tibial, is_confirmed: true };
@@ -41,7 +54,10 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
     const fit = evaluateTibialFit(
       DEFAULT_TIBIAL_COMPONENT.implant_size,
       DEFAULT_TIBIAL_COMPONENT.position_2d.x_offset_mm,
-      DEFAULT_TIBIAL_COMPONENT.position_2d.y_offset_mm
+      DEFAULT_TIBIAL_COMPONENT.position_2d.y_offset_mm,
+      patientBone.apMm,
+      patientBone.mlMm,
+      DEFAULT_TIBIAL_COMPONENT.position_2d.rotation_deg
     );
     return {
       ...DEFAULT_TIBIAL_COMPONENT,
@@ -60,7 +76,10 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
   const fitResult = evaluateTibialFit(
     tibialComponent.implant_size,
     tibialComponent.position_2d.x_offset_mm,
-    tibialComponent.position_2d.y_offset_mm
+    tibialComponent.position_2d.y_offset_mm,
+    patientBone.apMm,
+    patientBone.mlMm,
+    tibialComponent.position_2d.rotation_deg
   );
 
   const rawLandmarks = (plan.payload?.assessment_landmarks as Record<string, any>) || {};
@@ -71,14 +90,32 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
     ankleCenter: rawLandmarks.ankleCenter || rawLandmarks.ankle_center,
   };
 
-  const imageMatch = plan.case?.imaging?.find(
-    (img) => img.view.toLowerCase() === viewMode.toLowerCase()
+  const apImage =
+    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "ap") ||
+    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "flap") ||
+    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "long_leg");
+
+  const klatImage =
+    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "klat") ||
+    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "lateral");
+
+  const imageMatch = viewMode === "FLAP" ? apImage : klatImage;
+  const currentImgSrc = imageMatch?.src || (viewMode === "FLAP" ? "/knee_xray_ap.jpg" : "/klat.jpg");
+  const activeCalibration = normalizeCalibration(
+    imageMatch?.calibration || plan.payload.calibration,
+    `${viewMode} ${currentImgSrc}`
   );
-  const currentImgSrc = imageMatch?.src || (viewMode === "FLAP" ? "/flap.jpg" : "/klat.jpg");
 
   const handlePositionChange = (newPos: { x_offset_mm: number; y_offset_mm: number; rotation_deg: number }) => {
     if (isReadOnly) return;
-    const fit = evaluateTibialFit(tibialComponent.implant_size, newPos.x_offset_mm, newPos.y_offset_mm);
+    const fit = evaluateTibialFit(
+      tibialComponent.implant_size,
+      newPos.x_offset_mm,
+      newPos.y_offset_mm,
+      patientBone.apMm,
+      patientBone.mlMm,
+      newPos.rotation_deg
+    );
     setTibialComponent((prev) => ({
       ...prev,
       position_2d: newPos,
@@ -97,29 +134,29 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
             onClick={() => setViewMode("FLAP")}
             style={{
               padding: "0.5rem 1rem",
-              background: viewMode === "FLAP" ? "var(--accent)" : "var(--surface)",
-              color: viewMode === "FLAP" ? "white" : "inherit",
+              background: viewMode === "FLAP" ? "var(--brand)" : "var(--surface)",
+              color: viewMode === "FLAP" ? "var(--on-brand)" : "var(--ink)",
               border: "1px solid var(--border)",
               borderRadius: "4px",
               cursor: "pointer",
               fontWeight: 600,
             }}
           >
-            FLAP View (Full-Length AP)
+            AP View (Coronal Sizing)
           </button>
           <button
             onClick={() => setViewMode("KLAT")}
             style={{
               padding: "0.5rem 1rem",
-              background: viewMode === "KLAT" ? "var(--accent)" : "var(--surface)",
-              color: viewMode === "KLAT" ? "white" : "inherit",
+              background: viewMode === "KLAT" ? "var(--brand)" : "var(--surface)",
+              color: viewMode === "KLAT" ? "var(--on-brand)" : "var(--ink)",
               border: "1px solid var(--border)",
               borderRadius: "4px",
               cursor: "pointer",
               fontWeight: 600,
             }}
           >
-            KLAT View (Localized Knee)
+            KLAT View (Localized Lateral)
           </button>
         </div>
 
@@ -133,6 +170,8 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
               assessmentLandmarks={assessmentLandmarks}
               isReadOnly={isReadOnly}
               src={currentImgSrc}
+              calibration={activeCalibration}
+              patientBone={patientBone}
             />
           </div>
 
@@ -143,6 +182,7 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
               setTibialComponent={setTibialComponent}
               fitResult={fitResult}
               plan={plan}
+              patientBone={patientBone}
             />
           </div>
         </div>

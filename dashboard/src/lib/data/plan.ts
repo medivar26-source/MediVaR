@@ -28,6 +28,7 @@ import {
 } from "./planning-content";
 import { LAST_STEP } from "@/lib/plan";
 import type { PlanCase, PlanDetail, StepGate, CaseRisk } from "@/lib/plan";
+import { normalizeCalibration } from "./coordinates";
 
 export * from "@/lib/plan";
 
@@ -205,6 +206,7 @@ export async function getPlan(planId: string): Promise<PlanDetail | null> {
         view: img.view,
         label: img.label,
         src: img.url || (img.view === "FLAP" ? "/flap.jpg" : "/klat.jpg"),
+        calibration: normalizeCalibration(img.calibration),
       })),
       objectives: caseDetail.objectives || [],
       referenceRanges: REFERENCE_RANGES,
@@ -225,6 +227,7 @@ export async function getPlan(planId: string): Promise<PlanDetail | null> {
       },
     ];
   }
+  if (!planCase) return null;
 
   return {
     id: plan.id,

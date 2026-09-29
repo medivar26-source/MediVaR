@@ -197,6 +197,54 @@ export function LearnerDashboard({
           </div>
         )}
 
+        {/* SECTION C.5: Scheduled Sessions */}
+        {data.scheduledSessions && data.scheduledSessions.length > 0 && (
+          <div>
+            <div className={ls.sectionHeader}>
+              <div>
+                <h3 className={ls.sectionTitle}>Scheduled Sessions</h3>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "var(--t-caption)",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  Training and assessment sessions organized by your instructor
+                </p>
+              </div>
+            </div>
+            <div className={ls.casesGrid}>
+              {data.scheduledSessions.map((s) => (
+                <div key={s.id} className={ls.caseCard}>
+                  <div className={ls.caseCardHead}>
+                    <h4 className={ls.caseTitle}>{s.name}</h4>
+                    <Badge status={s.status === "scheduled" ? "warn" : s.status === "completed" ? "pass" : "neutral"}>
+                      {titleCase(s.status.replace("_", " "))}
+                    </Badge>
+                  </div>
+                  <div className={ls.caseChips}>
+                    <span className={ls.cohortMeta}>{s.caseName ?? "No case"}</span>
+                    <span className={ls.cohortMeta}>· {titleCase(s.mode)}</span>
+                    <span className={ls.cohortMeta}>· {s.duration} mins</span>
+                  </div>
+                  {s.description && <p className={ls.caseSummary}>{s.description}</p>}
+                  <div className={ls.caseFoot}>
+                    <span>{new Date(s.scheduledAt).toLocaleString()}</span>
+                    {s.status !== "completed" && s.caseId ? (
+                      <Link href={`/cases/${s.caseId}`} className={ls.caseAction}>
+                        Prepare & Start →
+                      </Link>
+                    ) : s.status === "completed" ? (
+                      <span className={ls.caseAction} style={{ color: "var(--pass)" }}>Completed</span>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* SECTION D: Assigned Cases with Lifecycle Statuses */}
         {enrichedCases.length > 0 && (
           <div>

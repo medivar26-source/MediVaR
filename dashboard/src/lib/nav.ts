@@ -1,8 +1,9 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Boxes,
   CircleHelp,
   Compass,
+  FileText,
+  FolderOpen,
   GraduationCap,
   Settings,
 } from "lucide-react";
@@ -17,13 +18,9 @@ import type { Persona } from "./roles";
  *
  * Clicking a rail icon swaps the panel; it does not navigate. Navigation
  * happens from the panel, so the rail never loses the user's place.
- *
- * An item names a `badgeKey`; it never carries a number. `sectionsForPersona`
- * resolves those keys against real counts, and a key with no count renders no
- * badge — a zero is not news, and an invented count is worse than no count.
  */
 
-export type SectionId = "overview" | "programs" | "cohort" | "contents";
+export type SectionId = "overview" | "programs" | "content-library" | "reports";
 
 export type PanelItem = {
   label: string;
@@ -42,10 +39,14 @@ export type PanelGroup = {
   items: PanelItem[];
 };
 
+export type NavGroup = PanelGroup;
+
 export type NavSection = {
   id: SectionId;
   /** Panel heading. */
   label: string;
+  /** Primary destination URL when clicking the rail icon. */
+  href: string;
   icon: LucideIcon;
   personas: Persona[];
   groups: PanelGroup[];
@@ -55,6 +56,7 @@ export const SECTIONS: NavSection[] = [
   {
     id: "overview",
     label: "Dashboard",
+    href: "/",
     icon: Compass,
     personas: ["learner", "instructor", "admin"],
     groups: [
@@ -63,7 +65,7 @@ export const SECTIONS: NavSection[] = [
           { label: "Dashboard", href: "/" },
           { label: "Activity", href: "/activity" },
           { label: "Performance", href: "/performance" },
-          { label: "Reports", href: "/reports" },
+          { label: "Reports", href: "/reports", personas: ["learner"] },
         ],
       },
       {
@@ -80,125 +82,100 @@ export const SECTIONS: NavSection[] = [
   {
     id: "programs",
     label: "Programs",
+    href: "/programs",
     icon: GraduationCap,
-    personas: ["learner"],
-    groups: [
-      {
-        items: [
-          { label: "Programs", href: "/programs" },
-        ],
-      },
-      {
-        label: "Sessions",
-        items: [
-          {
-            label: "All sessions",
-            href: "/sessions",
-            children: [
-              {
-                label: "Live now",
-                href: "/sessions?status=live",
-                badgeKey: "sessions.live",
-              },
-              {
-                label: "Interrupted",
-                href: "/sessions?status=aborted",
-                badgeKey: "sessions.aborted",
-              },
-              { label: "Completed", href: "/sessions?status=completed" },
-            ],
-          },
-        ],
-      },
-      {
-        label: "Planning",
-        items: [
-          {
-            label: "My plans",
-            href: "/plans",
-            children: [
-              {
-                label: "Ready for VR",
-                href: "/plans?state=ready",
-                badgeKey: "plans.ready",
-              },
-              { label: "PIN issued", href: "/plans?state=paired" },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "cohort",
-    label: "Cohorts",
-    icon: GraduationCap,
-    personas: ["instructor", "admin"],
-    groups: [
-      {
-        items: [
-          { label: "Cohorts", href: "/cohorts" },
-          { label: "Learners", href: "/cohorts/learners" },
-        ],
-      },
-      {
-        label: "Sessions",
-        items: [
-          {
-            label: "All sessions",
-            href: "/sessions",
-            children: [
-              {
-                label: "Live now",
-                href: "/sessions?status=live",
-                badgeKey: "sessions.live",
-              },
-              {
-                label: "Interrupted",
-                href: "/sessions?status=aborted",
-                badgeKey: "sessions.aborted",
-              },
-              { label: "Completed", href: "/sessions?status=completed" },
-            ],
-          },
-        ],
-      },
-      {
-        label: "Planning",
-        items: [
-          {
-            label: "My plans",
-            href: "/plans",
-            children: [
-              {
-                label: "Ready for VR",
-                href: "/plans?state=ready",
-                badgeKey: "plans.ready",
-              },
-              { label: "PIN issued", href: "/plans?state=paired" },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-
-  {
-    id: "contents",
-    label: "Contents",
-    icon: Boxes,
     personas: ["learner", "instructor", "admin"],
     groups: [
       {
         items: [
-          { label: "Simulations", href: "/simulations" },
-          { label: "Case library", href: "/cases" },
-          { label: "Library", href: "/library" },
+          {
+            label: "All Programs",
+            href: "/programs",
+            personas: ["instructor", "admin"],
+          },
+          {
+            label: "Learners",
+            href: "/cohorts/learners",
+            personas: ["instructor", "admin"],
+          },
+          {
+            label: "Your Programs",
+            href: "/programs",
+            personas: ["learner"],
+          },
+        ],
+      },
+      {
+        label: "Sessions",
+        items: [
+          {
+            label: "Sessions",
+            href: "/sessions",
+            personas: ["learner"],
+          },
+        ],
+      },
+      {
+        label: "Planning",
+        items: [
+          {
+            label: "My Plans",
+            href: "/plans",
+            personas: ["learner"],
+          },
         ],
       },
     ],
   },
-
+  {
+    id: "content-library",
+    label: "Content Library",
+    href: "/cases",
+    icon: FolderOpen,
+    personas: ["learner", "instructor", "admin"],
+    groups: [
+      {
+        items: [
+          {
+            label: "Case Library",
+            href: "/cases",
+            personas: ["instructor", "admin"],
+          },
+          {
+            label: "Simulations",
+            href: "/simulations",
+            personas: ["learner"],
+          },
+          {
+            label: "Practice Cases",
+            href: "/cases",
+            personas: ["learner"],
+          },
+          {
+            label: "Library",
+            href: "/library",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "reports",
+    label: "Reports",
+    href: "/reports",
+    icon: FileText,
+    personas: ["instructor", "admin"],
+    groups: [
+      {
+        items: [
+          {
+            label: "Global Reports",
+            href: "/reports",
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 /** Pinned to the bottom of the rail, below the divider. */
@@ -211,9 +188,6 @@ export const RAIL_FOOTER: { id: string; label: string; icon: LucideIcon; href: s
 /**
  * The panels this persona may see, with every `badgeKey` resolved against real
  * counts and the Pinned group built from the user's own recent rows.
- *
- * `data` is optional so the command palette — which only needs destinations,
- * never counts — can call this without a round trip.
  */
 export function sectionsForPersona(
   persona: Persona,
@@ -254,21 +228,32 @@ export function sectionsForPersona(
 
 /** Which section owns a route — used to open the right panel on load. */
 export function sectionForPath(path: string, persona: Persona): SectionId {
-  const available = sectionsForPersona(persona);
-  for (const section of available) {
-    for (const group of section.groups) {
-      for (const item of group.items) {
-        const hrefs = [item.href, ...(item.children ?? []).map((c) => c.href)];
-        if (
-          hrefs.some(
-            (href) =>
-              href !== "/" && path.startsWith(href.split("?")[0]),
-          )
-        ) {
-          return section.id;
-        }
-      }
-    }
+  const cleanPath = path.split("?")[0];
+  if (
+    cleanPath === "/" ||
+    cleanPath.startsWith("/activity") ||
+    cleanPath.startsWith("/performance")
+  ) {
+    return "overview";
   }
-  return available[0]?.id ?? "overview";
+  if (cleanPath.startsWith("/programs") || cleanPath.startsWith("/cohorts")) {
+    return "programs";
+  }
+  if (
+    cleanPath.startsWith("/cases") ||
+    cleanPath.startsWith("/library") ||
+    cleanPath.startsWith("/simulations")
+  ) {
+    return "content-library";
+  }
+  if (cleanPath.startsWith("/reports")) {
+    if (persona === "instructor" || persona === "admin") {
+      return "reports";
+    }
+    return "overview";
+  }
+  if (cleanPath.startsWith("/plans") || cleanPath.startsWith("/sessions")) {
+    return "programs";
+  }
+  return "overview";
 }

@@ -146,3 +146,6 @@ export const apiAddFeedback = (
     method: "POST",
     body: { feedback, attempt_id: attemptId },
   });
+
+export const apiListSessions = (token: string, residentId: string) =>
+  call<any[]>(token, `/residents/${encodeURIComponent(residentId)}/sessions`);

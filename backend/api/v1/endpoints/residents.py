@@ -13,6 +13,7 @@ from schemas.resident import (
     TrainingAssignment,
     TrainingAssignmentCreate,
 )
+from schemas.cohorts import SessionSummary
 from services import resident_service
 
 router = APIRouter()
@@ -104,3 +105,9 @@ def add_feedback(
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/{resident_id}/sessions", response_model=List[SessionSummary])
+def list_sessions(resident_id: str, current_user: UserProfile = Depends(get_current_user)):
+    if current_user.role not in ("instructor", "admin") and current_user.id != resident_id:
+        raise HTTPException(status_code=403, detail="Not authorized to view these sessions.")
+    return resident_service.list_sessions(resident_id)

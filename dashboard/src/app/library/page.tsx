@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Film } from "lucide-react";
-import { AppShell, PageHeader, SectionHeader } from "@/components/shell";
+import { AppShell, Breadcrumbs, PageHeader, SectionHeader } from "@/components/shell";
 import { Button, Chip, EmptyState } from "@/components/ui";
 import { getLibrary } from "@/lib/data/support";
 import { getCurrentUser } from "@/lib/session";
@@ -25,6 +25,13 @@ export default async function LibraryPage() {
 
   return (
     <AppShell user={user} searchHint='Try searching "library"'>
+      <Breadcrumbs
+        items={[
+          { label: "Content Library" },
+          { label: "Library" },
+        ]}
+      />
+
       <PageHeader
         title="Library"
         lede="Guides and references, each rendered from the same rows the product enforces — so nothing here can disagree with what a headset is handed."

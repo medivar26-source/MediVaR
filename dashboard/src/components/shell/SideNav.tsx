@@ -1,42 +1,100 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { ChevronDown, Stethoscope } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Stethoscope } from "lucide-react";
 import { cx } from "@/lib/cx";
 import {
   RAIL_FOOTER,
   sectionForPath,
   sectionsForPersona,
 } from "@/lib/nav";
-import type { PanelItem, SectionId } from "@/lib/nav";
+import type { NavGroup, PanelItem } from "@/lib/nav";
 import type { NavData } from "@/lib/data/nav";
 import type { Persona } from "@/lib/roles";
 import s from "./AppShell.module.css";
 
 /**
- * Tier 1 (rail) selects which panel is shown. Tier 2 (panel) navigates.
- * Clicking a rail icon deliberately does NOT navigate — browsing sections
- * never costs the user their current page.
- *
- * `nav` arrives as plain JSON and the sections are resolved here, on the
- * client. Resolving them on the server would mean sending a `NavSection` —
- * which holds a Lucide icon — across the boundary, and that throws at request
- * time.
+ * Rail icons are direct navigation links. Clicking an icon immediately redirects
+ * to that section's primary route. The contextual panel displays that section's
+ * sub-navigation based on the current active URL.
  */
-export function SideNav({ persona, nav }: { persona: Persona; nav: NavData }) {
-  const pathname = usePathname();
-  const sections = sectionsForPersona(persona, nav);
-  const [openId, setOpenId] = useState<SectionId>(() =>
-    sectionForPath(pathname, persona),
+export function SideNav(props: { persona: Persona; nav: NavData }) {
+  return (
+    <Suspense fallback={<nav className={s.rail} aria-label="Sections" />}>
+      <SideNavContent {...props} />
+    </Suspense>
   );
+}
 
-  const active = sections.find((x) => x.id === openId) ?? sections[0];
+function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const sections = sectionsForPersona(persona, nav);
+  const activeSectionId = sectionForPath(pathname, persona);
+  const active = sections.find((x) => x.id === activeSectionId) ?? sections[0];
+
+  // Inspect path for contextual program and cohort hierarchy
+  const programMatch = pathname.match(/^\/programs\/([^/]+)(?:\/cohorts\/([^/]+))?/);
+  const programId = programMatch ? programMatch[1] : null;
+  const cohortId = programMatch ? programMatch[2] : null;
+
+  let activeGroups = active?.groups ?? [];
+  if (
+    (persona === "instructor" || persona === "admin") &&
+    active?.id === "programs" &&
+    programId
+  ) {
+    const programGroup: NavGroup = {
+      label: "Program Workspace",
+      items: [
+        { label: "Overview", href: `/programs/${programId}?tab=overview` },
+        { label: "Curriculum", href: `/programs/${programId}?tab=curriculum` },
+        { label: "Skills", href: `/programs/${programId}?tab=skills` },
+        { label: "Assessment", href: `/programs/${programId}?tab=assessment` },
+        { label: "Cohorts", href: `/programs/${programId}?tab=cohorts` },
+      ],
+    };
+
+    const newGroups: NavGroup[] = [...activeGroups, programGroup];
+
+    if (cohortId) {
+      const cohortGroup: NavGroup = {
+        label: "Cohort Workspace",
+        items: [
+          { label: "Overview", href: `/programs/${programId}/cohorts/${cohortId}?tab=overview` },
+          { label: "Residents", href: `/programs/${programId}/cohorts/${cohortId}?tab=residents` },
+          { label: "Sessions", href: `/programs/${programId}/cohorts/${cohortId}?tab=sessions` },
+          { label: "Reports", href: `/programs/${programId}/cohorts/${cohortId}?tab=reports` },
+          { label: "Case Access", href: `/programs/${programId}/cohorts/${cohortId}?tab=cases` },
+          { label: "Enrollment", href: `/programs/${programId}/cohorts/${cohortId}?tab=enrollment` },
+        ],
+      };
+      newGroups.push(cohortGroup);
+    }
+    activeGroups = newGroups;
+  }
 
   const isCurrent = (href: string) => {
-    const base = href.split("?")[0];
-    return base === "/" ? pathname === "/" : pathname.startsWith(base);
+    const [targetBase, targetQuery] = href.split("?");
+    const currentTab = searchParams.get("tab") ?? "overview";
+
+    if (targetQuery) {
+      const targetTab = new URLSearchParams(targetQuery).get("tab");
+      return pathname === targetBase && currentTab === targetTab;
+    }
+
+    if (targetBase === "/") return pathname === "/";
+    if (targetBase === "/programs") return pathname === "/programs";
+    if (targetBase === "/cases") return pathname === "/cases";
+    if (targetBase === "/sessions") return pathname === "/sessions";
+    if (targetBase === "/plans") return pathname === "/plans";
+    if (targetBase === "/reports") return pathname === "/reports";
+    if (targetBase === "/settings") return pathname === "/settings";
+
+    if (pathname === targetBase) return true;
+    return pathname.startsWith(targetBase + "/");
   };
 
   const renderItem = (item: PanelItem, depth = 0) => (
@@ -80,17 +138,16 @@ export function SideNav({ persona, nav }: { persona: Persona; nav: NavData }) {
             ),
           );
           return (
-            <button
+            <Link
               key={section.id}
-              type="button"
+              href={section.href}
               className={cx(s.railBtn, on && s.railBtnOn)}
-              onClick={() => setOpenId(section.id)}
               aria-label={section.label}
-              aria-pressed={on}
+              aria-current={on ? "page" : undefined}
             >
               <section.icon className={s.railIcon} strokeWidth={1.75} />
               {hasBadge && <span className={s.railDot} aria-hidden="true" />}
-            </button>
+            </Link>
           );
         })}
 
@@ -111,11 +168,10 @@ export function SideNav({ persona, nav }: { persona: Persona; nav: NavData }) {
       <div className={s.panel}>
         <div className={s.panelHead}>
           <span className={s.panelTitle}>{active?.label}</span>
-          <ChevronDown className={s.panelCaret} aria-hidden="true" />
         </div>
 
         <nav className={s.panelScroll} aria-label={active?.label}>
-          {active?.groups.map((group, i) => (
+          {activeGroups.map((group, i) => (
             <div className={s.group} key={group.label ?? `g-${i}`}>
               {group.label && <p className={s.groupLabel}>{group.label}</p>}
               {group.items.map((item) => renderItem(item))}
@@ -123,10 +179,13 @@ export function SideNav({ persona, nav }: { persona: Persona; nav: NavData }) {
           ))}
         </nav>
 
-        <p className={s.panelFoot}>
+        <p className={pFootStyle}>
           Visibility is scoped by your role, not by this menu.
         </p>
       </div>
     </>
   );
 }
+
+const pFootStyle = s.panelFoot;
+
