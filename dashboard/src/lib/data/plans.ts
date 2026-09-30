@@ -29,6 +29,8 @@ export type PlanRow = {
   state: PlanState;
   /** Steps with an answer recorded. Not a gate verdict — that is server-side. */
   stepsAnswered: number;
+  /** How many steps this plan's workflow has: 4 for the TKR flow, 6 for the retired one. */
+  stepsTotal: number;
   /** Seconds spent across every step, from `step_timings`. */
   secondsSpent: number;
   sessionId?: string;
@@ -348,8 +350,44 @@ export type PlansView = {
   counts: Record<PlanState, number>;
 };
 
-export async function getPlans(state?: PlanState): Promise<PlansView> {
-  const mine = PLANS.filter((plan) => plan.userId === CURRENT_USER.id);
+/**
+ * Progress through the plan's own workflow. The TKR flow is four steps —
+ * assessment, tibial, femoral, review — and counting it against the retired
+ * six-step keys would always read 0 of 6.
+ */
+function stepProgress(
+  plan: PlanRecord,
+  payload: Record<string, unknown>,
+): { stepsAnswered: number; stepsTotal: number } {
+  if (plan.payload.workflow === "tkr") {
+    const p = plan.payload as unknown as {
+      v1_assessment?: unknown;
+      assessment_landmarks?: Record<string, unknown>;
+      v1_tibial?: { is_confirmed?: boolean };
+      v1_femoral?: { is_confirmed?: boolean };
+    };
+    const done = [
+      Boolean(p.v1_assessment) ||
+        Object.keys(p.assessment_landmarks ?? {}).length > 0,
+      Boolean(p.v1_tibial?.is_confirmed),
+      Boolean(p.v1_femoral?.is_confirmed),
+      plan.isReadyForVr,
+    ].filter(Boolean).length;
+    return { stepsAnswered: done, stepsTotal: 4 };
+  }
+  return {
+    stepsAnswered: STEP_KEYS.filter((key) => payload[key] !== undefined).length,
+    stepsTotal: 6,
+  };
+}
+
+export async function getPlans(
+  state?: PlanState,
+  userId: string = CURRENT_USER.id,
+): Promise<PlansView> {
+  // `startPlan` files a plan under the signed-in user, so callers pass that id;
+  // the seed user is only the default for code that has no session.
+  const mine = PLANS.filter((plan) => plan.userId === userId);
 
   const rows: PlanRow[] = mine.map((plan) => {
     const kase = CASE_BY_ID.get(plan.caseId);
@@ -389,7 +427,7 @@ export async function getPlans(state?: PlanState): Promise<PlansView> {
           : plan.isReadyForVr
             ? "ready"
             : "draft",
-      stepsAnswered: STEP_KEYS.filter((key) => payload[key] !== undefined).length,
+      ...stepProgress(plan, payload),
       secondsSpent: Object.values(plan.stepTimings).reduce(
         (sum: number, value: unknown) => sum + (Number(value) || 0),
         0,

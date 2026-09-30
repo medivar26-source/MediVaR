@@ -32,8 +32,8 @@ export function CaseStatusForm({
       onSubmit={(event) => {
         const message =
           nextStatus === "inactive"
-            ? "Deactivate this case? Residents will no longer be able to start new attempts. Past attempts and reports are kept."
-            : "Reactivate this case so residents can attempt it again?";
+            ? "Deactivate this case? Learners will no longer be able to start new attempts. Past attempts and reports are kept."
+            : "Reactivate this case so learners can attempt it again?";
         if (!window.confirm(message)) event.preventDefault();
       }}
     >

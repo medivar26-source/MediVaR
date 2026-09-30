@@ -64,7 +64,7 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
         label: "Cohort Workspace",
         items: [
           { label: "Overview", href: `/programs/${programId}/cohorts/${cohortId}?tab=overview` },
-          { label: "Residents", href: `/programs/${programId}/cohorts/${cohortId}?tab=residents` },
+          { label: "Learners", href: `/programs/${programId}/cohorts/${cohortId}?tab=residents` },
           { label: "Sessions", href: `/programs/${programId}/cohorts/${cohortId}?tab=sessions` },
           { label: "Reports", href: `/programs/${programId}/cohorts/${cohortId}?tab=reports` },
           { label: "Case Access", href: `/programs/${programId}/cohorts/${cohortId}?tab=cases` },
@@ -86,7 +86,9 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
     }
 
     if (targetBase === "/") return pathname === "/";
-    if (targetBase === "/programs") return pathname === "/programs";
+    if (targetBase === "/programs") {
+      return pathname === "/programs" && searchParams.get("tab") !== "cohorts";
+    }
     if (targetBase === "/cases") return pathname === "/cases";
     if (targetBase === "/sessions") return pathname === "/sessions";
     if (targetBase === "/plans") return pathname === "/plans";

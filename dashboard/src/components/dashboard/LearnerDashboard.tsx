@@ -1,7 +1,7 @@
 import { ArrowRight, ChevronRight, Play } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/shell";
-import { Badge, type BadgeStatus, Button } from "@/components/ui";
+import { Badge, type BadgeStatus, Button, DemoDataNote } from "@/components/ui";
 import {
   BarChart,
   DistributionBar,
@@ -110,11 +110,13 @@ export function LearnerDashboard({
                   : nextAction.type === "live_session" ||
                       nextAction.type === "interrupted_session"
                     ? "Resume session"
-                    : "Start simulation"}
+                    : "Start next case"}
             </Button>
           </>
         }
       />
+      <DemoDataNote />
+
 
       <div className={ls.container}>
         {/* SECTION B: Next Action Hero Banner */}
@@ -136,73 +138,12 @@ export function LearnerDashboard({
           </div>
         </div>
 
-        {/* SECTION C: Enrolled Programs */}
-        {programs.length > 0 && (
-          <div>
-            <div className={ls.sectionHeader}>
-              <h3 className={ls.sectionTitle}>Your Programs</h3>
-              <Link href="/programs" className={ls.sectionLink}>
-                View all programs ({programs.length}) →
-              </Link>
-            </div>
-            <div className={ls.programsGrid}>
-              {programs.map((prog) => {
-                const pct =
-                  cases.length > 0
-                    ? Math.round((completedCasesCount / cases.length) * 100)
-                    : 0;
-                return (
-                  <Link
-                    key={prog.id}
-                    href={`/programs/${prog.id}`}
-                    className={ls.programCard}
-                  >
-                    <div className={ls.programCardHead}>
-                      <div>
-                        <h4 className={ls.programName}>{prog.name}</h4>
-                        {prog.cohort_name && (
-                          <div className={ls.cohortMeta}>
-                            <span>
-                              Cohort:{" "}
-                              <strong style={{ color: "var(--ink)" }}>
-                                {prog.cohort_name}
-                              </strong>
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <Badge
-                        status={
-                          pct >= 100 ? "pass" : pct > 0 ? "warn" : "neutral"
-                        }
-                      >
-                        {pct}% complete
-                      </Badge>
-                    </div>
-                    {prog.description && (
-                      <p className={ls.programDesc}>{prog.description}</p>
-                    )}
-                    <div className={ls.programFoot}>
-                      <span>
-                        {completedCasesCount} of {cases.length} cases completed
-                      </span>
-                      <span className={ls.programOpen}>
-                        Open curriculum <ChevronRight size={14} />
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* SECTION C.5: Scheduled Sessions */}
-        {data.scheduledSessions && data.scheduledSessions.length > 0 && (
+        {data.upcomingSessions && data.upcomingSessions.length > 0 && (
           <div>
             <div className={ls.sectionHeader}>
               <div>
-                <h3 className={ls.sectionTitle}>Scheduled Sessions</h3>
+                <h3 className={ls.sectionTitle}>Upcoming Sessions</h3>
                 <p
                   style={{
                     margin: 0,
@@ -215,12 +156,12 @@ export function LearnerDashboard({
               </div>
             </div>
             <div className={ls.casesGrid}>
-              {data.scheduledSessions.map((s) => (
+              {data.upcomingSessions.map((s) => (
                 <div key={s.id} className={ls.caseCard}>
                   <div className={ls.caseCardHead}>
                     <h4 className={ls.caseTitle}>{s.name}</h4>
-                    <Badge status={s.status === "scheduled" ? "warn" : s.status === "completed" ? "pass" : "neutral"}>
-                      {titleCase(s.status.replace("_", " "))}
+                    <Badge status={s.status === "in_progress" ? "active" : "warn"}>
+                      {s.status === "in_progress" ? "In progress" : "Upcoming"}
                     </Badge>
                   </div>
                   <div className={ls.caseChips}>
@@ -327,12 +268,73 @@ export function LearnerDashboard({
           </div>
         )}
 
+        {/* SECTION C: Enrolled Programs */}
+        {programs.length > 0 && (
+          <div>
+            <div className={ls.sectionHeader}>
+              <h3 className={ls.sectionTitle}>Your Programs</h3>
+              <Link href="/programs" className={ls.sectionLink}>
+                View all programs ({programs.length}) →
+              </Link>
+            </div>
+            <div className={ls.programsGrid}>
+              {programs.map((prog) => {
+                const pct =
+                  cases.length > 0
+                    ? Math.round((completedCasesCount / cases.length) * 100)
+                    : 0;
+                return (
+                  <Link
+                    key={prog.id}
+                    href={`/programs/${prog.id}`}
+                    className={ls.programCard}
+                  >
+                    <div className={ls.programCardHead}>
+                      <div>
+                        <h4 className={ls.programName}>{prog.name}</h4>
+                        {prog.cohort_name && (
+                          <div className={ls.cohortMeta}>
+                            <span>
+                              Cohort:{" "}
+                              <strong style={{ color: "var(--ink)" }}>
+                                {prog.cohort_name}
+                              </strong>
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <Badge
+                        status={
+                          pct >= 100 ? "pass" : pct > 0 ? "warn" : "neutral"
+                        }
+                      >
+                        {pct}% complete
+                      </Badge>
+                    </div>
+                    {prog.description && (
+                      <p className={ls.programDesc}>{prog.description}</p>
+                    )}
+                    <div className={ls.programFoot}>
+                      <span>
+                        {completedCasesCount} of {cases.length} cases completed
+                      </span>
+                      <span className={ls.programOpen}>
+                        Open curriculum <ChevronRight size={14} />
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* SECTION E: Active Simulation & Latest Assessment */}
         <div className={ls.splitGrid}>
           {/* Panel 1: Simulation State */}
           <div className={ls.cardPanel}>
             <div>
-              <h3 className={ls.cardPanelTitle}>Current Simulation</h3>
+              <h3 className={ls.cardPanelTitle}>Current Session</h3>
               <p className={ls.cardPanelSub}>
                 Real-time status of your headset connection
               </p>
@@ -728,7 +730,18 @@ export function LearnerDashboard({
         </div>
 
         {/* SECTION I: Detailed Analytics (Drawer / Lower section) */}
-        <div className={ls.analyticsSection}>
+        {/* Collapsed by default: the page answers "what next?" first. */}
+        <details className={ls.analyticsSection}>
+          <summary
+            style={{
+              cursor: "pointer",
+              fontWeight: "var(--fw-semibold)",
+              color: "var(--ink)",
+              padding: "var(--s-3) 0",
+            }}
+          >
+            Show detailed analytics
+          </summary>
           <div className={ls.sectionHeader}>
             <div>
               <h3 className={ls.sectionTitle}>Detailed Analytics</h3>
@@ -907,7 +920,7 @@ export function LearnerDashboard({
               </div>
             </div>
           </div>
-        </div>
+        </details>
       </div>
     </>
   );

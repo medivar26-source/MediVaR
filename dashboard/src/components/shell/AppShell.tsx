@@ -25,7 +25,7 @@ export type AppShellProps = {
  */
 export async function AppShell({
   user,
-  searchHint = "Search cases, sessions, reports",
+  searchHint = "Search pages, cases, cohorts, learners",
   children,
 }: AppShellProps) {
   const persona = personaFor(user.role);

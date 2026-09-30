@@ -108,6 +108,9 @@ def add_feedback(
 
 @router.get("/{resident_id}/sessions", response_model=List[SessionSummary])
 def list_sessions(resident_id: str, current_user: UserProfile = Depends(get_current_user)):
-    if current_user.role not in ("instructor", "admin") and current_user.id != resident_id:
-        raise HTTPException(status_code=403, detail="Not authorized to view these sessions.")
+    if current_user.id != resident_id:
+        _require_instructor(current_user)
+        # Only for a resident in a cohort this instructor owns, never by id alone.
+        if not resident_service.is_supervised(resident_id, current_user.id):
+            raise HTTPException(status_code=404, detail="Resident not found, or not in a cohort you supervise.")
     return resident_service.list_sessions(resident_id)

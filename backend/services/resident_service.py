@@ -50,6 +50,12 @@ def _is_supervised(cur, resident_id: str, instructor_id: str) -> bool:
     return cur.fetchone() is not None
 
 
+def is_supervised(resident_id: str, instructor_id: str) -> bool:
+    """Public form of the supervision check, for endpoints that need only that."""
+    with _cursor() as cur:
+        return _is_supervised(cur, resident_id, instructor_id)
+
+
 def get_resident_summary(resident_id: str, instructor_id: str) -> Optional[Dict[str, Any]]:
     with _cursor() as cur:
         if not _is_supervised(cur, resident_id, instructor_id):

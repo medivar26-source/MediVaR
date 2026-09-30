@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { FolderOpen, Play, Plus } from "lucide-react";
+import { FolderOpen, Plus } from "lucide-react";
 import { AppShell, Breadcrumbs, PageHeader } from "@/components/shell";
 import { Badge, Button, Card, Chip, EmptyState, Skeleton } from "@/components/ui";
 import { listCases, type AttemptedFilter } from "@/lib/data/cases";
@@ -11,6 +11,8 @@ import { getCurrentUser } from "@/lib/session";
 import { PASS_MARK } from "@/lib/types";
 import { CaseFilters } from "./CaseFilters";
 import s from "./cases.module.css";
+import p from "../panels.module.css";
+import { cx } from "@/lib/cx";
 
 export const metadata: Metadata = { title: "Case Library" };
 
@@ -48,13 +50,13 @@ export default async function CasesPage({
     <AppShell user={user} searchHint='Try searching "varus"'>
       <Breadcrumbs
         items={[
-          { label: "Content Library" },
-          { label: isInstructor ? "Case Library" : "Practice Cases" },
+          ...(isInstructor ? [{ label: "Content Library" }] : []),
+          { label: isInstructor ? "Case Library" : "Cases" },
         ]}
       />
 
       <PageHeader
-        title={isInstructor ? "Case Library" : "Practice Cases"}
+        title={isInstructor ? "Case Library" : "Cases"}
         lede={
           isInstructor
             ? "Author, manage, and configure surgical simulation cases and reference planning criteria. Every case is synthetic."
@@ -67,13 +69,30 @@ export default async function CasesPage({
                 Create Case
               </Button>
             )}
-            <Button variant={isInstructor ? "secondary" : "primary"} icon={Play} href="/setup">
-              Start simulation
-            </Button>
           </div>
         }
       />
 
+      {!isInstructor && (
+        <nav className={p.tabs} aria-label="Case progress">
+          {(
+            [
+              { value: "unattempted", label: "To do" },
+              { value: "attempted", label: "Attempted" },
+              { value: "all", label: "All cases" },
+            ] as const
+          ).map((t) => (
+            <Link
+              key={t.value}
+              href={t.value === "all" ? "/cases" : `/cases?attempted=${t.value}`}
+              className={cx(p.tab, attempted === t.value && p.tabOn)}
+              aria-current={attempted === t.value ? "page" : undefined}
+            >
+              {t.label}
+            </Link>
+          ))}
+        </nav>
+      )}
 
       <Suspense fallback={<Skeleton height="180px" block />}>
         <CaseFilters facets={facets} matched={cases.length} total={total} />

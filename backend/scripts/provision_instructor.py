@@ -45,6 +45,12 @@ def main():
     parser.add_argument("--last-name", required=True, help="Last name")
     parser.add_argument("--institution", required=True, help="Institution name")
     parser.add_argument(
+        "--role",
+        choices=["instructor", "admin"],
+        default="instructor",
+        help="Account role. Use 'admin' once to bootstrap the first administrator.",
+    )
+    parser.add_argument(
         "--password",
         default=None,
         help="Temporary password (or set PROVISION_PASSWORD env var)",
@@ -86,6 +92,7 @@ def main():
             last_name=args.last_name,
             institution_name=args.institution,
             temp_password=password,
+            role=args.role,
         )
     except ValueError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

@@ -15,6 +15,7 @@ import {
   Th,
   THead,
   Tr,
+  DemoDataNote,
 } from "@/components/ui";
 import { BarChart, StatCard, StatRow } from "@/components/viz";
 import { getPerformanceOverview } from "@/lib/data/performance";
@@ -54,6 +55,8 @@ export default async function PerformancePage({
   return (
     <AppShell user={user} searchHint='Try searching "performance"'>
       <PageHeader title="Performance" lede={lede} />
+      <DemoDataNote />
+
 
       {/* The tab is the URL: it survives a reload and can be
           sent in a message, and the server renders only the selected panel. */}
@@ -75,8 +78,8 @@ export default async function PerformancePage({
           icon={BarChart3}
           title="No completed sessions yet"
           action={
-            <Button variant="primary" icon={Play} href="/setup">
-              Start simulation
+            <Button variant="primary" icon={Play} href="/cases">
+              Start a case
             </Button>
           }
         >

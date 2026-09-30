@@ -2,12 +2,20 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { FolderOpen, GraduationCap, Search, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cx } from "@/lib/cx";
+import { searchRecords, type SearchHit } from "@/app/actions/search";
 import { sectionsForPersona } from "@/lib/nav";
 import type { Persona } from "@/lib/roles";
 import s from "./SearchDialog.module.css";
+
+const KIND_ICON: Record<SearchHit["kind"], LucideIcon> = {
+  case: FolderOpen,
+  program: GraduationCap,
+  cohort: Users,
+  learner: Users,
+};
 
 export type SearchEntry = {
   title: string;
@@ -49,6 +57,8 @@ function Palette({
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Records found by name for the query that produced them.
+  const [found, setFound] = useState<{ q: string; hits: SearchHit[] }>({ q: "", hits: [] });
 
   // Moving focus is not state, so this stays a legitimate effect.
   useEffect(() => {
@@ -80,16 +90,45 @@ function Palette({
     return out;
   }, [persona]);
 
+  // Names of cases, programs, cohorts and learners: asked of the server once
+  // typing pauses. A stale answer is ignored, never shown.
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) return;
+    let current = true;
+    const timer = setTimeout(() => {
+      searchRecords(q)
+        .then((hits) => {
+          if (current) setFound({ q, hits });
+        })
+        .catch(() => {});
+    }, 250);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+  }, [query]);
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return entries.slice(0, 8);
-    return entries
+    const pages = entries
       .filter(
         (e) =>
           e.title.toLowerCase().includes(q) || e.meta.toLowerCase().includes(q),
       )
-      .slice(0, 12);
-  }, [entries, query]);
+      .slice(0, 6);
+    const records: SearchEntry[] =
+      found.q.toLowerCase() === q
+        ? found.hits.map((h) => ({
+            title: h.title,
+            meta: h.meta,
+            href: h.href,
+            icon: KIND_ICON[h.kind],
+          }))
+        : [];
+    return [...pages, ...records];
+  }, [entries, query, found]);
 
   // Clamped rather than reset in an effect.
   const active = Math.min(cursor, Math.max(results.length - 1, 0));
@@ -134,7 +173,7 @@ function Palette({
           <input
             ref={inputRef}
             className={s.input}
-            placeholder="Search cases, sessions, reports…"
+            placeholder="Search pages, cases, cohorts, learners…"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -153,7 +192,7 @@ function Palette({
             <div className={s.empty}>
               <p className={s.emptyTitle}>No matches for “{query}”</p>
               <p className={s.emptyText}>
-                Try a screen name — cases, sessions, reports, cohorts.
+                Try a page name, or part of a case, program, cohort or learner name.
               </p>
             </div>
           ) : (

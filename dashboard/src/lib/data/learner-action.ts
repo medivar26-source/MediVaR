@@ -96,7 +96,7 @@ export function resolveNextAction({
     return {
       type: "continue_plan",
       title: draftPlan.caseTitle,
-      subtitle: `Pre-operative plan in progress (${titleCase(draftPlan.difficulty)}) · ${draftPlan.stepsAnswered} of 6 steps answered`,
+      subtitle: `Pre-operative plan in progress (${titleCase(draftPlan.difficulty)}) · ${draftPlan.stepsAnswered} of ${draftPlan.stepsTotal ?? 6} steps ${draftPlan.stepsTotal === 4 ? "complete" : "answered"}`,
       badge: "Draft Plan",
       badgeTone: "brand",
       actionLabel: "Continue planning →",

@@ -11,6 +11,7 @@ import {
   Th,
   THead,
   Tr,
+  DemoDataNote,
 } from "@/components/ui";
 import { getReportsList } from "@/lib/data/performance";
 import { clock, shortDate, titleCase } from "@/lib/format";
@@ -43,13 +44,16 @@ export default async function ReportsPage() {
         title={persona === "learner" ? "Your Assessment Reports" : "Global Reports"}
         lede={
           persona === "learner"
-            ? "Every generated surgical case evaluation report for your completed simulation sessions. Review detailed scores, errors, and surgical accuracy."
+            ? "Every generated surgical case evaluation report for your completed sessions. Review detailed scores, errors, and surgical accuracy."
             : "Every generated surgical case report you may read. A report exists once its session completes and the database scores it."
         }
       />
+      <DemoDataNote />
+
 
       {reports.length === 0 ? (
-        <EmptyState icon={FileText} title="No reports yet">
+        <EmptyState icon={FileText} title="No reports yet"
+            action={persona === "learner" ? <Button variant="primary" href="/cases">Start a case</Button> : undefined}>
           {persona === "learner"
             ? "An assessment report is generated the moment you complete a simulation session in the headset. Finish an attempt to review your evaluation here."
             : "A report is generated the moment a session completes. Finish a session and its report appears here."}

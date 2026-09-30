@@ -11,6 +11,8 @@
  * differently.
  */
 
+import type { SessionSummary as CohortSession } from "./cohorts";
+import { pickUpcoming } from "./session-order";
 import {
   CASES,
   COHORTS,
@@ -102,7 +104,8 @@ export type LearnerDashboard = {
   weakest?: CategoryAverage;
   details: SessionDetail[];
   suggestedCases: CaseSummary[];
-  scheduledSessions?: SessionSummary[];
+  /** Sessions still to come (or under way), soonest first, from the sessions API. */
+  upcomingSessions?: CohortSession[];
 };
 
 export async function getLearnerDashboard(
@@ -111,14 +114,18 @@ export async function getLearnerDashboard(
 ): Promise<LearnerDashboard> {
   const now = Date.now();
   
-  let scheduledSessions: SessionSummary[] = [];
+  let upcomingSessions: CohortSession[] = [];
   try {
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
     const token = cookieStore.get("mediver-token")?.value;
     if (token) {
       const { apiListSessions } = await import("./residents-api");
-      scheduledSessions = await apiListSessions(token, userId);
+      const { toSessionSummary } = await import("./cohorts");
+      const raw = await apiListSessions(token, userId);
+      // Only what is still ahead: cancelled and finished sessions are history,
+      // and the Sessions page is where history lives.
+      upcomingSessions = pickUpcoming(raw.map(toSessionSummary));
     }
   } catch (err) {
     console.warn("Failed to fetch scheduled sessions:", err);
@@ -240,7 +247,7 @@ export async function getLearnerDashboard(
         isActive: row.isActive,
         attempts: 0,
       })),
-    scheduledSessions,
+    upcomingSessions,
   };
 }
 

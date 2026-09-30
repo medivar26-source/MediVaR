@@ -235,6 +235,11 @@ async def upload_radiograph(
     if current_user.role not in ("instructor", "admin"):
         raise HTTPException(status_code=403, detail="Not authorized to upload radiographs.")
 
+    try:
+        cases_service.assert_case_in_institution(case_id, current_user.institution_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Case not found.")
+
     # Validate calibration calculation dynamically
     cal_result = calculate_calibration(
         physical_marker_diameter_mm=marker_diameter_mm,

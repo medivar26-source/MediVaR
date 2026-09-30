@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { furthestOpenStep, getPlan } from "@/lib/data/plan";
+import { getPlan } from "@/lib/data/plan";
 import { getCurrentUser } from "@/lib/session";
 
 /**
@@ -29,14 +29,10 @@ export default async function PlanIndexPage({
 
   if (plan.hasSession) redirect(`/cases/${plan.caseId}`);
 
-  if (plan.payload.workflow === "tkr") {
-    if (plan.isReadyForVr || plan.lockedVersion) {
-      redirect(`/plan/${plan.id}/review`);
-    }
-    redirect(`/plan/${plan.id}/assessment`);
+  // One planning flow: assessment → tibial → femoral → review. The older
+  // seven-step flow is retired; its addresses redirect here.
+  if (plan.isReadyForVr || plan.lockedVersion) {
+    redirect(`/plan/${plan.id}/review`);
   }
-
-  if (plan.isReadyForVr) redirect(`/plan/${plan.id}/saved`);
-
-  redirect(`/plan/${plan.id}/step/${furthestOpenStep(plan.gates)}`);
+  redirect(`/plan/${plan.id}/assessment`);
 }

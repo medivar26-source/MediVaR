@@ -158,7 +158,7 @@ export default async function ProgramDetailPage({
                 variant="dark"
               />
               <StatCard
-                label="Enrolled residents"
+                label="Enrolled learners"
                 value={String(totalLearners)}
               />
               <StatCard
@@ -170,7 +170,7 @@ export default async function ProgramDetailPage({
               <StatCard
                 label="Curriculum cases"
                 value={String(cases.length)}
-                sub="surgical simulations"
+                sub="cases"
               />
             </StatRow>
 
@@ -473,7 +473,7 @@ export default async function ProgramDetailPage({
             <SectionHeader
               title="Supervised Learners"
               action={
-                <Link href="/cohorts/learners" className={p.clear}>
+                <Link href="/learners" className={p.clear}>
                   Every learner you supervise
                 </Link>
               }
@@ -510,6 +510,8 @@ export default async function ProgramDetailPage({
       : undefined;
 
   const userPassMark = PASS_MARK[user.defaultDifficulty] ?? 70;
+  // The next thing to do: the first case not yet attempted, else the first case.
+  const nextCase = cases.find((c) => c.attempts === 0) ?? cases[0];
 
   return (
     <AppShell user={user} searchHint='Try searching "cases"'>
@@ -525,9 +527,15 @@ export default async function ProgramDetailPage({
         title={program.name}
         lede={program.description || "Comprehensive clinical surgical simulation and procedural curriculum."}
         actions={
-          <Button variant="primary" icon={Play} href="/setup">
-            Start simulation
-          </Button>
+          nextCase ? (
+            <Button variant="primary" icon={Play} href={`/cases/${nextCase.id}`}>
+              {nextCase.attempts === 0 ? "Start next case" : "Practise a case"}
+            </Button>
+          ) : (
+            <Button variant="secondary" href="/cases">
+              Browse cases
+            </Button>
+          )
         }
       />
 
@@ -577,13 +585,14 @@ export default async function ProgramDetailPage({
         <StatCard
           label="Assigned cases"
           value={String(cases.length)}
-          sub="Interactive simulations"
+          sub="Practice cases"
         />
       </StatRow>
 
       <SectionHeader title="Curriculum Cases" />
       {cases.length === 0 ? (
-        <EmptyState icon={FolderOpen} title="No cases assigned yet">
+        <EmptyState icon={FolderOpen} title="No cases assigned yet"
+            action={<Button variant="primary" href="/cases">Browse cases</Button>}>
           There are no cases published in this program yet.
         </EmptyState>
       ) : (

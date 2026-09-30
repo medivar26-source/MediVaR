@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, GraduationCap } from "lucide-react";
+import { ChevronRight, GraduationCap, Users } from "lucide-react";
 import { AppShell, PageHeader, SectionHeader } from "@/components/shell";
-import { Chip, EmptyState } from "@/components/ui";
+import { Button, Chip, EmptyState } from "@/components/ui";
 import { StatCard, StatRow } from "@/components/viz";
+import { getCohorts } from "@/lib/data/cohorts";
 import { getPrograms } from "@/lib/data/programs";
+import { cx } from "@/lib/cx";
 import { shortDate } from "@/lib/format";
 import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
@@ -24,7 +26,12 @@ export const metadata: Metadata = { title: "Programs" };
  *   Serves as the main academic/training structure for institutional programs,
  *   enabling workspace access and program creation.
  */
-export default async function ProgramsPage() {
+export default async function ProgramsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab: rawTab } = await searchParams;
   const user = await getCurrentUser();
   const persona = personaFor(user.role);
   const isInstructor = persona === "instructor" || persona === "admin";
@@ -32,12 +39,71 @@ export default async function ProgramsPage() {
   const programs = await getPrograms();
 
   if (isInstructor) {
+    const tab = rawTab === "cohorts" ? "cohorts" : "programs";
+    const cohorts = tab === "cohorts" ? await getCohorts() : [];
+    const programName = new Map(programs.map((prog) => [prog.id, prog.name]));
+
     return (
       <AppShell user={user} searchHint='Try searching "programs"'>
         <PageHeader
           title="Programs"
           lede="Manage your academic training programs and the cohorts within them."
         />
+
+        <nav className={p.tabs} aria-label="Programs sections">
+          <Link
+            href="/programs"
+            className={cx(p.tab, tab === "programs" && p.tabOn)}
+            aria-current={tab === "programs" ? "page" : undefined}
+          >
+            Programs
+          </Link>
+          <Link
+            href="/programs?tab=cohorts"
+            className={cx(p.tab, tab === "cohorts" && p.tabOn)}
+            aria-current={tab === "cohorts" ? "page" : undefined}
+          >
+            All cohorts
+          </Link>
+        </nav>
+
+        {tab === "cohorts" ? (
+          cohorts.length === 0 ? (
+            <EmptyState icon={Users} title="No cohorts yet"
+            action={<Button variant="secondary" href="/programs">Open a program</Button>}>
+              Open a program and create a cohort under it, then add learners.
+            </EmptyState>
+          ) : (
+            <div className={p.cards}>
+              {cohorts.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/programs/${c.program_id}/cohorts/${c.id}`}
+                  className={p.card}
+                >
+                  <div className={p.panelHead}>
+                    <p className={p.cardTitle}>{c.name}</p>
+                  </div>
+                  <p className={p.cardBody}>
+                    {programName.get(c.program_id) ?? "Program"}
+                  </p>
+                  <p className={p.cardMeta}>
+                    {c.learners} learner{c.learners === 1 ? "" : "s"}
+                    {c.meanScore !== undefined ? ` · mean ${c.meanScore}` : ""}
+                    {c.belowPass > 0 ? ` · ${c.belowPass} below pass` : ""}
+                  </p>
+                  <div className={p.cardFoot}>
+                    <span className={p.cardOpen}>
+                      Open Cohort
+                      <ChevronRight className={p.cardChevron} strokeWidth={2} />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )
+        ) : (
+          <>
 
         {programs.length === 0 ? (
           <EmptyState icon={GraduationCap} title="No programs yet">
@@ -83,7 +149,11 @@ export default async function ProgramsPage() {
             </div>
           </>
         )}
+          </>
+        )}
 
+        {tab === "programs" && (
+          <>
         <SectionHeader title="Add a program" />
         <section className={p.panel} aria-label="Add a program">
           <div>
@@ -94,6 +164,8 @@ export default async function ProgramsPage() {
           </div>
           <NewProgram />
         </section>
+          </>
+        )}
       </AppShell>
     );
   }

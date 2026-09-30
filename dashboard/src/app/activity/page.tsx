@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarClock } from "lucide-react";
 import { AppShell, PageHeader, SectionHeader } from "@/components/shell";
-import { Badge, Chip, EmptyState } from "@/components/ui";
+import { Badge, Button, Chip, EmptyState, DemoDataNote } from "@/components/ui";
 import { BarChart, StatCard, StatRow } from "@/components/viz";
 import { getActivity } from "@/lib/data/performance";
 import { longDuration, timeOfDay, titleCase } from "@/lib/format";
@@ -22,9 +22,12 @@ export default async function ActivityPage() {
         title="Activity"
         lede="Your practice rhythm — every session, day by day, and the weekly pattern behind it."
       />
+      <DemoDataNote />
+
 
       {view.totals.sessions === 0 ? (
-        <EmptyState icon={CalendarClock} title="No activity yet">
+        <EmptyState icon={CalendarClock} title="No activity yet"
+            action={<Button variant="primary" href="/cases">Start a case</Button>}>
           Sessions appear here the moment one starts. Plan a case and pair a
           headset to begin.
         </EmptyState>

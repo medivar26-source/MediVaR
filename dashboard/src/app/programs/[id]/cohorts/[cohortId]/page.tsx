@@ -53,7 +53,7 @@ export async function generateMetadata({
 
 const COHORT_TABS = [
   { value: "overview", label: "Overview" },
-  { value: "residents", label: "Residents" },
+  { value: "residents", label: "Learners" },
   { value: "sessions", label: "Sessions" },
   { value: "reports", label: "Reports" },
   { value: "cases", label: "Case Access" },
@@ -149,7 +149,7 @@ export default async function CohortWorkspacePage({
       <PageHeader
         eyebrow={`Program: ${program.name}`}
         title={cohort.name}
-        lede={`${cohort.learners} resident${cohort.learners === 1 ? "" : "s"} · owned by ${cohort.ownerName ?? "—"} · created ${shortDate(cohort.createdAt)}`}
+        lede={`${cohort.learners} learner${cohort.learners === 1 ? "" : "s"} · owned by ${cohort.ownerName ?? "—"} · created ${shortDate(cohort.createdAt)}`}
         actions={
           <Button
             href={`/programs/${program.id}?tab=cohorts`}
@@ -189,7 +189,7 @@ export default async function CohortWorkspacePage({
               sub={
                 cohort.meanScore === undefined
                   ? "no scored reports yet"
-                  : `across ${scored.length} resident${scored.length === 1 ? "" : "s"}`
+                  : `across ${scored.length} learner${scored.length === 1 ? "" : "s"}`
               }
             />
             <StatCard
@@ -281,7 +281,7 @@ export default async function CohortWorkspacePage({
       {tab === "residents" && (
         <>
           <SectionHeader
-            title="Enrolled Residents"
+            title="Enrolled Learners"
             action={
               <Button
                 variant="secondary"
@@ -297,10 +297,10 @@ export default async function CohortWorkspacePage({
               Provision new resident accounts or enroll existing residents using the Enrollment tab.
             </EmptyState>
           ) : (
-            <Table label={`Residents in ${cohort.name}`}>
+            <Table label={`Learners in ${cohort.name}`}>
               <THead>
                 <Tr>
-                  <Th>Resident</Th>
+                  <Th>Learner</Th>
                   <Th>Role</Th>
                   <Th numeric>Sessions</Th>
                   <Th numeric>Assessments</Th>
@@ -314,7 +314,7 @@ export default async function CohortWorkspacePage({
                 {learners.map((learner) => (
                   <Tr key={learner.id}>
                     <Td head>
-                      <Link href={`/cohorts/learners/${learner.id}`}>
+                      <Link href={`/learners/${learner.id}`}>
                         {learner.displayName}
                       </Link>
                     </Td>
@@ -514,7 +514,7 @@ export default async function CohortWorkspacePage({
               <THead>
                 <Tr>
                   <Th>Date</Th>
-                  <Th>Resident</Th>
+                  <Th>Learner</Th>
                   <Th>Case</Th>
                   <Th>Mode</Th>
                   <Th>Difficulty</Th>
@@ -619,10 +619,10 @@ export default async function CohortWorkspacePage({
       {/* 6. ENROLLMENT TAB */}
       {tab === "enrollment" && (
         <>
-          <SectionHeader title="Enrollment & Resident Provisioning" />
-          <section className={p.panel} aria-label="Manage Residents">
+          <SectionHeader title="Enrollment & Learner Provisioning" />
+          <section className={p.panel} aria-label="Manage Learners">
             <div>
-              <p className={p.panelTitle}>Provision Residents</p>
+              <p className={p.panelTitle}>Provision Learners</p>
               <p className={p.panelSub}>
                 Directly provision new resident accounts or enroll existing residents into this cohort using their unique Learner ID.
               </p>

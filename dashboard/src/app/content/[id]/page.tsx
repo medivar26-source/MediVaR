@@ -120,14 +120,14 @@ export default async function CaseAuthoringPage({
       <div className={p.columns}>
         <div>
           <Card padding="lg">
-            <CardHeader title="Case details" subtitle="Visible to residents once the case is active." />
+            <CardHeader title="Case details" subtitle="Visible to learners once the case is active." />
             <EditCaseForm detail={detail} procedures={procedures} />
           </Card>
         </div>
 
         <div>
           <Card padding="lg" style={{ marginBottom: "var(--s-5)" }}>
-            <CardHeader title="Status" subtitle="Controls whether residents can start new attempts." />
+            <CardHeader title="Status" subtitle="Controls whether learners can start new attempts." />
             <CaseStatusForm caseId={detail.id} status={detail.status} />
           </Card>
 
@@ -197,7 +197,7 @@ export default async function CaseAuthoringPage({
             detail.usage === null
               ? "Not tracked yet."
               : detail.usage.length === 0
-                ? "No resident has attempted this case yet."
+                ? "No learner has attempted this case yet."
                 : `${detail.usage.length} learner${detail.usage.length === 1 ? "" : "s"}`
           }
         />
@@ -213,10 +213,10 @@ export default async function CaseAuthoringPage({
             <EmptyState icon={Users} title="Not yet used" />
           </div>
         ) : (
-          <Table label={`Residents who have attempted ${detail.title}`}>
+          <Table label={`Learners who have attempted ${detail.title}`}>
             <THead>
               <Tr>
-                <Th>Resident</Th>
+                <Th>Learner</Th>
                 <Th numeric>Sessions</Th>
                 <Th>Last session</Th>
               </Tr>
@@ -241,11 +241,11 @@ function BackLink() {
   return (
     <div style={{ marginBottom: "1rem" }}>
       <Link
-        href="/content"
+        href="/cases"
         className={p.clear}
         style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
       >
-        <ChevronLeft size={16} /> Back to Content / Case Library
+        <ChevronLeft size={16} /> Back to Case Library
       </Link>
     </div>
   );

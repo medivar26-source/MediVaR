@@ -1,11 +1,13 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  BookOpen,
   CircleHelp,
+  ClipboardList,
   Compass,
-  FileText,
   FolderOpen,
   GraduationCap,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 import type { BadgeKey, NavData } from "./data/nav";
 import type { Persona } from "./roles";
@@ -20,7 +22,13 @@ import type { Persona } from "./roles";
  * happens from the panel, so the rail never loses the user's place.
  */
 
-export type SectionId = "overview" | "programs" | "content-library" | "reports";
+export type SectionId =
+  | "overview"
+  | "training"
+  | "programs"
+  | "content-library"
+  | "help"
+  | "admin";
 
 export type PanelItem = {
   label: string;
@@ -58,23 +66,43 @@ export const SECTIONS: NavSection[] = [
     label: "Dashboard",
     href: "/",
     icon: Compass,
-    personas: ["learner", "instructor", "admin"],
+    personas: ["learner", "instructor"],
     groups: [
       {
         items: [
           { label: "Dashboard", href: "/" },
           { label: "Activity", href: "/activity" },
           { label: "Performance", href: "/performance" },
-          { label: "Reports", href: "/reports", personas: ["learner"] },
+          { label: "Reports", href: "/reports" },
         ],
       },
       {
         label: "By skill",
         items: [
+          { label: "Pre-op planning", href: "/performance/planning" },
           { label: "Bone cuts & alignment", href: "/performance/bone-cuts" },
           { label: "Gap assessment", href: "/performance/gaps" },
           { label: "Trialling & stability", href: "/performance/trialling" },
           { label: "Implantation", href: "/performance/implantation" },
+          { label: "Patellar management", href: "/performance/patella" },
+          { label: "Exposure & closure", href: "/performance/exposure" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "training",
+    label: "Training",
+    href: "/programs",
+    icon: ClipboardList,
+    personas: ["learner"],
+    groups: [
+      {
+        items: [
+          { label: "Your Programs", href: "/programs" },
+          { label: "Cases", href: "/cases" },
+          { label: "Pre-op Plans", href: "/plans" },
+          { label: "Sessions", href: "/sessions" },
         ],
       },
     ],
@@ -84,7 +112,7 @@ export const SECTIONS: NavSection[] = [
     label: "Programs",
     href: "/programs",
     icon: GraduationCap,
-    personas: ["learner", "instructor", "admin"],
+    personas: ["instructor"],
     groups: [
       {
         items: [
@@ -94,14 +122,14 @@ export const SECTIONS: NavSection[] = [
             personas: ["instructor", "admin"],
           },
           {
-            label: "Learners",
-            href: "/cohorts/learners",
+            label: "Cohorts",
+            href: "/programs?tab=cohorts",
             personas: ["instructor", "admin"],
           },
           {
-            label: "Your Programs",
-            href: "/programs",
-            personas: ["learner"],
+            label: "Learners",
+            href: "/learners",
+            personas: ["instructor", "admin"],
           },
         ],
       },
@@ -111,17 +139,6 @@ export const SECTIONS: NavSection[] = [
           {
             label: "Sessions",
             href: "/sessions",
-            personas: ["learner"],
-          },
-        ],
-      },
-      {
-        label: "Planning",
-        items: [
-          {
-            label: "My Plans",
-            href: "/plans",
-            personas: ["learner"],
           },
         ],
       },
@@ -132,7 +149,7 @@ export const SECTIONS: NavSection[] = [
     label: "Content Library",
     href: "/cases",
     icon: FolderOpen,
-    personas: ["learner", "instructor", "admin"],
+    personas: ["instructor"],
     groups: [
       {
         items: [
@@ -142,14 +159,14 @@ export const SECTIONS: NavSection[] = [
             personas: ["instructor", "admin"],
           },
           {
-            label: "Simulations",
-            href: "/simulations",
-            personas: ["learner"],
+            label: "Procedures",
+            href: "/content?tab=procedures",
+            personas: ["instructor", "admin"],
           },
           {
-            label: "Practice Cases",
-            href: "/cases",
-            personas: ["learner"],
+            label: "Assessment Criteria",
+            href: "/content?tab=criteria",
+            personas: ["instructor", "admin"],
           },
           {
             label: "Library",
@@ -160,18 +177,31 @@ export const SECTIONS: NavSection[] = [
     ],
   },
   {
-    id: "reports",
-    label: "Reports",
-    href: "/reports",
-    icon: FileText,
-    personas: ["instructor", "admin"],
+    id: "help",
+    label: "Help & guides",
+    href: "/library",
+    icon: BookOpen,
+    personas: ["learner"],
     groups: [
       {
         items: [
-          {
-            label: "Global Reports",
-            href: "/reports",
-          },
+          { label: "Library", href: "/library" },
+          { label: "Help", href: "/help" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "admin",
+    label: "Admin",
+    href: "/admin/instructors",
+    icon: ShieldCheck,
+    personas: ["admin"],
+    groups: [
+      {
+        items: [
+          { label: "Instructor accounts", href: "/admin/instructors" },
+          { label: "Institutions", href: "/admin/institutions" },
         ],
       },
     ],
@@ -229,31 +259,28 @@ export function sectionsForPersona(
 /** Which section owns a route — used to open the right panel on load. */
 export function sectionForPath(path: string, persona: Persona): SectionId {
   const cleanPath = path.split("?")[0];
-  if (
-    cleanPath === "/" ||
-    cleanPath.startsWith("/activity") ||
-    cleanPath.startsWith("/performance")
-  ) {
+  const on = (...prefixes: string[]) =>
+    prefixes.some((prefix) => cleanPath === prefix || cleanPath.startsWith(prefix + "/"));
+
+  if (cleanPath === "/" || on("/activity", "/reports", "/performance")) {
     return "overview";
   }
-  if (cleanPath.startsWith("/programs") || cleanPath.startsWith("/cohorts")) {
-    return "programs";
-  }
-  if (
-    cleanPath.startsWith("/cases") ||
-    cleanPath.startsWith("/library") ||
-    cleanPath.startsWith("/simulations")
-  ) {
-    return "content-library";
-  }
-  if (cleanPath.startsWith("/reports")) {
-    if (persona === "instructor" || persona === "admin") {
-      return "reports";
+
+  // A learner's whole training path lives in one section.
+  if (persona === "learner") {
+    if (on("/programs", "/cases", "/plans", "/plan", "/sessions", "/simulations", "/setup")) {
+      return "training";
     }
+    if (on("/library", "/help")) return "help";
     return "overview";
   }
-  if (cleanPath.startsWith("/plans") || cleanPath.startsWith("/sessions")) {
+
+  if (on("/admin")) return "admin";
+  if (on("/programs", "/cohorts", "/learners", "/plans", "/sessions")) {
     return "programs";
+  }
+  if (on("/cases", "/content", "/library", "/simulations")) {
+    return "content-library";
   }
   return "overview";
 }

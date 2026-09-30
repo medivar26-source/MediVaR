@@ -341,6 +341,15 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
             VR headset transfer transport is not yet connected; payload is cached for pairing. In accordance with MediVeR-XR architecture, 2D software parameters are now hard-locked into read-only mode.
           </p>
 
+          <div style={{ marginTop: "0.25rem", padding: "0.75rem", borderRadius: "8px", background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.25)" }}>
+            <strong style={{ fontSize: "0.8125rem", color: "#e2e8f0" }}>What happens next</strong>
+            <ol style={{ margin: "0.4rem 0 0", paddingLeft: "1.1rem", fontSize: "0.8125rem", color: "#cbd5e1", lineHeight: 1.6 }}>
+              <li>Your plan is sealed. It can no longer be edited.</li>
+              <li>Put on the headset and pair it to load this plan (headset pairing is not connected yet).</li>
+              <li>Perform the operation. The score appears under <a href="/sessions" style={{ color: "#38bdf8" }}>Sessions</a>, with a report for each run.</li>
+            </ol>
+          </div>
+
           {/* Collapsible/Viewable VR Payload JSON */}
           <div style={{ marginTop: "0.5rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
@@ -432,9 +441,14 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
               LOCK PLAN & SEND TO VR →
             </button>
           ) : (
-            <Button variant="secondary" href="/cases">
-              Return to Cases
-            </Button>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <Button variant="secondary" href={`/cases/${plan.caseId}`}>
+                Back to case
+              </Button>
+              <Button variant="secondary" href="/plans">
+                All pre-op plans
+              </Button>
+            </div>
           )}
         </div>
       </div>

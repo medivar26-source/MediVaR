@@ -52,6 +52,13 @@ def create_cohort(name: str, owner_id: str, institution_id: str, program_id: Opt
     conn = get_db_conn()
     try:
         cur = conn.cursor()
+        # A program belongs to one institution; never file a cohort under another one.
+        cur.execute(
+            "SELECT 1 FROM programs WHERE id = %s AND institution_id = %s",
+            (program_id, institution_id),
+        )
+        if not cur.fetchone():
+            raise ValueError("Program not found.")
         cur.execute(
             """
             INSERT INTO cohorts (program_id, name, owner_id)
@@ -73,6 +80,9 @@ def create_cohort(name: str, owner_id: str, institution_id: str, program_id: Opt
             mean_score=None,
             below_pass=0
         )
+    except ValueError:
+        conn.rollback()
+        raise
     except Exception as exc:
         conn.rollback()
         raise ValueError(f"Failed to create cohort: {exc}")
@@ -250,16 +260,27 @@ def add_existing_learner(
         cur = conn.cursor()
         
         # 1. Verify cohort ownership and get program
-        cur.execute("SELECT program_id FROM cohorts WHERE id = %s AND owner_id = %s", (cohort_id, owner_id))
+        cur.execute(
+            """
+            SELECT c.program_id, p.institution_id
+            FROM cohorts c JOIN programs p ON p.id = c.program_id
+            WHERE c.id = %s AND c.owner_id = %s
+            """,
+            (cohort_id, owner_id),
+        )
         cohort_row = cur.fetchone()
         if not cohort_row:
             raise ValueError("Cohort not found or unauthorized.")
         program_id = str(cohort_row["program_id"])
+        institution_id = str(cohort_row["institution_id"])
         
         # 2. Find learner by Learner ID
         cur.execute(
-            "SELECT id, first_name, last_name FROM users WHERE learner_id = %s AND status = 'active'",
-            (learner_id.upper(),)
+            """
+            SELECT id, first_name, last_name FROM users
+            WHERE learner_id = %s AND status = 'active' AND institution_id = %s
+            """,
+            (learner_id.upper(), institution_id)
         )
         user_row = cur.fetchone()
         if not user_row:
@@ -321,6 +342,23 @@ def set_cohort_cases(cohort_id: str, case_ids: List[str], owner_id: str) -> "Coh
     try:
         cur = conn.cursor()
         _verify_cohort_ownership(cur, cohort_id, owner_id)
+
+        # Only this institution's cases (or shared, institution-less ones) may be assigned.
+        if case_ids:
+            cur.execute(
+                """
+                SELECT c.id FROM cases c
+                WHERE c.id IN %s
+                  AND (c.institution_id IS NULL OR c.institution_id = (
+                        SELECT p.institution_id FROM cohorts co
+                        JOIN programs p ON p.id = co.program_id
+                        WHERE co.id = %s))
+                """,
+                (tuple(case_ids), cohort_id),
+            )
+            allowed = {str(r["id"]) for r in cur.fetchall()}
+            if allowed != {str(c) for c in case_ids}:
+                raise ValueError("One or more cases were not found.")
 
         # Remove anything assigned that isn't in the new set.
         if case_ids:

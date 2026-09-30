@@ -48,7 +48,7 @@ export async function getPreset(id: string): Promise<PresetSummary | null> {
 
 export async function getCohorts(): Promise<CohortSummary[]> {
   try {
-    const data = await apiClient.get('/cohorts');
+    const data = await apiClient.get('/cohorts/');
     return data.map((c: any) => ({
       id: c.id,
       program_id: c.program_id,
@@ -203,7 +203,12 @@ export type SessionSummary = {
   createdAt: string;
   caseId?: string;
   caseName?: string;
+  /** Same value as `caseName`, under the name the shared session type uses. */
+  caseTitle?: string;
   mode: string;
+  difficulty?: string;
+  design?: string;
+  fixation?: string;
   residentCount: number;
   completedCount: number;
 };
@@ -220,6 +225,7 @@ export function toSessionSummary(s: any): SessionSummary {
     createdAt: s.created_at,
     caseId: s.case_id ?? undefined,
     caseTitle: s.case_name ?? "Unknown Case",
+    caseName: s.case_name ?? undefined,
     mode: s.mode ?? "training",
     difficulty: s.difficulty ?? "beginner",
     design: s.design ?? "CR",

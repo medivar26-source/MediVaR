@@ -82,7 +82,7 @@ export function NewCaseForm({ procedures }: { procedures: ProcedureOption[] }) {
       <Textarea
         label="Description"
         name="description"
-        placeholder="One or two sentences a resident sees before starting."
+        placeholder="One or two sentences a learner sees before starting."
         rows={2}
         maxLength={1000}
         optional
@@ -91,7 +91,7 @@ export function NewCaseForm({ procedures }: { procedures: ProcedureOption[] }) {
       <Textarea
         label="Learning objective"
         name="learningObjective"
-        placeholder="What should a resident be able to do after completing this case?"
+        placeholder="What should a learner be able to do after completing this case?"
         rows={2}
         maxLength={1000}
         required

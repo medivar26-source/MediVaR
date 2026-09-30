@@ -14,6 +14,7 @@ import {
   Th,
   THead,
   Tr,
+  DemoDataNote,
 } from "@/components/ui";
 import { StatCard, StatRow } from "@/components/viz";
 import { asMode, asStatus, getSessionList } from "@/lib/data/sessions";
@@ -22,6 +23,7 @@ import { getCurrentUser } from "@/lib/session";
 import { personaFor } from "@/lib/roles";
 import { SessionFilters } from "./SessionFilters";
 import s from "./sessions.module.css";
+import p from "../panels.module.css";
 
 export const metadata: Metadata = { title: "Sessions" };
 
@@ -69,7 +71,26 @@ export default async function SessionsPage({
             ? "Every case you have performed in the headset, and what each one scored."
             : "Every session you supervise. Open one to see the report it produced."
         }
+        actions={
+          persona !== "learner" ? (
+            <Button variant="primary" href="/programs?tab=cohorts">
+              Schedule a session
+            </Button>
+          ) : (
+            <Button variant="secondary" href="/plans">
+              Pre-op plans
+            </Button>
+          )
+        }
       />
+      <DemoDataNote />
+
+      {persona !== "learner" && (
+        <p className={p.panelSub} style={{ marginTop: 0 }}>
+          Sessions are scheduled from a cohort: choose a cohort, then open its
+          Sessions tab.
+        </p>
+      )}
 
       <StatRow>
         <StatCard
@@ -175,7 +196,9 @@ export default async function SessionsPage({
                         <Badge status="warn">Upcoming</Badge>
                       ) : session.status === "live" ? (
                         <Badge status="active">In progress</Badge>
-                      ) : session.status === "aborted" || session.status === "cancelled" ? (
+                      ) : session.status === "cancelled" ? (
+                        <Chip tone="muted">Cancelled</Chip>
+                      ) : session.status === "aborted" ? (
                         <Chip tone="muted">Interrupted</Chip>
                       ) : score === undefined ? (
                         <Chip tone="muted">No report</Chip>

@@ -17,6 +17,7 @@ import type {
   ReportTimelineEntry,
   Verdict,
 } from "@/lib/report";
+import { personaFor } from "@/lib/roles";
 import { PASS_MARK, type Profile, type SessionSummary } from "@/lib/types";
 import {
   CASE_BY_ID,
@@ -29,6 +30,7 @@ import {
 } from "@/lib/seed";
 import { PLAN_BY_ID } from "./plans";
 import { visibleSessions } from "./scope";
+import { normalizeStatus, orderSessions } from "./session-order";
 
 export * from "@/lib/report";
 
@@ -103,7 +105,12 @@ export async function getSessionList(
       const persona = personaFor(user.role);
       if (persona === "learner") {
         const raw = await apiListSessions(token, user.id);
-        dbRows = raw.map(toSessionSummary);
+        // The API says "in_progress"; this product's own word for it is "live".
+        // Unify so the status filter and badges treat both the same.
+        dbRows = raw.map(toSessionSummary).map((row) => ({
+          ...row,
+          status: normalizeStatus(row.status) as SessionSummary["status"],
+        })) as unknown as SessionSummary[];
       }
     }
   } catch (err) {
@@ -117,7 +124,9 @@ export async function getSessionList(
       (!filters.caseId || row.caseId === filters.caseId),
   );
 
-  const sessions: SessionListItem[] = rows.map((row) => ({
+  const ordered = orderSessions(rows);
+
+  const sessions: SessionListItem[] = ordered.map((row) => ({
     ...row,
     passed:
       row.totalScore === undefined
@@ -158,7 +167,9 @@ export async function getSession(id: string): Promise<SessionSummary | null> {
       const { toSessionSummary } = await import("./cohorts");
       const dbRows = await apiListSessions(token, user.id);
       const found = dbRows.find((s: any) => s.id === id);
-      if (found) return toSessionSummary(found);
+      // The mapper returns the cohort-level shape plus the fields the shared
+      // session type needs (case title, difficulty, design, fixation).
+      if (found) return toSessionSummary(found) as unknown as SessionSummary;
     }
   } catch (err) {
     console.warn("Failed to fetch session from API:", err);

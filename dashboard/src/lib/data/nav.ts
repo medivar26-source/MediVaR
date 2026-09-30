@@ -10,7 +10,9 @@
  * absent count renders no badge rather than a zero.
  */
 
+import { getCohorts } from "./cohorts";
 import { PLANS } from "./plans";
+import { personaFor } from "@/lib/roles";
 import { sessionsFor } from "@/lib/seed";
 import type { Profile } from "@/lib/types";
 
@@ -35,13 +37,36 @@ export type NavData = {
 
 const EMPTY: NavData = { counts: {}, pinned: [], notifications: [] };
 
+/**
+ * An instructor's own sessions are not what needs their attention — their
+ * cohorts are. Sourced from the cohorts API, so it matches the cohort pages.
+ */
+async function cohortNotifications(user: Profile): Promise<NavNotification[]> {
+  if (personaFor(user.role) !== "instructor") return [];
+  const cohorts = await getCohorts();
+  return cohorts
+    .filter((c) => c.belowPass > 0)
+    .slice(0, 3)
+    .map((c) => ({
+      id: `cohort-${c.id}`,
+      title: `${c.belowPass} learner${c.belowPass === 1 ? "" : "s"} below the pass mark`,
+      meta: c.name,
+      href: `/programs/${c.program_id}/cohorts/${c.id}`,
+    }));
+}
+
 export async function getNavData(user: Profile): Promise<NavData> {
+  const cohortNotes = await cohortNotifications(user);
   const mine = sessionsFor(user.id).slice(0, 20);
   const readyCount = PLANS.filter(
     (plan) => plan.userId === user.id && plan.isReadyForVr,
   ).length;
 
-  if (!mine.length && !readyCount) return EMPTY;
+  if (!mine.length && !readyCount) {
+    return cohortNotes.length
+      ? { ...EMPTY, notifications: cohortNotes }
+      : EMPTY;
+  }
 
   const live = mine.filter((s) => s.status === "live");
   const aborted = mine.filter((s) => s.status === "aborted");
@@ -70,7 +95,7 @@ export async function getNavData(user: Profile): Promise<NavData> {
 
   /* ---- notifications: things that happened and need a decision ---- */
 
-  const notifications: NavNotification[] = [];
+  const notifications: NavNotification[] = [...cohortNotes];
   if (live[0]) {
     notifications.push({
       id: `live-${live[0].id}`,

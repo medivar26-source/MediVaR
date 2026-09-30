@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { AppShell } from "@/components/shell";
 import { InstructorDashboard } from "@/components/dashboard/InstructorDashboard";
 import { LearnerDashboard } from "@/components/dashboard/LearnerDashboard";
@@ -5,6 +6,7 @@ import {
   getInstructorDashboard,
   getLearnerDashboard,
 } from "@/lib/data/dashboard";
+import { getCohorts } from "@/lib/data/cohorts";
 import { getPlans } from "@/lib/data/plans";
 import { listCases } from "@/lib/data/cases";
 import { getPrograms } from "@/lib/data/programs";
@@ -31,13 +33,18 @@ export default async function DashboardPage({
 
   const weeks = windowFromParam(params.weeks, WEEK_OPTIONS);
 
+  // The platform administrator has no dashboard of learners; its home is the console.
+  if (persona === "admin") redirect("/admin/instructors");
+
   if (persona === "instructor") {
+    const cohorts = await getCohorts();
     return (
       <AppShell user={user} searchHint='Try searching "below pass mark"'>
         <InstructorDashboard
           user={user}
           data={await getInstructorDashboard(user.id, weeks)}
           weeks={weeks}
+          cohorts={cohorts}
         />
       </AppShell>
     );
@@ -46,7 +53,7 @@ export default async function DashboardPage({
   const [learnerData, programs, plansResult, casesResult] = await Promise.all([
     getLearnerDashboard(user.id, weeks),
     getPrograms(),
-    getPlans(),
+    getPlans(undefined, user.id),
     listCases(user.id, { attempted: "all" }),
   ]);
 

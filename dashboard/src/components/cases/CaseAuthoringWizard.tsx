@@ -637,6 +637,35 @@ export function CaseAuthoringWizard({
         />
       </div>
 
+      {/* Publish readiness, visible on every step so nothing is a surprise at step 5 */}
+      {currentStep < 5 && (
+        <details
+          style={{
+            border: "var(--bw) solid var(--border)",
+            borderRadius: "var(--r-md)",
+            background: "var(--surface)",
+            padding: "var(--s-3) var(--s-4)",
+          }}
+        >
+          <summary style={{ cursor: "pointer", fontWeight: "var(--fw-semibold)", color: "var(--ink)" }}>
+            Ready to publish: {checklist.filter((c) => c.ok).length} of {checklist.length} checks
+            {isPublishable ? " (all done)" : ""}
+          </summary>
+          <ul style={{ listStyle: "none", margin: "var(--s-3) 0 0", padding: 0, display: "grid", gap: "var(--s-2)" }}>
+            {checklist.map((c) => (
+              <li key={c.id} style={{ fontSize: "var(--t-label)", color: "var(--text)" }}>
+                <strong style={{ color: c.ok ? "var(--pass)" : "var(--warn)" }}>
+                  {c.ok ? "Done" : "Pending"}
+                </strong>
+                {" · "}
+                {c.label}
+                {!c.ok && c.detail ? ` — ${c.detail}` : ""}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
       {errorMessage && (
         <Banner
           tone="fail"

@@ -37,6 +37,8 @@ export { ProgressBar } from "./ProgressBar";
 export type { ProgressBarProps } from "./ProgressBar";
 
 export { Banner } from "./Banner";
+export { DemoDataNote } from "./DemoDataNote";
+export { PageSkeleton } from "./PageSkeleton";
 export type { BannerProps, BannerTone } from "./Banner";
 
 export { Stepper } from "./Stepper";

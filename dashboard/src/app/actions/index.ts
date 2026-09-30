@@ -426,8 +426,7 @@ export async function createProgram(
     return { error: "Failed to connect to the server." };
   }
 
-  revalidatePath("/programs");
-  revalidatePath("/cohorts");
+  revalidatePath("/programs", "layout");
   redirect("/programs");
 }
 
@@ -449,7 +448,7 @@ export async function createCohort(
   const token = cookieStore.get("mediver-token")?.value;
 
   try {
-    const res = await fetch(`${API_BASE}/cohorts`, {
+    const res = await fetch(`${API_BASE}/cohorts/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -466,9 +465,7 @@ export async function createCohort(
     return { error: "Failed to connect to the server." };
   }
 
-  revalidatePath(`/programs/${program_id}`);
-  revalidatePath(`/cohorts/program/${program_id}`);
-  revalidatePath("/cohorts");
+  revalidatePath("/programs", "layout");
   redirect(`/programs/${program_id}?tab=cohorts`);
 }
 
@@ -582,7 +579,7 @@ export async function assignCases(
     return { error: "Failed to connect to the server." };
   }
 
-  revalidatePath(`/cohorts/${cohortId}`);
+  revalidatePath("/programs", "layout");
   return { saved: `${caseIds.length} case(s) assigned` };
 }
 
@@ -634,7 +631,7 @@ export async function createSession(
     return { error: "Failed to connect to the server." };
   }
 
-  revalidatePath(`/cohorts/${cohortId}`);
+  revalidatePath("/programs", "layout");
   return { saved: "Session scheduled successfully." };
 }
 
@@ -666,7 +663,7 @@ export async function cancelSession(
     return { error: "Failed to connect to server." };
   }
 
-  revalidatePath(`/cohorts/${cohortId}`);
+  revalidatePath("/programs", "layout");
   return { saved: "Session cancelled." };
 }
 
@@ -712,7 +709,7 @@ export async function updateSession(
     return { error: "Failed to connect to the server." };
   }
 
-  revalidatePath(`/cohorts/${cohortId}`);
+  revalidatePath("/programs", "layout");
   return { saved: "Session updated successfully." };
 }
 /* ---------------------------------- cases --------------------------------- */
@@ -829,6 +826,7 @@ export async function createCase(
   }
 
   revalidatePath("/content");
+  revalidatePath("/cases");
   redirect(`/content/${id}`);
 }
 
@@ -862,6 +860,8 @@ export async function updateCase(
 
   revalidatePath("/content");
   revalidatePath(`/content/${caseId}`);
+  revalidatePath("/cases");
+  revalidatePath(`/cases/${caseId}`);
   return { saved: true };
 }
 
@@ -890,6 +890,8 @@ export async function setCaseStatus(
 
   revalidatePath("/content");
   revalidatePath(`/content/${caseId}`);
+  revalidatePath("/cases");
+  revalidatePath(`/cases/${caseId}`);
   return { success: true };
 }
 
@@ -1023,7 +1025,7 @@ export async function addInstructorNote(
     return { error: err instanceof ResidentApiError ? err.message : "Could not save the note." };
   }
 
-  revalidatePath(`/cohorts/learners/${residentId}`);
+  revalidatePath(`/learners/${residentId}`);
   return {};
 }
 
@@ -1052,7 +1054,7 @@ export async function assignPractice(
     return { error: err instanceof ResidentApiError ? err.message : "Could not assign the case." };
   }
 
-  revalidatePath(`/cohorts/learners/${residentId}`);
+  revalidatePath(`/learners/${residentId}`);
   return { saved: true };
 }
 
@@ -1084,6 +1086,6 @@ export async function saveInstructorFeedback(
   }
 
   if (attemptId) revalidatePath(`/sessions/${attemptId}/report`);
-  revalidatePath(`/cohorts/learners/${residentId}`);
+  revalidatePath(`/learners/${residentId}`);
   return { saved: true };
 }

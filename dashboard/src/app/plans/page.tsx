@@ -12,6 +12,7 @@ import {
   Th,
   THead,
   Tr,
+  DemoDataNote,
 } from "@/components/ui";
 import { StatCard, StatRow } from "@/components/viz";
 import { getPlans } from "@/lib/data/plans";
@@ -21,7 +22,7 @@ import { getCurrentUser } from "@/lib/session";
 import { PlanFilters } from "./PlanFilters";
 import p from "../panels.module.css";
 
-export const metadata: Metadata = { title: "Plans" };
+export const metadata: Metadata = { title: "Pre-op Plans" };
 
 const STATES: PlanState[] = ["draft", "ready", "paired", "performed"];
 
@@ -45,20 +46,27 @@ export default async function PlansPage({
     : undefined;
 
   const user = await getCurrentUser();
-  const { plans, counts } = await getPlans(state);
+  const { plans, counts } = await getPlans(state, user.id);
   const now = new Date().toISOString();
 
   return (
     <AppShell user={user} searchHint='Try searching "plans"'>
       <PageHeader
-        title="Plans"
+        title="Pre-op Plans"
         lede="Every case you have planned, and where each plan has got to — in progress, sealed and waiting for a headset, or performed."
         actions={
-          <Button href="/cases" variant="primary">
-            Plan a case
-          </Button>
+          <>
+            <Button href="/sessions" variant="secondary">
+              Sessions &amp; reports
+            </Button>
+            <Button href="/cases" variant="primary">
+              Plan a case
+            </Button>
+          </>
         }
       />
+      <DemoDataNote />
+
 
       <StatRow>
         <StatCard label="In progress" value={String(counts.draft)} variant="dark" />
@@ -114,7 +122,7 @@ export default async function PlansPage({
                       "—"
                     )}
                   </Td>
-                  <Td numeric>{plan.stepsAnswered} / 6</Td>
+                  <Td numeric>{plan.stepsAnswered} / {plan.stepsTotal}</Td>
                   <Td numeric>
                     {plan.secondsSpent ? longDuration(plan.secondsSpent) : "—"}
                   </Td>

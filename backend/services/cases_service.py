@@ -115,6 +115,25 @@ def validate_case_version_for_publishing(
 # Instructor Queries (Full Detail)
 # ---------------------------------------------------------------------------
 
+def assert_case_in_institution(case_id: UUID, institution_id: Optional[UUID]) -> None:
+    """
+    Raise ValueError("Case not found.") unless the case belongs to this
+    institution. Shared cases with no institution stay reachable. Called before
+    any write so another institution's case can never be changed.
+    """
+    if not institution_id:
+        return
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT institution_id FROM cases WHERE id = %s", (str(case_id),))
+            row = cur.fetchone()
+    finally:
+        conn.close()
+    if not row or (row["institution_id"] and str(row["institution_id"]) != str(institution_id)):
+        raise ValueError("Case not found.")
+
+
 def get_institution_cases(institution_id: UUID) -> List[Dict[str, Any]]:
     """Lists all cases for an institution with draft/published version IDs and linked programs."""
     conn = get_db_conn()
@@ -517,6 +536,7 @@ def update_case(case_id: UUID, case_in: CaseUpdate, instructor_id: UUID, institu
     RULE 2: Draft versions are mutable. Published versions are immutable.
     If no draft exists (e.g. editing an already published version), branches into a new mutable draft version.
     """
+    assert_case_in_institution(case_id, institution_id)
     conn = get_db_conn()
     try:
         with conn.cursor() as cur:
@@ -703,6 +723,7 @@ def publish_case_version(case_id: UUID, institution_id: Optional[UUID] = None) -
     - Sets cases.status = 'active'.
     - Clears cases.draft_version_id = NULL.
     """
+    assert_case_in_institution(case_id, institution_id)
     conn = get_db_conn()
     try:
         with conn.cursor() as cur:
@@ -777,6 +798,7 @@ def publish_case_version(case_id: UUID, institution_id: Optional[UUID] = None) -
 
 def deactivate_case(case_id: UUID, institution_id: Optional[UUID] = None) -> Dict[str, Any]:
     """Deactivates an active case (status = 'inactive') without deleting data."""
+    assert_case_in_institution(case_id, institution_id)
     conn = get_db_conn()
     try:
         with conn.cursor() as cur:

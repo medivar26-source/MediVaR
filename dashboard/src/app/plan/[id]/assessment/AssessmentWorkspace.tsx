@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { fallbackNotice, resolveScan } from "@/lib/plan-scans";
 
 import { updatePlanPayload } from "@/app/actions";
 import s from "../plan.module.css";
@@ -75,7 +76,8 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
   const imageMatch = plan.case?.imaging?.find(
     (img) => img.view.toLowerCase() === viewMode.toLowerCase()
   );
-  const currentImgSrc = imageMatch?.src || (viewMode === "FLAP" ? "/flap.jpg" : "/klat.jpg");
+  const scan = resolveScan(imageMatch, viewMode);
+  const currentImgSrc = scan.src;
 
   const handleLandmarkMove = (key: keyof LandmarkState, pos: Point2D) => {
     if (isReadOnly || isAccepted) return; // locked
@@ -142,6 +144,14 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
         <div style={{ display: "flex", gap: "2rem", height: "700px" }}>
           {/* Main Imaging/Landmark Workspace */}
           <div style={{ flex: "2", border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden", position: "relative" }}>
+            {scan.isFallback && (
+              <div
+                role="status"
+                style={{ position: "absolute", top: 10, right: 10, zIndex: 100, backgroundColor: "rgba(154,98,18,0.95)", color: "white", padding: "6px 12px", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 600, maxWidth: "60%" }}
+              >
+                {fallbackNotice(viewMode)}
+              </div>
+            )}
 
              {plan.payload.workflow === "tkr" && (
                <div style={{ position: "absolute", top: 10, left: 10, zIndex: 100, backgroundColor: "rgba(220,38,38,0.9)", color: "white", padding: "6px 12px", borderRadius: "4px", fontSize: "0.875rem", fontWeight: "bold" }}>

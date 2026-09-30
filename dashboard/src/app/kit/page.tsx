@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Download, FolderOpen, Play, Plus, Search } from "lucide-react";
 import { AppShell, PageHeader, SectionHeader } from "@/components/shell";
 import {
@@ -63,6 +64,8 @@ const PLANNING_STEPS = [
 ];
 
 export default async function KitPage() {
+  // Developer style guide: never a production page.
+  if (process.env.NODE_ENV === "production") notFound();
   const user = await getCurrentUser();
 
   return (

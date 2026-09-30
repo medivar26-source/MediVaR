@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ImageOff, ListChecks, Play } from "lucide-react";
-import { AppShell, PageHeader } from "@/components/shell";
+import { AppShell, Breadcrumbs, PageHeader } from "@/components/shell";
 import {
   Badge,
   Button,
@@ -24,6 +24,7 @@ import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import { PASS_MARK } from "@/lib/types";
 import { ConfigurePanel } from "./ConfigurePanel";
+import { getPlans } from "@/lib/data/plans";
 import { StartPlanning } from "./StartPlanning";
 import s from "./case.module.css";
 
@@ -68,6 +69,11 @@ export default async function CaseDetailPage({
   const presets = canConfigure ? await getInstructorConfigs(detail.id) : [];
   const programs = persona === "learner" ? await getPrograms().catch(() => []) : [];
 
+  const myPlan =
+    persona === "learner"
+      ? (await getPlans(undefined, user.id)).plans.find((row) => row.caseId === detail.id)
+      : undefined;
+
   const passMark = PASS_MARK[detail.difficulty];
   const attempts = detail.attempts.length;
 
@@ -82,6 +88,12 @@ export default async function CaseDetailPage({
 
   return (
     <AppShell user={user} searchHint='Try searching "varus"'>
+      <Breadcrumbs
+        items={[
+          { label: canConfigure ? "Case Library" : "Cases", href: "/cases" },
+          { label: detail.title },
+        ]}
+      />
       <PageHeader
         eyebrow={`${detail.procedureName} · ${detail.id}`}
         title={detail.title}
@@ -89,11 +101,24 @@ export default async function CaseDetailPage({
         actions={
           <div style={{ display: "flex", gap: "0.5rem" }}>
             {canConfigure && (
-              <Button variant="secondary" href={`/cases/${detail.id}/edit`}>
-                Edit Draft
-              </Button>
+              <>
+                <Button variant="secondary" href={`/content/${detail.id}`}>
+                  Status &amp; imaging
+                </Button>
+                <Button variant="secondary" href={`/cases/${detail.id}/edit`}>
+                  Edit Draft
+                </Button>
+              </>
             )}
-            <StartPlanning caseId={detail.id} config={config} />
+            <StartPlanning
+              caseId={detail.id}
+              config={config}
+              plan={
+                myPlan
+                  ? { id: myPlan.id, state: myPlan.state, sessionId: myPlan.sessionId }
+                  : undefined
+              }
+            />
           </div>
         }
       />

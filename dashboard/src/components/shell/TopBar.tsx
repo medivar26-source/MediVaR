@@ -87,7 +87,7 @@ export function TopBar({
                 >
                   Light
                 </PopoverItem>
-                <PopoverItem onClick={close} meta="Planned, not built">
+                <PopoverItem onClick={close} meta="Coming soon">
                   Dark
                 </PopoverItem>
                 <PopoverDivider />

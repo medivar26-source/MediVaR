@@ -297,9 +297,10 @@ def provision_instructor(
     last_name: str,
     institution_name: str,
     temp_password: str,
+    role: str = "instructor",
 ) -> UserProfile:
     """
-    Provision an instructor account:
+    Provision an instructor account (or an administrator, when role="admin"):
     1. Get or create institution.
     2. Create Supabase Auth user with email + temp_password.
     3. Create application users row with role='instructor'.
@@ -307,6 +308,9 @@ def provision_instructor(
     Raises ValueError if the email already exists.
     Never logs the plaintext password.
     """
+    if role not in ("instructor", "admin"):
+        raise ValueError("role must be 'instructor' or 'admin'.")
+
     institution_id = _get_or_create_institution(institution_name)
 
     # Check if email already used
@@ -328,7 +332,7 @@ def provision_instructor(
             "password": temp_password,
             "email_confirm": True,  # Skip email verification for provisioned accounts
             "user_metadata": {
-                "role": "instructor",
+                "role": role,
                 "institution": institution_name,
                 "display_name": f"{first_name} {last_name}",
             },
@@ -346,15 +350,15 @@ def provision_instructor(
         cur.execute(
             """
             INSERT INTO users (id, institution_id, first_name, last_name, email, role, status, default_difficulty)
-            VALUES (%s, %s, %s, %s, %s, 'instructor', 'active', 'expert')
+            VALUES (%s, %s, %s, %s, %s, %s, 'active', 'expert')
             RETURNING *
             """,
-            (auth_user_id, institution_id, first_name, last_name, email),
+            (auth_user_id, institution_id, first_name, last_name, email, role),
         )
         row = dict(cur.fetchone())
         conn.commit()
         profile = _row_to_profile(row)
-        logger.info("Provisioned instructor: %s (%s)", email, auth_user_id)
+        logger.info("Provisioned %s: %s (%s)", role, email, auth_user_id)
         return profile
     except Exception as exc:
         conn.rollback()
@@ -365,6 +369,68 @@ def provision_instructor(
             pass
         logger.error("Failed to create users row for %s: %s", email, exc)
         raise ValueError(f"Failed to create user record: {exc}")
+    finally:
+        conn.close()
+
+
+def list_staff(institution_id: Optional[str] = None) -> list:
+    """
+    Instructors and administrators, newest first, each with their institution.
+    Pass an institution id to narrow to one institution.
+    """
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+        sql = """
+            SELECT u.id, u.first_name, u.last_name, u.email, u.role, u.status,
+                   u.created_at, u.institution_id, i.name AS institution_name
+            FROM users u
+            LEFT JOIN institutions i ON i.id = u.institution_id
+            WHERE u.role IN ('instructor', 'admin')
+        """
+        params: tuple = ()
+        if institution_id:
+            sql += " AND u.institution_id = %s"
+            params = (institution_id,)
+        sql += " ORDER BY i.name, u.created_at DESC"
+        cur.execute(sql, params)
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def list_institutions() -> list:
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, name FROM institutions ORDER BY name")
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def find_institution_by_name(name: str) -> Optional[dict]:
+    """Case-insensitive lookup, so "demo hospital" never becomes a second institution."""
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, name FROM institutions WHERE lower(name) = lower(%s) LIMIT 1",
+            (name.strip(),),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_institution_name(institution_id: str) -> Optional[str]:
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM institutions WHERE id = %s", (institution_id,))
+        row = cur.fetchone()
+        return row["name"] if row else None
     finally:
         conn.close()
 

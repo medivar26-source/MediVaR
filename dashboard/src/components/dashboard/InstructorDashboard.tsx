@@ -1,6 +1,7 @@
-import { Users } from "lucide-react";
-import { PageHeader } from "@/components/shell";
-import { Badge, Banner, Button } from "@/components/ui";
+import Link from "next/link";
+import { ChevronRight, Users } from "lucide-react";
+import { PageHeader, SectionHeader } from "@/components/shell";
+import { Badge, Banner, Button, DemoDataNote } from "@/components/ui";
 import {
   BarChart,
   DistributionBar,
@@ -12,6 +13,7 @@ import {
 } from "@/components/viz";
 import { initialsOf } from "@/lib/format";
 import type { InstructorDashboard as Data } from "@/lib/data/dashboard";
+import type { CohortSummary } from "@/lib/data/cohorts";
 import type { Profile } from "@/lib/types";
 import { PASS_MARK } from "@/lib/types";
 import { Panel } from "./ContextRow";
@@ -20,6 +22,7 @@ import { Toolbar } from "./Toolbar";
 import { cx } from "@/lib/cx";
 import { WEEK_OPTIONS } from "@/lib/window";
 import s from "./dashboard.module.css";
+import p from "@/app/panels.module.css";
 
 const BAND_COLOUR = [
   "var(--pass)",
@@ -32,10 +35,13 @@ export function InstructorDashboard({
   user,
   data,
   weeks,
+  cohorts = [],
 }: {
   user: Profile;
   data: Data;
   weeks: number;
+  /** Every cohort the instructor owns, from the cohorts API. */
+  cohorts?: CohortSummary[];
 }) {
   const { stats } = data;
   const passMark = PASS_MARK.intermediate;
@@ -49,18 +55,20 @@ export function InstructorDashboard({
         title="Who needs you"
         lede={`${stats.learners} learners · cohort mean ${stats.meanScore}% · pass mark ${passMark}`}
         actions={
-          <Button variant="primary" icon={Users} href="/cohorts">
-            Manage cohort
+          <Button variant="primary" icon={Users} href="/programs?tab=cohorts">
+            All cohorts
           </Button>
         }
       />
+      <DemoDataNote />
+
 
       {urgent.length > 0 && (
         <Banner
           tone="fail"
           title={`${urgent.length} learner${urgent.length === 1 ? " is" : "s are"} below the pass mark`}
           action={
-            <Button size="sm" href="/cohorts/learners">
+            <Button size="sm" href="/learners">
               Review all
             </Button>
           }
@@ -68,6 +76,43 @@ export function InstructorDashboard({
           Three or more critical errors cap a session at 59 and mark it Not
           passed regardless of category scores.
         </Banner>
+      )}
+
+      {cohorts.length > 0 && (
+        <>
+          <SectionHeader
+            title="Your cohorts"
+            action={
+              <Link href="/programs?tab=cohorts" className={p.clear}>
+                See all
+              </Link>
+            }
+          />
+          <div className={p.cards}>
+            {cohorts.slice(0, 6).map((c) => (
+              <Link
+                key={c.id}
+                href={`/programs/${c.program_id}/cohorts/${c.id}`}
+                className={p.card}
+              >
+                <div className={p.panelHead}>
+                  <p className={p.cardTitle}>{c.name}</p>
+                </div>
+                <p className={p.cardMeta}>
+                  {c.learners} learner{c.learners === 1 ? "" : "s"}
+                  {c.meanScore !== undefined ? ` · mean ${c.meanScore}` : ""}
+                  {c.belowPass > 0 ? ` · ${c.belowPass} below pass` : ""}
+                </p>
+                <div className={p.cardFoot}>
+                  <span className={p.cardOpen}>
+                    Open Cohort
+                    <ChevronRight className={p.cardChevron} strokeWidth={2} />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </>
       )}
 
       <div style={{ height: "var(--s-5)" }} />
@@ -80,7 +125,7 @@ export function InstructorDashboard({
           fallback: 7,
           options: WEEK_OPTIONS,
         }}
-        action={{ label: "All learners", href: "/cohorts/learners" }}
+        action={{ label: "All learners", href: "/learners" }}
         exportRows={[
           ["Learner", "Role", "Sessions", "Assessments", "Mean", "Critical"],
           ...data.learners.map((l) => [

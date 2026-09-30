@@ -25,8 +25,10 @@ import { shortDate, titleCase } from "@/lib/format";
 import { personaFor, ROLE_LABEL } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import { AddNoteForm } from "./AddNoteForm";
+import { listCases } from "@/lib/data/cases";
+import { AssignCaseForm } from "./AssignCaseForm";
 import { AssignPracticeButton } from "./AssignPracticeButton";
-import p from "../../../panels.module.css";
+import p from "../../panels.module.css";
 
 export async function generateMetadata({
   params,
@@ -36,9 +38,9 @@ export async function generateMetadata({
   const { id } = await params;
   try {
     const detail = await getResidentDetail(id);
-    return { title: detail ? `${detail.displayName} — Resident` : "Resident" };
+    return { title: detail ? `${detail.displayName} — Learner` : "Learner" };
   } catch {
-    return { title: "Resident" };
+    return { title: "Learner" };
   }
 }
 
@@ -68,7 +70,7 @@ export default async function ResidentDetailPage({
     return (
       <AppShell user={user} searchHint='Try searching "learners"'>
         <BackLink />
-        <Banner tone="fail" title="This resident couldn't be loaded">
+        <Banner tone="fail" title="This learner couldn't be loaded">
           {err instanceof ResidentApiError ? err.message : "Something went wrong. Try again in a moment."}
         </Banner>
       </AppShell>
@@ -77,13 +79,15 @@ export default async function ResidentDetailPage({
   if (!detail) notFound();
 
   const untracked = detail.status === "no-data";
+  const { cases: publishedCases } = await listCases(user.id, { attempted: "all" }).catch(
+    () => ({ cases: [] as { id: string; title: string }[] }),
+  );
 
   return (
     <AppShell user={user} searchHint='Try searching "learners"'>
       <Breadcrumbs
         items={[
-          { label: "Programs", href: "/programs" },
-          { label: "Supervised Residents", href: "/cohorts/learners" },
+          { label: "Learners", href: "/learners" },
           { label: detail.displayName },
         ]}
       />
@@ -94,11 +98,11 @@ export default async function ResidentDetailPage({
         lede={`${ROLE_LABEL[detail.role as keyof typeof ROLE_LABEL] ?? titleCase(detail.role)}${detail.joinedAt ? ` · joined ${shortDate(detail.joinedAt)}` : ""}`}
         actions={
           <>
-            <Button variant="secondary" disabled title="No training-assignment system exists yet">
-              Assign training
+            <Button variant="secondary" href="#assign-case">
+              Assign a case
             </Button>
-            <Button variant="secondary" disabled title="No messaging system exists yet">
-              Message
+            <Button variant="secondary" disabled title="Messaging is not available yet">
+              Message (coming soon)
             </Button>
           </>
         }
@@ -115,7 +119,7 @@ export default async function ResidentDetailPage({
       </div>
 
       {untracked && (
-        <Banner tone="info" title="No completed sessions recorded for this resident">
+        <Banner tone="info" title="No completed sessions recorded for this learner">
           Competency, skill performance and recent cases appear here once a
           session pipeline is writing to this resident&rsquo;s record. Nothing
           below is invented in the meantime.
@@ -214,6 +218,14 @@ export default async function ResidentDetailPage({
         </section>
       </div>
 
+      <div id="assign-case">
+        <SectionHeader title="Assign a case" />
+        <AssignCaseForm
+          residentId={id}
+          cases={publishedCases.map((c) => ({ id: c.id, title: c.title }))}
+        />
+      </div>
+
       <SectionHeader title="Recent cases" />
       {detail.recentCases.length === 0 ? (
         <EmptyState icon={ListChecks} title="No completed cases yet" />
@@ -288,7 +300,7 @@ export default async function ResidentDetailPage({
 function BackLink() {
   return (
     <div style={{ marginBottom: "1rem" }}>
-      <Link href="/cohorts/learners" className={p.clear} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+      <Link href="/learners" className={p.clear} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
         <ChevronLeft size={16} /> Back to Learners
       </Link>
     </div>

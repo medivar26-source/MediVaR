@@ -89,6 +89,7 @@ test("resolveNextAction priority resolution", async (t) => {
           updatedAt: "2026-03-20T09:30:00Z",
           state: "draft",
           stepsAnswered: 2,
+          stepsTotal: 6,
           secondsSpent: 120,
         },
       ],
@@ -120,6 +121,7 @@ test("resolveNextAction priority resolution", async (t) => {
           updatedAt: "2026-03-20T09:30:00Z",
           state: "draft",
           stepsAnswered: 2,
+          stepsTotal: 6,
           secondsSpent: 120,
         },
       ],
@@ -142,6 +144,7 @@ test("resolveNextAction priority resolution", async (t) => {
       updatedAt: "2026-03-20T09:30:00Z",
       state: "draft",
       stepsAnswered: 3,
+      stepsTotal: 6,
       secondsSpent: 240,
     };
 
@@ -156,6 +159,25 @@ test("resolveNextAction priority resolution", async (t) => {
     assert.ok(action.subtitle.includes("3 of 6 steps answered"));
   });
 
+  await t.test("a TKR draft is counted against its own four steps", () => {
+    const tkrDraft: PlanRow = {
+      id: "tkr-1",
+      caseId: "case-1",
+      caseTitle: "TKA Right Knee",
+      difficulty: "intermediate",
+      mode: "training",
+      createdAt: "2026-09-01T10:00:00Z",
+      updatedAt: "2026-09-01T10:00:00Z",
+      state: "draft",
+      stepsAnswered: 2,
+      stepsTotal: 4,
+      secondsSpent: 120,
+    };
+    const action = resolveNextAction({ plans: [tkrDraft], cases: mockCases });
+    assert.equal(action.type, "continue_plan");
+    assert.ok(action.subtitle.includes("2 of 4 steps complete"));
+  });
+
   await t.test("Priority 4: Ready/paired plan prompts learner for VR transfer", () => {
     const readyPlan: PlanRow = {
       id: "ready-1",
@@ -167,6 +189,7 @@ test("resolveNextAction priority resolution", async (t) => {
       updatedAt: "2026-03-19T10:30:00Z",
       state: "ready",
       stepsAnswered: 6,
+      stepsTotal: 6,
       secondsSpent: 600,
     };
 
@@ -238,6 +261,7 @@ test("enrichCasesWithStatus lifecycle mapping", async (t) => {
         updatedAt: "2026-03-20T09:30:00Z",
         state: "draft",
         stepsAnswered: 2,
+        stepsTotal: 6,
         secondsSpent: 120,
       },
     ];

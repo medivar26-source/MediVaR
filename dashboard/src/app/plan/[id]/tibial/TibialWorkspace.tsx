@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { fallbackNotice, resolveScan } from "@/lib/plan-scans";
 import type { PlanDetail, V1TibialComponent } from "@/lib/plan";
 import { getTibialTemplate, evaluateTibialFit } from "@/lib/data/tkr_templates";
 import { normalizeCalibration } from "@/lib/data/coordinates";
@@ -100,7 +101,8 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
     plan.case?.imaging?.find((img) => img.view.toLowerCase() === "lateral");
 
   const imageMatch = viewMode === "FLAP" ? apImage : klatImage;
-  const currentImgSrc = imageMatch?.src || (viewMode === "FLAP" ? "/knee_xray_ap.jpg" : "/klat.jpg");
+  const scan = resolveScan(imageMatch, viewMode);
+  const currentImgSrc = scan.src;
   const activeCalibration = normalizeCalibration(
     imageMatch?.calibration || plan.payload.calibration,
     `${viewMode} ${currentImgSrc}`
@@ -163,6 +165,14 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
         <div style={{ display: "flex", gap: "2rem", height: "700px" }}>
           {/* Main Imaging/Planning Workspace */}
           <div style={{ flex: "2", border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden", position: "relative" }}>
+            {scan.isFallback && (
+              <div
+                role="status"
+                style={{ position: "absolute", top: 10, right: 10, zIndex: 100, backgroundColor: "rgba(154,98,18,0.95)", color: "white", padding: "6px 12px", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 600, maxWidth: "60%" }}
+              >
+                {fallbackNotice(viewMode)}
+              </div>
+            )}
             <TibialCanvas
               viewMode={viewMode}
               tibialComponent={tibialComponent}

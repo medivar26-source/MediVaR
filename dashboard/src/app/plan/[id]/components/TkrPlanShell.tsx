@@ -74,9 +74,9 @@ export function TkrPlanShell({
     <div className={s.page}>
       {/* Stepper Rail */}
       <nav className={s.rail} aria-label="TKA Planning steps">
-        <Link href="/cases" className={s.back}>
+        <Link href={`/cases/${plan.caseId}`} className={s.back}>
           <ArrowLeft width={15} height={15} strokeWidth={2.25} aria-hidden="true" />
-          Back to Cases
+          Back to case
         </Link>
 
         <div className={s.railCase}>
@@ -113,7 +113,7 @@ export function TkrPlanShell({
                       : current
                         ? "In progress"
                         : !accessible
-                          ? "Gated"
+                          ? "Finish the previous step first"
                           : "Ready"}
                   </span>
                 </span>

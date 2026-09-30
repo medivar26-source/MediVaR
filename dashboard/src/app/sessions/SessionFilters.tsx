@@ -17,7 +17,7 @@ import s from "./sessions.module.css";
  * Clicking a selected chip clears it. A filter you cannot undo is a trap.
  */
 
-const STATUSES = ["scheduled", "live", "completed", "aborted"] as const;
+const STATUSES = ["scheduled", "live", "completed", "aborted", "cancelled"] as const;
 const MODES = ["training", "assessment"] as const;
 
 export function SessionFilters({

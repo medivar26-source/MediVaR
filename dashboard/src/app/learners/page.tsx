@@ -20,7 +20,7 @@ import { getSupervisedLearners } from "@/lib/data/cohorts";
 import { relativeTime } from "@/lib/format";
 import { personaFor, ROLE_LABEL } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
-import p from "../../panels.module.css";
+import p from "../panels.module.css";
 
 export const metadata: Metadata = { title: "Learners" };
 
@@ -47,12 +47,12 @@ export default async function LearnersPage() {
       <Breadcrumbs
         items={[
           { label: "Programs", href: "/programs" },
-          { label: "Supervised Residents" },
+          { label: "Learners" },
         ]}
       />
 
       <PageHeader
-        title="Supervised Residents"
+        title="Learners"
         lede="Everybody in the cohorts you teach, ordered by who needs you: below the pass mark first, then anybody who has never started a session."
         actions={
           <Button href="/programs" variant="secondary">
@@ -62,7 +62,8 @@ export default async function LearnersPage() {
       />
 
       {learners.length === 0 ? (
-        <EmptyState icon={Users} title="No learners">
+        <EmptyState icon={Users} title="No learners"
+            action={<Button variant="primary" href="/programs?tab=cohorts">Open a cohort to enrol learners</Button>}>
           Your cohorts have no members yet. An administrator assigns a learner to
           a cohort from the account management screen.
         </EmptyState>
@@ -106,7 +107,7 @@ export default async function LearnersPage() {
               {learners.map((learner) => (
                 <Tr key={learner.id}>
                   <Td head>
-                    <Link href={`/cohorts/learners/${learner.id}`}>{learner.displayName}</Link>
+                    <Link href={`/learners/${learner.id}`}>{learner.displayName}</Link>
                   </Td>
                   <Td>
                     {learner.cohorts.map((c) => (
