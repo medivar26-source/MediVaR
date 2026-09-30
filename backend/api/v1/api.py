@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from api.v1.endpoints import health, auth, cohorts, programs, cases, procedures, residents, admin
+from api.v1.endpoints import health, auth, cohorts, programs, cases, procedures, residents, admin, personal_cases
 
 api_router = APIRouter()
 api_router.include_router(health.router, prefix="", tags=["health"])
@@ -10,7 +10,6 @@ api_router.include_router(cases.router, prefix="/cases", tags=["cases"])
 api_router.include_router(procedures.router, prefix="/procedures", tags=["procedures"])
 api_router.include_router(residents.router, prefix="/residents", tags=["residents"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
+api_router.include_router(personal_cases.router, prefix="/personal-cases", tags=["personal_cases"])
 # Future routes:
 # api_router.include_router(sessions.router, prefix="/sessions", tags=["sessions"])
-
-

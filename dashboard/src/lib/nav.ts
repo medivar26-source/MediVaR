@@ -26,6 +26,7 @@ export type SectionId =
   | "overview"
   | "training"
   | "programs"
+  | "personal-space"
   | "content-library"
   | "help"
   | "admin";
@@ -103,6 +104,20 @@ export const SECTIONS: NavSection[] = [
           { label: "Cases", href: "/cases" },
           { label: "Pre-op Plans", href: "/plans" },
           { label: "Sessions", href: "/sessions" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "personal-space",
+    label: "Personal Space",
+    href: "/personal-cases",
+    icon: FolderOpen,
+    personas: ["learner"],
+    groups: [
+      {
+        items: [
+          { label: "My Cases", href: "/personal-cases" },
         ],
       },
     ],
@@ -270,6 +285,9 @@ export function sectionForPath(path: string, persona: Persona): SectionId {
   if (persona === "learner") {
     if (on("/programs", "/cases", "/plans", "/plan", "/sessions", "/simulations", "/setup")) {
       return "training";
+    }
+    if (on("/personal-cases")) {
+      return "personal-space";
     }
     if (on("/library", "/help")) return "help";
     return "overview";

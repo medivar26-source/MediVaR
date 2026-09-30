@@ -193,7 +193,7 @@ async def upload_asset(
     Generic upload for Case Library assets to Supabase Storage 'imaging' bucket.
     Returns the storage path for the frontend to include in the case payload.
     """
-    if current_user.role not in ("instructor", "admin"):
+    if current_user.role not in ("instructor", "admin", "resident"):
         raise HTTPException(status_code=403, detail="Not authorized to upload assets.")
 
     contents = await file.read()
