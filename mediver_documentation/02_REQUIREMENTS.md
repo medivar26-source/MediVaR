@@ -124,4 +124,3 @@ Authentication is intended to be addressed first during implementation. This doc
 - Dynamic derived calibration: Radiograph pixel scales are dynamically derived ($\text{scale} = \frac{\text{physical\_mm}}{\text{detected\_px}}$) and validated against physical limits (0.05–1.5 mm/px).
 - Pre-flight checklist validation: Freezing a draft into a published version requires passing the pre-flight checklist (metadata, FLAP + KLAT imaging, valid calibration, 6 canonical measurements, component sizing, and rubric criteria).
 - Canonical backend calculations: All 6 measurements, component sizing catalogs (Tibial 1–6, Femoral 1–8), and clinical fit metrics (coverage $\ge 90\%$, overhang $\le 1.0$mm, caution $> 1.5$mm, anterior condylar flush $0.0$mm) reside strictly in the backend calculation engine.
-
