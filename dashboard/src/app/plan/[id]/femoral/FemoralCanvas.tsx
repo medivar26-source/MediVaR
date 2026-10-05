@@ -15,6 +15,7 @@ interface FemoralCanvasProps {
   femoralComponent: V1FemoralComponent;
   onPositionChange: (newPos: { x_offset_mm: number; y_offset_mm: number; rotation_deg: number }) => void;
   assessmentLandmarks: Record<string, Point2D>;
+  patientBone?: { mlMm: number; apMm: number };
   isReadOnly?: boolean;
   src?: string;
   calibration?: V1Calibration;
@@ -25,6 +26,7 @@ export function FemoralCanvas({
   femoralComponent,
   onPositionChange,
   assessmentLandmarks,
+  patientBone,
   isReadOnly = false,
   src,
   calibration = DEFAULT_CALIBRATION,
@@ -160,6 +162,25 @@ export function FemoralCanvas({
                   <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="#3b82f6" floodOpacity="0.45" />
                 </filter>
               </defs>
+
+              {/* Patient Femoral Cortical Boundary Markers (Fixed to Anatomy) */}
+              {patientBone && (
+                <g
+                  transform={`translate(${kneeX_img}, ${kneeY_img - (viewMode === "FLAP" ? 26 * pxPerMm : 4 * pxPerMm)}) scale(${pxPerMm})`}
+                >
+                  {viewMode === "FLAP" ? (
+                    <>
+                      <line x1={-patientBone.mlMm / 2} y1={-10} x2={-patientBone.mlMm / 2} y2={10} stroke="#f59e0b" strokeWidth={1.5 / pxPerMm} />
+                      <line x1={patientBone.mlMm / 2} y1={-10} x2={patientBone.mlMm / 2} y2={10} stroke="#f59e0b" strokeWidth={1.5 / pxPerMm} />
+                    </>
+                  ) : (
+                    <>
+                      <line x1={-10} y1={-patientBone.apMm / 2} x2={10} y2={-patientBone.apMm / 2} stroke="#f59e0b" strokeWidth={1.5 / pxPerMm} />
+                      <line x1={-10} y1={patientBone.apMm / 2} x2={10} y2={patientBone.apMm / 2} stroke="#f59e0b" strokeWidth={1.5 / pxPerMm} />
+                    </>
+                  )}
+                </g>
+              )}
 
               {/* Implant Component Group placed in Image Space, scaled strictly by pxPerMm */}
               <g

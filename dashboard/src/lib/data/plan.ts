@@ -190,27 +190,69 @@ export async function getPlan(planId: string): Promise<PlanDetail | null> {
   } else {
     // Fetch dynamically authored case from backend database
     const { getCase } = await import("@/lib/data/cases");
-    const caseDetail = await getCase(plan.caseId, plan.userId);
-    if (!caseDetail) return null;
-
-    planCase = {
-      id: caseDetail.id,
-      title: caseDetail.title,
-      summary: caseDetail.summary,
-      side: caseDetail.side,
-      difficulty: caseDetail.difficulty,
-      pathologyLabel: caseDetail.pathologyLabel,
-      patient: caseDetail.patient?.vitals || [],
-      narrative: caseDetail.patient?.notes || [],
-      imaging: (caseDetail.imaging || []).map((img) => ({
-        view: img.view,
-        label: img.label,
-        src: img.url || (img.view === "FLAP" ? "/flap.jpg" : "/klat.jpg"),
-        calibration: normalizeCalibration(img.calibration),
-      })),
-      objectives: caseDetail.objectives || [],
-      referenceRanges: REFERENCE_RANGES,
-    };
+    const { getPersonalCase } = await import("@/lib/data/personal-cases");
+    
+    let caseDetail = await getCase(plan.caseId, plan.userId).catch(() => null);
+    
+    if (caseDetail) {
+      planCase = {
+        id: caseDetail.id,
+        title: caseDetail.title,
+        summary: caseDetail.summary,
+        side: caseDetail.side,
+        difficulty: caseDetail.difficulty,
+        pathologyLabel: caseDetail.pathologyLabel,
+        patient: caseDetail.patient?.vitals || [],
+        narrative: caseDetail.patient?.notes || [],
+        imaging: (caseDetail.imaging || []).map((img) => ({
+          view: img.view,
+          label: img.label,
+          src: img.url || (img.view === "FLAP" ? "/flap.jpg" : "/klat.jpg"),
+          calibration: normalizeCalibration(img.calibration),
+        })),
+        objectives: caseDetail.objectives || [],
+        referenceRanges: REFERENCE_RANGES,
+      };
+    } else {
+      const pc = await getPersonalCase(plan.caseId).catch(() => null);
+      if (pc) {
+        planCase = {
+          id: pc.id,
+          title: pc.title,
+          summary: pc.description || "",
+          side: (pc.side || "right") as any,
+          difficulty: pc.difficulty as any,
+          pathologyLabel: pc.pathology_label || pc.pathology || "",
+          patient: fieldsOf(
+            {
+              ...pc.patient,
+              sex: pc.patient?.gender,
+              rom: pc.patient?.range_of_motion,
+            } || {},
+            VITALS
+          ),
+          narrative: fieldsOf(
+            {
+              ...pc.patient,
+              complaint: pc.patient?.clinical_notes,
+              history: pc.patient?.history,
+            } || {},
+            NARRATIVE
+          ),
+          imaging: (pc.imaging || []).map((img) => ({
+            view: img.view_type as any,
+            label: img.label,
+            src: (img as any).signed_url || img.storage_path,
+            calibration: normalizeCalibration(img.calibration),
+          })),
+          objectives: pc.objectives || [],
+          referenceRanges: REFERENCE_RANGES,
+          isPersonalCase: true,
+        };
+      }
+    }
+    
+    if (!planCase) return null;
 
     risks = [
       {

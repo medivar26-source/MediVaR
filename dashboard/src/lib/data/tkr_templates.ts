@@ -234,6 +234,13 @@ export function evaluateFemoralFit(
   // Transform it based on the user's manual offset and rotation.
   const poly = transformPhysicalPolygon(geometry.flapPolygon, xOffsetMm, yOffsetMm, rotationDeg);
   
+  // 1. Patient femoral bone boundaries (assuming centered at origin)
+  const boneMinX = -patientMlMm / 2;
+  const boneMaxX = patientMlMm / 2;
+  const boneMinY = -patientApMm / 2;
+  const boneMaxY = patientApMm / 2;
+
+  // 2. Transformed implant footprint boundaries
   let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity;
   for (const p of poly) {
     if (p.x < minX) minX = p.x;
@@ -242,25 +249,21 @@ export function evaluateFemoralFit(
     if (p.y > maxY) maxY = p.y;
   }
 
-  // Calculate physical AP and ML spread of the transformed polygon
-  const actualAp = maxY - minY;
-  const actualMl = maxX - minX;
+  // 3. Exact geometric bounding box intersection for AP/ML coverage
+  const overlapMinX = Math.max(boneMinX, minX);
+  const overlapMaxX = Math.min(boneMaxX, maxX);
+  const overlapMinY = Math.max(boneMinY, minY);
+  const overlapMaxY = Math.min(boneMaxY, maxY);
 
-  const apCoveragePct = Number(
-    Math.min(100, Math.max(60, (actualAp / patientApMm) * 100 - Math.abs(yOffsetMm) * 0.5)).toFixed(1)
-  );
-  const mlCoveragePct = Number(
-    Math.min(100, Math.max(60, (actualMl / patientMlMm) * 100 - Math.abs(xOffsetMm) * 0.5)).toFixed(1)
-  );
+  const overlapAp = Math.max(0, overlapMaxY - overlapMinY);
+  const overlapMl = Math.max(0, overlapMaxX - overlapMinX);
 
-  // Anterior notching calculated from the anterior-most point of the polygon bounding box
-  const undersizeGap = Math.max(0, patientApMm - template.apMm);
-  // Anterior is assumed negative Y. If min Y shifts positive, it's shifting posterior.
-  const posteriorShift = Math.max(0, minY + (template.apMm / 2));
-  
-  // Keep original logic behavior for tests
-  const originalPosteriorShift = Math.max(0, -yOffsetMm);
-  const notchingRiskMm = Number((originalPosteriorShift > 0.2 ? originalPosteriorShift : (undersizeGap > 4.0 ? (undersizeGap - 4.0) * 0.5 : 0.0)).toFixed(1));
+  const apCoveragePct = Number((overlapAp / patientApMm * 100).toFixed(1));
+  const mlCoveragePct = Number((overlapMl / patientMlMm * 100).toFixed(1));
+
+  // 4. Anterior notching risk: physical mm distance the anterior flange (minY) is posterior to anterior cortex (boneMinY)
+  // Assuming anterior is -Y. If minY is greater than boneMinY, the flange is "inside" the bone (notching).
+  const notchingRiskMm = Number(Math.max(0, minY - boneMinY).toFixed(1));
 
   let fitStatus: FemoralFitResult["fitStatus"] = "ACCEPTABLE FIT";
   if (notchingRiskMm > 0.5) {

@@ -74,7 +74,7 @@ export function TkrPlanShell({
     <div className={s.page}>
       {/* Stepper Rail */}
       <nav className={s.rail} aria-label="TKA Planning steps">
-        <Link href={`/cases/${plan.caseId}`} className={s.back}>
+        <Link href={plan.case.isPersonalCase ? `/personal-cases/${plan.caseId}` : `/cases/${plan.caseId}`} className={s.back}>
           <ArrowLeft width={15} height={15} strokeWidth={2.25} aria-hidden="true" />
           Back to case
         </Link>

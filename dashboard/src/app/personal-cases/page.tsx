@@ -73,7 +73,7 @@ export default async function PersonalCasesPage() {
 
                       <span className={s.cardFoot}>
                         <span className={s.cardCta}>
-                          Edit & View →
+                          Prepare & Start →
                         </span>
                       </span>
                     </span>

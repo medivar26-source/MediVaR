@@ -3,12 +3,23 @@
 import { useState } from "react";
 import type { LandmarkState, Point2D, ViewMode } from "./AssessmentWorkspace";
 import { ScanViewport } from "../components/ScanViewport";
+import React, { useEffect } from "react";
+
+const Reporter = ({ naturalWidth, naturalHeight, viewMode, onDimsLoaded }: any) => {
+  useEffect(() => {
+    if (onDimsLoaded && naturalWidth && naturalHeight) {
+      onDimsLoaded(viewMode, { width: naturalWidth, height: naturalHeight });
+    }
+  }, [naturalWidth, naturalHeight, viewMode, onDimsLoaded]);
+  return null;
+};
 
 interface XRayCanvasProps {
   viewMode: ViewMode;
   landmarks: LandmarkState;
   isAccepted: boolean;
   onLandmarkMove: (key: keyof LandmarkState, pos: Point2D) => void;
+  onDimsLoaded?: (viewMode: string, dims: { width: number; height: number }) => void;
   src?: string;
 }
 
@@ -31,7 +42,7 @@ const LANDMARK_COLORS: Record<string, string> = {
   tibiaShaftDistal: "#8b5cf6"
 };
 
-export function XRayCanvas({ viewMode, landmarks, isAccepted, onLandmarkMove, src }: XRayCanvasProps) {
+export function XRayCanvas({ viewMode, landmarks, isAccepted, onLandmarkMove, onDimsLoaded, src }: XRayCanvasProps) {
   const [draggingKey, setDraggingKey] = useState<keyof LandmarkState | null>(null);
 
   const defaultImgSrc = viewMode === "FLAP" ? "/flap.jpg" : "/klat.jpg";
@@ -124,13 +135,21 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, onLandmarkMove, sr
     "femurCanalProximal", "femurCanalDistal"
   ] : [
     "tibiaPlateauAnterior", "tibiaPlateauPosterior", 
-    "tibiaShaftProximal", "tibiaShaftDistal"
+    "tibiaShaftProximal", "tibiaShaftDistal",
+    "femurAnteriorBoundary", "femurPosteriorBoundary"
   ];
 
   return (
     <ScanViewport src={imgSrc} alt={`${viewMode} Scan`}>
-      {({ zoom, stageRef }) => (
+      {({ zoom, stageRef, naturalWidth, naturalHeight }) => {
+        return (
         <>
+          <Reporter 
+            naturalWidth={naturalWidth} 
+            naturalHeight={naturalHeight} 
+            viewMode={viewMode} 
+            onDimsLoaded={onDimsLoaded} 
+          />
           {viewMode === "FLAP" ? renderFlapLines() : renderKlatLines()}
 
           {currentLandmarks.map((key) => {
@@ -169,7 +188,8 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, onLandmarkMove, sr
             );
           })}
         </>
-      )}
+        );
+      }}
     </ScanViewport>
   );
 }

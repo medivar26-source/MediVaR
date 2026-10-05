@@ -2,21 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FolderPlus } from "lucide-react";
-import { AppShell, PageHeader } from "@/components/shell";
+import { AppShell, Breadcrumbs, PageHeader } from "@/components/shell";
 import { Button } from "@/components/ui";
 import { cx } from "@/lib/cx";
 import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
-import { AssessmentCriteriaSection } from "./AssessmentCriteriaSection";
 import { ProceduresSection } from "./ProceduresSection";
 import p from "../panels.module.css";
 
-export const metadata: Metadata = { title: "Content / Case Library" };
+export const metadata: Metadata = { title: "Content / Procedures" };
 
 const TABS = [
   { id: "cases", label: "Cases" },
   { id: "procedures", label: "Procedures" },
-  { id: "criteria", label: "Assessment criteria" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -56,9 +54,16 @@ export default async function ContentPage({
 
   return (
     <AppShell user={user} searchHint='Try searching "varus"'>
+      <Breadcrumbs
+        items={[
+          { label: "Content Library", href: "/cases" },
+          { label: "Procedures" },
+        ]}
+      />
+
       <PageHeader
-        title="Content / Case Library"
-        lede="Author and manage the cases, procedures and assessment criteria your learners train against."
+        title="Procedures"
+        lede="Author and manage the procedures and clinical step sequences your learners train against."
         actions={
           tab === "cases" ? (
             <Button variant="primary" icon={FolderPlus} href="/content#new-case">
@@ -82,7 +87,6 @@ export default async function ContentPage({
       </nav>
 
       {tab === "procedures" && <ProceduresSection />}
-      {tab === "criteria" && <AssessmentCriteriaSection />}
     </AppShell>
   );
 }

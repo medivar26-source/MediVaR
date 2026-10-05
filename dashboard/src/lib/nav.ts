@@ -178,15 +178,6 @@ export const SECTIONS: NavSection[] = [
             href: "/content?tab=procedures",
             personas: ["instructor", "admin"],
           },
-          {
-            label: "Assessment Criteria",
-            href: "/content?tab=criteria",
-            personas: ["instructor", "admin"],
-          },
-          {
-            label: "Library",
-            href: "/library",
-          },
         ],
       },
     ],
@@ -297,7 +288,7 @@ export function sectionForPath(path: string, persona: Persona): SectionId {
   if (on("/programs", "/cohorts", "/learners", "/plans", "/sessions")) {
     return "programs";
   }
-  if (on("/cases", "/content", "/library", "/simulations")) {
+  if (on("/cases", "/content", "/simulations")) {
     return "content-library";
   }
   return "overview";

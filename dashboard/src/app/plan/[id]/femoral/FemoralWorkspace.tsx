@@ -32,6 +32,17 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
 
   const isReadOnly = plan.isReadyForVr || plan.lockedVersion !== undefined;
 
+  const patientBone = (() => {
+    const v1Ass = plan.payload?.v1_assessment as Record<string, any>;
+    if (v1Ass?.patient_femoral_ml_mm && v1Ass?.patient_femoral_ap_mm) {
+      return {
+        mlMm: Number(v1Ass.patient_femoral_ml_mm),
+        apMm: Number(v1Ass.patient_femoral_ap_mm)
+      };
+    }
+    return undefined;
+  })();
+
   const initialComponent: V1FemoralComponent = (() => {
     if (isReadOnly && plan.lockedVersion?.payload.v1_femoral) {
       return { ...plan.lockedVersion.payload.v1_femoral, is_confirmed: true };
@@ -40,11 +51,13 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
       return { ...plan.payload.v1_femoral, is_confirmed: isReadOnly ? true : plan.payload.v1_femoral.is_confirmed };
     }
     const template = getFemoralTemplate(DEFAULT_FEMORAL_COMPONENT.implant_size);
-    const fit = evaluateFemoralFit(
+    const fit = patientBone ? evaluateFemoralFit(
       DEFAULT_FEMORAL_COMPONENT.implant_size,
       DEFAULT_FEMORAL_COMPONENT.position_2d.x_offset_mm,
-      DEFAULT_FEMORAL_COMPONENT.position_2d.y_offset_mm
-    );
+      DEFAULT_FEMORAL_COMPONENT.position_2d.y_offset_mm,
+      patientBone.apMm,
+      patientBone.mlMm
+    ) : { apCoveragePct: 0, mlCoveragePct: 0, notchingRiskMm: 0, fitStatus: "incomplete" as any };
     return {
       ...DEFAULT_FEMORAL_COMPONENT,
       ap_dimension_mm: template.apMm,
@@ -59,11 +72,13 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
 
   const [femoralComponent, setFemoralComponent] = useState<V1FemoralComponent>(initialComponent);
 
-  const fitResult = evaluateFemoralFit(
+  const fitResult = patientBone ? evaluateFemoralFit(
     femoralComponent.implant_size,
     femoralComponent.position_2d.x_offset_mm,
-    femoralComponent.position_2d.y_offset_mm
-  );
+    femoralComponent.position_2d.y_offset_mm,
+    patientBone.apMm,
+    patientBone.mlMm
+  ) : { apCoveragePct: 0, mlCoveragePct: 0, notchingRiskMm: 0, fitStatus: "incomplete" as any };
 
   const rawLandmarks = (plan.payload?.assessment_landmarks as Record<string, any>) || {};
   const assessmentLandmarks = {
@@ -92,7 +107,15 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
 
   const handlePositionChange = (newPos: { x_offset_mm: number; y_offset_mm: number; rotation_deg: number }) => {
     if (isReadOnly) return;
-    const fit = evaluateFemoralFit(femoralComponent.implant_size, newPos.x_offset_mm, newPos.y_offset_mm);
+    
+    const fit = patientBone ? evaluateFemoralFit(
+      femoralComponent.implant_size, 
+      newPos.x_offset_mm, 
+      newPos.y_offset_mm, 
+      patientBone.apMm, 
+      patientBone.mlMm
+    ) : { apCoveragePct: 0, mlCoveragePct: 0, notchingRiskMm: 0, fitStatus: "incomplete" as any };
+
     setFemoralComponent((prev) => ({
       ...prev,
       position_2d: newPos,
@@ -153,6 +176,7 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
               femoralComponent={femoralComponent}
               onPositionChange={handlePositionChange}
               assessmentLandmarks={assessmentLandmarks}
+              patientBone={patientBone}
               isReadOnly={isReadOnly}
               src={currentImgSrc}
               calibration={activeCalibration}

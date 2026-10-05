@@ -212,6 +212,23 @@ export function MeasurementPanel({ landmarks, isAccepted, onReset, onAccept }: M
         </div>
       </div>
 
+      <div style={{ marginTop: "1.5rem" }}>
+        <h4 style={{ margin: "0 0 0.5rem 0", fontSize: "0.875rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>
+          PLANNING GEOMETRY LANDMARKS
+        </h4>
+        <div style={{ padding: "0.875rem", backgroundColor: "rgba(0,0,0,0.03)", borderRadius: "6px", border: "1px solid var(--border)" }}>
+          <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-muted)", marginBottom: "0.5rem" }}>
+            Adjust these on the canvas for patient-specific sizing:
+          </p>
+          <ul style={{ margin: 0, paddingLeft: "1.25rem", fontSize: "0.8125rem", color: "var(--foreground)" }}>
+            <li><strong style={{color: "#8b5cf6"}}>FLAP:</strong> Tibial Medial & Lateral Boundary (shared w/ MPTA)</li>
+            <li><strong style={{color: "#06b6d4"}}>KLAT:</strong> Tibial Anterior & Posterior Boundary (shared w/ PTS)</li>
+            <li><strong style={{color: "#f59e0b"}}>FLAP:</strong> Femoral Medial & Lateral Boundary (shared w/ LDFA)</li>
+            <li><strong style={{color: "#06b6d4"}}>KLAT:</strong> Femoral Anterior & Posterior Boundary <em style={{color: "var(--text-muted)"}}>(New)</em></li>
+          </ul>
+        </div>
+      </div>
+
       <div style={{ marginTop: "auto", paddingTop: "1.5rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
         {!isAccepted && (
           <Button

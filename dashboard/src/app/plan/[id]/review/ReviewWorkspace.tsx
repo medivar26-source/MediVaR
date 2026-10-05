@@ -28,33 +28,22 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
   };
 
   // Derive tibial values
-  const tibial = plan.lockedVersion?.payload.v1_tibial || plan.payload.v1_tibial || {
-    implant_size: 3,
-    position_2d: { x_offset_mm: 1.2, y_offset_mm: -0.4, rotation_deg: 0.5 },
-    ap_dimension_mm: 42.5,
-    ml_dimension_mm: 68.2,
-    cortical_coverage_pct: 91.5,
-    medial_overhang_mm: 0.4,
-    lateral_overhang_mm: 0.6,
-    fit_status: "ACCEPTABLE FIT",
-  };
+  const tibial = plan.lockedVersion?.payload.v1_tibial || plan.payload.v1_tibial;
 
   // Derive femoral values
-  const femoral = plan.lockedVersion?.payload.v1_femoral || plan.payload.v1_femoral || {
-    implant_size: 4,
-    position_2d: { x_offset_mm: 0.5, y_offset_mm: 0.0, rotation_deg: 0.0 },
-    ap_dimension_mm: 58.4,
-    ml_dimension_mm: 64.1,
-    ap_coverage_pct: 94.2,
-    ml_coverage_pct: 92.8,
-    notching_risk_mm: 0.0,
-    fit_status: "ACCEPTABLE FIT",
-  };
+  const femoral = plan.lockedVersion?.payload.v1_femoral || plan.payload.v1_femoral;
+
+  // Determine if plan is actually complete
+  const isTibialComplete = tibial && tibial.fit_status !== "incomplete" && tibial.is_confirmed;
+  const isFemoralComplete = femoral && femoral.fit_status !== "incomplete" && femoral.is_confirmed;
+  const isCalibrationValid = plan.payload.calibration?.isValid !== false;
+  
+  const canSealPlan = isTibialComplete && isFemoralComplete && isCalibrationValid;
 
   const kneeSide: "RIGHT" | "LEFT" = (plan.case.side || "right").toUpperCase() as "RIGHT" | "LEFT";
 
   // Exact V1 VR Payload schema matching Pages 6-7 of PDF
-  const vrPayload: V1VrPayload = plan.lockedVersion?.payload.v1_vr_payload || plan.payload.v1_vr_payload || {
+  const vrPayload: V1VrPayload | null = plan.lockedVersion?.payload.v1_vr_payload || plan.payload.v1_vr_payload || (canSealPlan ? {
     patient_id: plan.caseId === "SYNTH-VARUS-001" ? "P-0247" : plan.caseId === "SYNTH-VALGUS-001" ? "P-0891" : plan.caseId,
     knee_side: kneeSide,
     assessment: {
@@ -66,22 +55,22 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
       PTS_deg: assessment.PTS_deg,
     },
     tibial_component: {
-      implant_size: tibial.implant_size,
+      implant_size: tibial!.implant_size,
       position_2d: {
-        x_offset_mm: tibial.position_2d.x_offset_mm,
-        y_offset_mm: tibial.position_2d.y_offset_mm,
-        rotation_deg: tibial.position_2d.rotation_deg,
+        x_offset_mm: tibial!.position_2d.x_offset_mm,
+        y_offset_mm: tibial!.position_2d.y_offset_mm,
+        rotation_deg: tibial!.position_2d.rotation_deg,
       },
     },
     femoral_component: {
-      implant_size: femoral.implant_size,
+      implant_size: femoral!.implant_size,
       position_2d: {
-        x_offset_mm: femoral.position_2d.x_offset_mm,
-        y_offset_mm: femoral.position_2d.y_offset_mm,
-        rotation_deg: femoral.position_2d.rotation_deg,
+        x_offset_mm: femoral!.position_2d.x_offset_mm,
+        y_offset_mm: femoral!.position_2d.y_offset_mm,
+        rotation_deg: femoral!.position_2d.rotation_deg,
       },
     },
-  };
+  } : null);
 
   const handleConfirmLock = () => {
     startTransition(async () => {
@@ -280,32 +269,44 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", fontSize: "0.8125rem" }}>
             {/* Tibial Summary */}
             <div style={{ padding: "0.5rem", borderRadius: "4px", background: "rgba(0,0,0,0.02)", border: "1px solid var(--border)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-                <strong>Tibial Baseplate: Size {tibial.implant_size}</strong>
-                <span style={{ color: "#10b981", fontWeight: 700 }}>{tibial.fit_status}</span>
-              </div>
-              <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-                Offsets: X: {tibial.position_2d.x_offset_mm.toFixed(1)}mm, Y: {tibial.position_2d.y_offset_mm.toFixed(1)}mm, Rot: {tibial.position_2d.rotation_deg.toFixed(1)}°
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.25rem", fontSize: "0.75rem" }}>
-                <span>Coverage: <strong>{tibial.cortical_coverage_pct?.toFixed(1) ?? "91.5"}%</strong></span>
-                <span>Overhang: M {tibial.medial_overhang_mm?.toFixed(1) ?? "0.4"}mm / L {tibial.lateral_overhang_mm?.toFixed(1) ?? "0.6"}mm</span>
-              </div>
+              {tibial ? (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
+                    <strong>Tibial Baseplate: Size {tibial.implant_size}</strong>
+                    <span style={{ color: tibial.fit_status === "incomplete" ? "#f59e0b" : "#10b981", fontWeight: 700 }}>{tibial.fit_status}</span>
+                  </div>
+                  <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                    Offsets: X: {tibial.position_2d.x_offset_mm.toFixed(1)}mm, Y: {tibial.position_2d.y_offset_mm.toFixed(1)}mm, Rot: {tibial.position_2d.rotation_deg.toFixed(1)}°
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.25rem", fontSize: "0.75rem" }}>
+                    <span>Coverage: <strong>{tibial.cortical_coverage_pct?.toFixed(1) ?? "--"}%</strong></span>
+                    <span>Overhang: M {tibial.medial_overhang_mm?.toFixed(1) ?? "--"}mm / L {tibial.lateral_overhang_mm?.toFixed(1) ?? "--"}mm</span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ color: "#f59e0b", fontWeight: 700 }}>Tibial Planning Incomplete</div>
+              )}
             </div>
 
             {/* Femoral Summary */}
             <div style={{ padding: "0.5rem", borderRadius: "4px", background: "rgba(0,0,0,0.02)", border: "1px solid var(--border)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-                <strong>Femoral Component: Size {femoral.implant_size}</strong>
-                <span style={{ color: "#10b981", fontWeight: 700 }}>{femoral.fit_status}</span>
-              </div>
-              <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-                Offsets: X: {femoral.position_2d.x_offset_mm.toFixed(1)}mm, Y: {femoral.position_2d.y_offset_mm.toFixed(1)}mm, Rot: {femoral.position_2d.rotation_deg.toFixed(1)}°
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.25rem", fontSize: "0.75rem" }}>
-                <span>AP Coverage: <strong>{femoral.ap_coverage_pct?.toFixed(1) ?? "94.2"}%</strong></span>
-                <span>Notching Risk: <strong>{femoral.notching_risk_mm === 0 ? "0.0 mm (Flush)" : `${femoral.notching_risk_mm} mm`}</strong></span>
-              </div>
+              {femoral ? (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
+                    <strong>Femoral Component: Size {femoral.implant_size}</strong>
+                    <span style={{ color: femoral.fit_status === "incomplete" ? "#f59e0b" : "#10b981", fontWeight: 700 }}>{femoral.fit_status}</span>
+                  </div>
+                  <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                    Offsets: X: {femoral.position_2d.x_offset_mm.toFixed(1)}mm, Y: {femoral.position_2d.y_offset_mm.toFixed(1)}mm, Rot: {femoral.position_2d.rotation_deg.toFixed(1)}°
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.25rem", fontSize: "0.75rem" }}>
+                    <span>AP Coverage: <strong>{femoral.ap_coverage_pct?.toFixed(1) ?? "--"}%</strong></span>
+                    <span>Notching Risk: <strong>{femoral.notching_risk_mm === 0 ? "0.0 mm (Flush)" : `${femoral.notching_risk_mm} mm`}</strong></span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ color: "#f59e0b", fontWeight: 700 }}>Femoral Planning Incomplete</div>
+              )}
             </div>
           </div>
         </div>
@@ -421,28 +422,30 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           {!isLocked ? (
             <button
-              onClick={() => setShowModal(true)}
+              onClick={() => canSealPlan && setShowModal(true)}
+              disabled={!canSealPlan}
               style={{
                 padding: "0.75rem 1.5rem",
                 borderRadius: "6px",
-                background: "#0f172a",
-                color: "white",
+                background: canSealPlan ? "#0f172a" : "#cbd5e1",
+                color: canSealPlan ? "white" : "#64748b",
                 fontWeight: 700,
                 fontSize: "0.9375rem",
                 border: "none",
-                cursor: "pointer",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                cursor: canSealPlan ? "pointer" : "not-allowed",
+                boxShadow: canSealPlan ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "0.5rem",
               }}
+              title={!canSealPlan ? "Planning is incomplete or calibration is missing." : "Lock plan"}
             >
               <Lock width={16} height={16} />
-              LOCK PLAN & SEND TO VR →
+              {canSealPlan ? "LOCK PLAN & SEND TO VR →" : "PLAN INCOMPLETE"}
             </button>
           ) : (
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              <Button variant="secondary" href={`/cases/${plan.caseId}`}>
+              <Button variant="secondary" href={plan.case.isPersonalCase ? `/personal-cases/${plan.caseId}` : `/cases/${plan.caseId}`}>
                 Back to case
               </Button>
               <Button variant="secondary" href="/plans">

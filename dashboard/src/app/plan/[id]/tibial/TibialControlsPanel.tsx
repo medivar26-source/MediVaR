@@ -25,7 +25,7 @@ export function TibialControlsPanel({
   setTibialComponent,
   fitResult,
   plan,
-  patientBone = { mlMm: 68.2, apMm: 42.5 },
+  patientBone,
 }: TibialControlsPanelProps) {
   const router = useRouter();
   const params = useParams();
@@ -36,6 +36,7 @@ export function TibialControlsPanel({
 
   const handleSizeChange = (newSize: number) => {
     if (isReadOnly) return;
+    if (!patientBone) return;
     const template = getTibialTemplate(newSize);
     const fit = evaluateTibialFit(
       newSize,
@@ -63,6 +64,7 @@ export function TibialControlsPanel({
     delta: number
   ) => {
     if (isReadOnly) return;
+    if (!patientBone) return;
     setTibialComponent((prev) => {
       const newPos = {
         ...prev.position_2d,

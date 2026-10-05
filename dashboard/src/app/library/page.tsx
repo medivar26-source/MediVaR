@@ -4,6 +4,7 @@ import { Film } from "lucide-react";
 import { AppShell, Breadcrumbs, PageHeader, SectionHeader } from "@/components/shell";
 import { Button, Chip, EmptyState } from "@/components/ui";
 import { getLibrary } from "@/lib/data/support";
+import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import p from "../panels.module.css";
 
@@ -21,13 +22,14 @@ export const metadata: Metadata = { title: "Library" };
  */
 export default async function LibraryPage() {
   const user = await getCurrentUser();
+  const persona = personaFor(user.role);
   const library = await getLibrary();
 
   return (
     <AppShell user={user} searchHint='Try searching "library"'>
       <Breadcrumbs
         items={[
-          { label: "Content Library" },
+          ...(persona === "learner" ? [{ label: "Help & guides", href: "/library" }] : []),
           { label: "Library" },
         ]}
       />

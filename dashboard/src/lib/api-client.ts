@@ -73,6 +73,9 @@ export const apiClient = {
   put: (endpoint: string, data: any, options?: RequestInit) => 
     fetchWithConfig(endpoint, { ...options, method: 'PUT', body: JSON.stringify(data) }),
   
+  patch: (endpoint: string, data: any, options?: RequestInit) => 
+    fetchWithConfig(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(data) }),
+  
   upload: async (endpoint: string, formData: FormData, options?: RequestInit) => {
     const url = `${API_BASE_URL}${endpoint}`;
     const headers = new Headers(options?.headers);

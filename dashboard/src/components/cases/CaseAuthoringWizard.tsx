@@ -29,6 +29,8 @@ import {
   uploadAssetAction,
 } from "@/app/actions/cases";
 import dicomParser from "dicom-parser";
+import dynamic from "next/dynamic";
+const DicomViewer = dynamic(() => import("./DicomViewer"), { ssr: false });
 import {
   Badge,
   Banner,
@@ -1043,14 +1045,26 @@ export function CaseAuthoringWizard({
                     <div className={s.stack}>
                       <div className={s.previewFrame}>
                         {img.storage_path ? (
-                          <img
-                            src={img.storage_path.startsWith('cases/synth/') ? `/${img.storage_path}` : img.storage_path}
-                            alt={`${img.view_type} preview`}
-                            className={s.previewImg}
-                            onError={(e) => {
-                              (e.target as HTMLElement).style.display = "none";
-                            }}
-                          />
+                          (() => {
+                            const urlWithoutQuery = img.storage_path.split('?')[0].toLowerCase();
+                            const isDicom = urlWithoutQuery.endsWith('.dcm') || urlWithoutQuery.endsWith('.dcim');
+                            return isDicom ? (
+                            <DicomViewer 
+                              src={img.storage_path.startsWith('cases/synth/') ? `/${img.storage_path}` : img.storage_path} 
+                              className={s.previewImg} 
+                              alt={`${img.view_type} preview`} 
+                            />
+                          ) : (
+                            <img
+                              src={img.storage_path.startsWith('cases/synth/') ? `/${img.storage_path}` : img.storage_path}
+                              alt={`${img.view_type} preview`}
+                              className={s.previewImg}
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                          )
+                          })()
                         ) : (
                           <ImageIcon width={36} height={36} color="var(--text-disabled)" />
                         )}

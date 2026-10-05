@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { fallbackNotice, resolveScan } from "@/lib/plan-scans";
 
 import { updatePlanPayload } from "@/app/actions";
 import s from "../plan.module.css";
 import { XRayCanvas } from "./XRayCanvas";
 import { MeasurementPanel } from "./MeasurementPanel";
+import { pxToMm } from "@/lib/data/calibration";
+import { normalizeCalibration } from "@/lib/data/coordinates";
 
 export type ViewMode = "FLAP" | "KLAT";
 
@@ -29,6 +31,8 @@ export type LandmarkState = {
   tibiaPlateauPosterior?: Point2D;
   tibiaShaftProximal?: Point2D;
   tibiaShaftDistal?: Point2D;
+  femurAnteriorBoundary?: Point2D;
+  femurPosteriorBoundary?: Point2D;
 };
 
 const DEFAULT_LANDMARKS: LandmarkState = {
@@ -46,6 +50,8 @@ const DEFAULT_LANDMARKS: LandmarkState = {
   tibiaPlateauPosterior: { x: 70, y: 40 },
   tibiaShaftProximal: { x: 50, y: 50 },
   tibiaShaftDistal: { x: 50, y: 80 },
+  femurAnteriorBoundary: { x: 35, y: 30 },
+  femurPosteriorBoundary: { x: 65, y: 30 },
 };
 
 import type { PlanDetail } from "@/lib/plan";
@@ -72,6 +78,16 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
 
   const [landmarks, setLandmarks] = useState<LandmarkState>(() => normalizeLandmarks(rawLandmarks));
   const [isAccepted, setIsAccepted] = useState(isReadOnly); // Automatically accept if locked
+  const [flapDims, setFlapDims] = useState<{width: number, height: number} | null>(null);
+  const [klatDims, setKlatDims] = useState<{width: number, height: number} | null>(null);
+
+  const handleDimsLoaded = useCallback((mode: string, dims: { width: number; height: number }) => {
+    if (mode === "FLAP") {
+      setFlapDims(prev => prev?.width === dims.width && prev?.height === dims.height ? prev : dims);
+    } else if (mode === "KLAT") {
+      setKlatDims(prev => prev?.width === dims.width && prev?.height === dims.height ? prev : dims);
+    }
+  }, []);
 
   const imageMatch = plan.case?.imaging?.find(
     (img) => img.view.toLowerCase() === viewMode.toLowerCase()
@@ -93,9 +109,43 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
   const handleAccept = async (calculated?: import("@/lib/plan").V1Assessment) => {
     if (isReadOnly) return;
     setIsAccepted(true);
+
+    // Compute Physical Planning Geometries
+    const flapImg = plan.case?.imaging?.find(i => i.view.toLowerCase() === "flap" || i.view.toLowerCase() === "ap");
+    const klatImg = plan.case?.imaging?.find(i => i.view.toLowerCase() === "klat");
+    const flapCal = normalizeCalibration(flapImg?.calibration);
+    const klatCal = normalizeCalibration(klatImg?.calibration);
+
+    let patient_tibial_ml_mm, patient_tibial_ap_mm, patient_femoral_ml_mm, patient_femoral_ap_mm;
+
+    if (flapDims && landmarks.tibiaProximalLateral && landmarks.tibiaProximalMedial) {
+      const px = Math.abs(landmarks.tibiaProximalMedial.x - landmarks.tibiaProximalLateral.x) / 100 * flapDims.width;
+      patient_tibial_ml_mm = pxToMm(px, flapCal);
+    }
+    if (klatDims && landmarks.tibiaPlateauAnterior && landmarks.tibiaPlateauPosterior) {
+      const px = Math.abs(landmarks.tibiaPlateauPosterior.x - landmarks.tibiaPlateauAnterior.x) / 100 * klatDims.width;
+      patient_tibial_ap_mm = pxToMm(px, klatCal);
+    }
+    if (flapDims && landmarks.femurDistalLateral && landmarks.femurDistalMedial) {
+      const px = Math.abs(landmarks.femurDistalMedial.x - landmarks.femurDistalLateral.x) / 100 * flapDims.width;
+      patient_femoral_ml_mm = pxToMm(px, flapCal);
+    }
+    if (klatDims && landmarks.femurAnteriorBoundary && landmarks.femurPosteriorBoundary) {
+      const px = Math.abs(landmarks.femurPosteriorBoundary.x - landmarks.femurAnteriorBoundary.x) / 100 * klatDims.width;
+      patient_femoral_ap_mm = pxToMm(px, klatCal);
+    }
+
+    const assessmentPayload = {
+      ...calculated,
+      ...(!Number.isNaN(patient_tibial_ml_mm) && patient_tibial_ml_mm !== undefined && { patient_tibial_ml_mm }),
+      ...(!Number.isNaN(patient_tibial_ap_mm) && patient_tibial_ap_mm !== undefined && { patient_tibial_ap_mm }),
+      ...(!Number.isNaN(patient_femoral_ml_mm) && patient_femoral_ml_mm !== undefined && { patient_femoral_ml_mm }),
+      ...(!Number.isNaN(patient_femoral_ap_mm) && patient_femoral_ap_mm !== undefined && { patient_femoral_ap_mm }),
+    };
+
     try {
       await updatePlanPayload(plan.id, {
-        v1_assessment: calculated,
+        v1_assessment: assessmentPayload as import("@/lib/plan").V1Assessment,
         assessment_landmarks: {
           ...landmarks,
           femoral_head_center: landmarks.hipCenter,
@@ -163,6 +213,7 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
                 landmarks={landmarks} 
                 isAccepted={isAccepted}
                 onLandmarkMove={handleLandmarkMove} 
+                onDimsLoaded={handleDimsLoaded}
                 src={currentImgSrc}
              />
           </div>

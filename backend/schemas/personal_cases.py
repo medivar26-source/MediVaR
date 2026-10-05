@@ -14,6 +14,7 @@ class LearnerPersonalCaseImagingBase(BaseModel):
     height: Optional[int] = None
     laterality: Optional[str] = None
     calibration: Dict[str, Any] = Field(default_factory=dict)
+    signed_url: Optional[str] = None
 
 class LearnerPersonalCaseImaging(LearnerPersonalCaseImagingBase):
     id: UUID
@@ -31,7 +32,7 @@ class LearnerPersonalCaseBase(BaseModel):
     objectives: List[str] = Field(default_factory=list)
 
 class LearnerPersonalCaseCreate(LearnerPersonalCaseBase):
-    pass
+    imaging: Optional[List[Dict[str, Any]]] = None
 
 class LearnerPersonalCaseUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1)
@@ -42,6 +43,7 @@ class LearnerPersonalCaseUpdate(BaseModel):
     description: Optional[str] = None
     patient: Optional[Dict[str, Any]] = None
     objectives: Optional[List[str]] = None
+    imaging: Optional[List[Dict[str, Any]]] = None
 
 class LearnerPersonalCaseDetail(LearnerPersonalCaseBase):
     id: UUID

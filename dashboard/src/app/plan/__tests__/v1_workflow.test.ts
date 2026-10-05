@@ -12,10 +12,13 @@ import { pxToMm, mmToPx, DEFAULT_CALIBRATION } from "../../../lib/data/calibrati
 describe("V1 TKA Planning Workflow & Calibration", () => {
   it("should correctly convert pixels and mm using 0.264 mm/px calibration", () => {
     assert.strictEqual(DEFAULT_CALIBRATION.mm_per_px, 0.264);
+    
+    // Create a mock valid calibration
+    const validCal = { ...DEFAULT_CALIBRATION, isValid: true };
     // 100 pixels * 0.264 mm/px = 26.4 mm
-    assert.strictEqual(pxToMm(100), 26.4);
+    assert.strictEqual(pxToMm(100, validCal), 26.4);
     // 26.4 mm / 0.264 mm/px = 100.0 px
-    assert.strictEqual(mmToPx(26.4), 100.0);
+    assert.strictEqual(mmToPx(26.4, validCal), 100.0);
   });
 
   it("should provide exact discrete catalog sizes for Tibial (1 to 6) and Femoral (1 to 8)", () => {
@@ -49,14 +52,15 @@ describe("V1 TKA Planning Workflow & Calibration", () => {
   });
 
   it("should evaluate femoral fit and anterior notching risk against clinical tolerances", () => {
-    const acceptable = evaluateFemoralFit(4, 0.5, 0.0, 59.0, 65.0);
+    // Offset by -0.3 in Y to align anterior flange (-29.2 - 0.3 = -29.5) flush with anterior cortex (-29.5)
+    const acceptable = evaluateFemoralFit(4, 0.5, -0.3, 59.0, 65.0);
     assert.ok(acceptable.apCoveragePct >= 90.0);
     assert.ok(acceptable.mlCoveragePct >= 90.0);
     assert.strictEqual(acceptable.notchingRiskMm, 0.0);
     assert.strictEqual(acceptable.fitStatus, "ACCEPTABLE FIT");
 
     // Posterior displacement creating anterior notching risk
-    const notching = evaluateFemoralFit(4, 0.5, -2.0, 59.0, 65.0);
+    const notching = evaluateFemoralFit(4, 0.5, 2.0, 59.0, 65.0); // 2.0mm posterior offset
     assert.ok(notching.notchingRiskMm > 0.5);
     assert.strictEqual(notching.fitStatus, "CAUTION: Anterior Notch Risk");
   });

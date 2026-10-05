@@ -52,6 +52,7 @@ export function normalizeCalibration(cal?: any, viewHint?: string): V1Calibratio
       measured_pixel_diameter,
       mm_per_px: mm_per_px > 0 ? mm_per_px : DEFAULT_MM_PER_PX,
       calibrated_at: cal.calibrated_at || new Date().toISOString(),
+      isValid: true,
     };
   }
 
@@ -70,6 +71,7 @@ export function normalizeCalibration(cal?: any, viewHint?: string): V1Calibratio
       measured_pixel_diameter: 32.5,
       mm_per_px,
       calibrated_at: new Date().toISOString(),
+      isValid: false,
     };
   }
 
@@ -91,6 +93,7 @@ export function calculateCalibrationFromMarker(
     measured_pixel_diameter: measuredMarkerImagePx,
     mm_per_px,
     calibrated_at: new Date().toISOString(),
+    isValid: true,
   };
 }
 

@@ -61,7 +61,7 @@ test("Navigation persona separation & approved hierarchy", async (t) => {
       "Instructor must have All Programs at /programs",
     );
 
-    // 2. Content Library section with Case Library and Library
+    // 2. Content Library section with Case Library and Procedures (no Assessment Criteria or Library)
     const contentSection = instructorSections.find((s) => s.id === "content-library");
     assert.ok(contentSection, "Instructor must have 'content-library' section");
     assert.equal(contentSection.label, "Content Library");
@@ -72,8 +72,16 @@ test("Navigation persona separation & approved hierarchy", async (t) => {
       "Instructor must have Case Library at /cases",
     );
     assert.ok(
-      contentItems.some((i) => i.href === "/library" && i.label === "Library"),
-      "Instructor must have Library at /library",
+      contentItems.some((i) => i.href === "/content?tab=procedures" && i.label === "Procedures"),
+      "Instructor must have Procedures at /content?tab=procedures",
+    );
+    assert.ok(
+      !contentItems.some((i) => i.label === "Assessment Criteria"),
+      "Instructor should not have Assessment Criteria in Content Library",
+    );
+    assert.ok(
+      !contentItems.some((i) => i.label === "Library"),
+      "Instructor should not have Library in Content Library",
     );
 
     // 3. Reports lives inside Overview, not as a section of its own
@@ -113,7 +121,6 @@ test("Navigation persona separation & approved hierarchy", async (t) => {
     assert.equal(sectionForPath("/cohorts", "instructor"), "programs");
     assert.equal(sectionForPath("/cohorts/prog-123", "instructor"), "programs");
     assert.equal(sectionForPath("/cases", "instructor"), "content-library");
-    assert.equal(sectionForPath("/library", "instructor"), "content-library");
     assert.equal(sectionForPath("/reports", "instructor"), "overview");
     assert.equal(sectionForPath("/learners/abc", "instructor"), "programs");
     assert.equal(sectionForPath("/content", "instructor"), "content-library");

@@ -20,6 +20,8 @@ import {
 } from "@/app/actions/personal-cases";
 import { uploadAssetAction } from "@/app/actions/cases"; // Reusing asset uploader for the file itself
 import dicomParser from "dicom-parser";
+import dynamic from "next/dynamic";
+const DicomViewer = dynamic(() => import("@/components/cases/DicomViewer"), { ssr: false });
 import {
   Badge,
   Banner,
@@ -560,7 +562,15 @@ export function PersonalCaseAuthoringWizard({
               <div key={img.id} style={{ display: "flex", gap: "1.5rem", padding: "1.5rem", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", background: "var(--surface-sunken)" }}>
                 <div style={{ width: "200px", height: "300px", background: "var(--surface)", borderRadius: "var(--r-md)", border: "1px dashed var(--border-hover)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative" }}>
                   {img.storage_path ? (
-                    <img src={img.storage_path} alt={img.label} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                    (() => {
+                      const urlWithoutQuery = img.storage_path.split('?')[0].toLowerCase();
+                      const isDicom = urlWithoutQuery.endsWith('.dcm') || urlWithoutQuery.endsWith('.dcim');
+                      return isDicom ? (
+                      <DicomViewer src={(img as any).signed_url || img.storage_path} alt={img.label} className="absolute inset-0" />
+                    ) : (
+                      <img src={(img as any).signed_url || img.storage_path} alt={img.label} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                    )
+                    })()
                   ) : (
                     <ImageIcon size={48} color="var(--border)" strokeWidth={1} />
                   )}
@@ -595,7 +605,7 @@ export function PersonalCaseAuthoringWizard({
                       {img.storage_path && img.calibration?.detected_marker_pixel_diameter > 0 ? (
                         <Badge status="success">Calibrated</Badge>
                       ) : img.storage_path ? (
-                        <Badge status="warning">Manual Needed</Badge>
+                        <Badge status="warn">Manual Needed</Badge>
                       ) : (
                         <Badge status="neutral">Pending Image</Badge>
                       )}

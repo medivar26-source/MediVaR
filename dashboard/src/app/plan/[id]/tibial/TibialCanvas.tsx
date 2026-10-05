@@ -100,9 +100,6 @@ export function TibialCanvas({
         const centerX_img = kneeX_img + tibialComponent.position_2d.x_offset_mm * pxPerMm;
         const centerY_img = kneeY_img + tibialComponent.position_2d.y_offset_mm * pxPerMm + (viewMode === "FLAP" ? 6 * pxPerMm : 0);
 
-        const patientMl = patientBone?.mlMm ?? 68.2;
-        const patientAp = patientBone?.apMm ?? 42.5;
-
         return (
           <>
             {/* Canonical SVG Overlay strictly aligned with Natural Image Raster */}
@@ -128,39 +125,41 @@ export function TibialCanvas({
               </defs>
 
               {/* Patient Tibial Cortical Plateau Boundary & Resection Markers (Fixed to Anatomy) */}
-              <g
-                transform={`translate(${kneeX_img}, ${kneeY_img + (viewMode === "FLAP" ? 6 * pxPerMm : 0)}) scale(${pxPerMm})`}
-              >
-                {/* Resection Reference Line */}
-                <line
-                  x1={-patientMl / 2}
-                  y1={0}
-                  x2={patientMl / 2}
-                  y2={0}
-                  stroke="#0284c7"
-                  strokeWidth={1.5 / pxPerMm}
-                  strokeDasharray={`${3 / pxPerMm},${2 / pxPerMm}`}
-                  opacity={0.8}
-                />
-                {/* Medial Cortical Boundary Marker */}
-                <line
-                  x1={-patientMl / 2}
-                  y1={-3}
-                  x2={-patientMl / 2}
-                  y2={8}
-                  stroke="#0284c7"
-                  strokeWidth={1.8 / pxPerMm}
-                />
-                {/* Lateral Cortical Boundary Marker */}
-                <line
-                  x1={patientMl / 2}
-                  y1={-3}
-                  x2={patientMl / 2}
-                  y2={8}
-                  stroke="#0284c7"
+              {patientBone && (
+                <g
+                  transform={`translate(${kneeX_img}, ${kneeY_img + (viewMode === "FLAP" ? 6 * pxPerMm : 0)}) scale(${pxPerMm})`}
+                >
+                  {/* Resection Reference Line */}
+                  <line
+                    x1={-patientBone.mlMm / 2}
+                    y1={0}
+                    x2={patientBone.mlMm / 2}
+                    y2={0}
+                    stroke="#0284c7"
+                    strokeWidth={1.5 / pxPerMm}
+                    strokeDasharray={`${3 / pxPerMm},${2 / pxPerMm}`}
+                    opacity={0.8}
+                  />
+                  {/* Medial Cortical Boundary Marker */}
+                  <line
+                    x1={-patientBone.mlMm / 2}
+                    y1={-3}
+                    x2={-patientBone.mlMm / 2}
+                    y2={8}
+                    stroke="#0284c7"
+                    strokeWidth={1.8 / pxPerMm}
+                  />
+                  {/* Lateral Cortical Boundary Marker */}
+                  <line
+                    x1={patientBone.mlMm / 2}
+                    y1={-3}
+                    x2={patientBone.mlMm / 2}
+                    y2={8}
+                    stroke="#0284c7"
                   strokeWidth={1.8 / pxPerMm}
                 />
               </g>
+              )}
 
               {/* Implant Component Group placed in Image Space, scaled strictly by pxPerMm */}
               <g

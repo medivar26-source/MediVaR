@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+const DicomViewer = dynamic(() => import("@/components/cases/DicomViewer"), { ssr: false });
 
 export interface ViewportContext {
   zoom: number;
@@ -65,6 +67,12 @@ export function ScanViewport({ src, alt = "Scan Image", children }: ScanViewport
     const img = e.currentTarget;
     if (img.naturalWidth > 0 && img.naturalHeight > 0) {
       setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+    }
+  };
+
+  const handleDicomLoad = (size: { naturalWidth: number; naturalHeight: number }) => {
+    if (size.naturalWidth > 0 && size.naturalHeight > 0) {
+      setNaturalSize({ width: size.naturalWidth, height: size.naturalHeight });
     }
   };
 
@@ -311,19 +319,38 @@ export function ScanViewport({ src, alt = "Scan Image", children }: ScanViewport
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={alt}
-          onLoad={handleImageLoad}
-          draggable={false}
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "block",
-            pointerEvents: "none",
-            userSelect: "none",
-          }}
-        />
+        {(() => {
+          const urlWithoutQuery = src.split('?')[0].toLowerCase();
+          const isDicom = urlWithoutQuery.endsWith('.dcm') || urlWithoutQuery.endsWith('.dcim');
+          return isDicom ? (
+          <DicomViewer
+            src={src}
+            alt={alt}
+            onLoad={handleDicomLoad}
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "block",
+              pointerEvents: "none",
+              userSelect: "none",
+            }}
+          />
+        ) : (
+          <img
+            src={src}
+            alt={alt}
+            onLoad={handleImageLoad}
+            draggable={false}
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "block",
+              pointerEvents: "none",
+              userSelect: "none",
+            }}
+          />
+        );
+        })()}
 
         {/* Children (SVGs, Landmark Markers, Component Overlays) */}
         {children({

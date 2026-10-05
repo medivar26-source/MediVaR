@@ -91,6 +91,7 @@ export type V1Calibration = {
   measured_pixel_diameter?: number;
   mm_per_px: number;
   calibrated_at?: string;
+  isValid?: boolean;
 };
 
 export type V1Assessment = {
@@ -101,6 +102,10 @@ export type V1Assessment = {
   LDFA_deg: number;
   PTS_deg: number;
   alignment_type?: "VARUS" | "VALGUS" | "NEUTRAL";
+  patient_tibial_ml_mm?: number;
+  patient_tibial_ap_mm?: number;
+  patient_femoral_ml_mm?: number;
+  patient_femoral_ap_mm?: number;
 };
 
 export type V1Position2D = {
@@ -260,6 +265,7 @@ export type PlanCase = {
   imaging: { view: string; label: string; src?: string; calibration?: V1Calibration }[];
   objectives: string[];
   referenceRanges: Partial<Record<MeasurementKey, [number, number]>>;
+  isPersonalCase?: boolean;
 };
 
 export type PlanSnapshot = {

@@ -41,7 +41,7 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
     if (v1Ass?.patient_tibial_ml_mm && v1Ass?.patient_tibial_ap_mm) {
       return { mlMm: Number(v1Ass.patient_tibial_ml_mm), apMm: Number(v1Ass.patient_tibial_ap_mm) };
     }
-    return { mlMm: 68.2, apMm: 42.5 };
+    return undefined;
   })();
 
   const initialComponent: V1TibialComponent = (() => {
@@ -52,14 +52,14 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
       return { ...plan.payload.v1_tibial, is_confirmed: isReadOnly ? true : plan.payload.v1_tibial.is_confirmed };
     }
     const template = getTibialTemplate(DEFAULT_TIBIAL_COMPONENT.implant_size);
-    const fit = evaluateTibialFit(
+    const fit = patientBone ? evaluateTibialFit(
       DEFAULT_TIBIAL_COMPONENT.implant_size,
       DEFAULT_TIBIAL_COMPONENT.position_2d.x_offset_mm,
       DEFAULT_TIBIAL_COMPONENT.position_2d.y_offset_mm,
       patientBone.apMm,
       patientBone.mlMm,
       DEFAULT_TIBIAL_COMPONENT.position_2d.rotation_deg
-    );
+    ) : { coveragePct: 0, medialOverhangMm: 0, lateralOverhangMm: 0, fitStatus: "incomplete" as any };
     return {
       ...DEFAULT_TIBIAL_COMPONENT,
       ap_dimension_mm: template.apMm,
@@ -74,14 +74,14 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
 
   const [tibialComponent, setTibialComponent] = useState<V1TibialComponent>(initialComponent);
 
-  const fitResult = evaluateTibialFit(
+  const fitResult = patientBone ? evaluateTibialFit(
     tibialComponent.implant_size,
     tibialComponent.position_2d.x_offset_mm,
     tibialComponent.position_2d.y_offset_mm,
     patientBone.apMm,
     patientBone.mlMm,
     tibialComponent.position_2d.rotation_deg
-  );
+  ) : { coveragePct: 0, medialOverhangMm: 0, lateralOverhangMm: 0, fitStatus: "incomplete" as any };
 
   const rawLandmarks = (plan.payload?.assessment_landmarks as Record<string, any>) || {};
   const assessmentLandmarks = {
@@ -110,14 +110,16 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
 
   const handlePositionChange = (newPos: { x_offset_mm: number; y_offset_mm: number; rotation_deg: number }) => {
     if (isReadOnly) return;
-    const fit = evaluateTibialFit(
+    
+    const fit = patientBone ? evaluateTibialFit(
       tibialComponent.implant_size,
       newPos.x_offset_mm,
       newPos.y_offset_mm,
       patientBone.apMm,
       patientBone.mlMm,
       newPos.rotation_deg
-    );
+    ) : { coveragePct: 0, medialOverhangMm: 0, lateralOverhangMm: 0, fitStatus: "incomplete" as any };
+
     setTibialComponent((prev) => ({
       ...prev,
       position_2d: newPos,
