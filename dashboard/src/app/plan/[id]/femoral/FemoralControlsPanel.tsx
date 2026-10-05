@@ -2,28 +2,51 @@
 
 import { useTransition } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { updatePlanPayload } from "@/app/actions";
 import { Button } from "@/components/ui";
 import {
   FEMORAL_TEMPLATES,
   getFemoralTemplate,
   evaluateFemoralFit,
+  suggestFemoralSize,
   type FemoralFitResult,
 } from "@/lib/data/tkr_templates";
 import type { PlanDetail, V1FemoralComponent } from "@/lib/plan";
+import { FitGauge, FitVerdict, KeyboardHint, NudgeRow, SaveBadge, type Tone } from "../components/PlanControls";
+import { useNudgeKeys, useSaveStatus } from "../components/planHooks";
+import c from "../components/planControls.module.css";
 
 interface FemoralControlsPanelProps {
   femoralComponent: V1FemoralComponent;
   setFemoralComponent: React.Dispatch<React.SetStateAction<V1FemoralComponent>>;
   fitResult: FemoralFitResult;
   plan: PlanDetail;
+  patientBone?: { mlMm: number; apMm: number };
 }
+
+type Axis = "x_offset_mm" | "y_offset_mm" | "rotation_deg";
+
+const NOT_MEASURED = { apCoveragePct: 0, mlCoveragePct: 0, notchingRiskMm: 0, fitStatus: "incomplete" as never };
+
+const coverageTone = (v: number): Tone => (v >= 90 ? "pass" : v >= 85 ? "warn" : "fail");
+const notchTone = (v: number): Tone => (v <= 0.5 ? "pass" : "fail");
+
+const COVERAGE_ZONES = [
+  { from: 60, to: 85, tone: "fail" },
+  { from: 85, to: 90, tone: "warn" },
+  { from: 90, to: 100, tone: "pass" },
+] as const;
+
+const NOTCH_ZONES = [
+  { from: 0, to: 0.5, tone: "pass" },
+  { from: 0.5, to: 2, tone: "fail" },
+] as const;
 
 export function FemoralControlsPanel({
   femoralComponent,
   setFemoralComponent,
   fitResult,
   plan,
+  patientBone,
 }: FemoralControlsPanelProps) {
   const router = useRouter();
   const params = useParams();
@@ -31,43 +54,50 @@ export function FemoralControlsPanel({
   const isReadOnly = plan.isReadyForVr || plan.lockedVersion !== undefined;
 
   const currentTemplate = getFemoralTemplate(femoralComponent.implant_size);
+  const suggestedSize = patientBone ? suggestFemoralSize(patientBone.apMm) : undefined;
+  const measured = Boolean(patientBone);
+
+  const { status, save, retry } = useSaveStatus<V1FemoralComponent>(
+    plan.id,
+    femoralComponent,
+    plan.lockedVersion?.payload.v1_femoral ?? plan.payload.v1_femoral ?? null,
+    isReadOnly,
+  );
+
+  // Same inputs as the workspace uses for the displayed fit — measured bone and rotation — so
+  // what is stored on the component always matches what the surgeon is looking at.
+  const evaluate = (size: number, pos: V1FemoralComponent["position_2d"]) =>
+    patientBone
+      ? evaluateFemoralFit(size, pos.x_offset_mm, pos.y_offset_mm, patientBone.apMm, patientBone.mlMm, pos.rotation_deg)
+      : NOT_MEASURED;
 
   const handleSizeChange = (newSize: number) => {
     if (isReadOnly) return;
     const template = getFemoralTemplate(newSize);
-    const fit = evaluateFemoralFit(
-      newSize,
-      femoralComponent.position_2d.x_offset_mm,
-      femoralComponent.position_2d.y_offset_mm
-    );
-    setFemoralComponent((prev) => ({
-      ...prev,
-      implant_size: newSize,
-      ap_dimension_mm: template.apMm,
-      ml_dimension_mm: template.mlMm,
-      ap_coverage_pct: fit.apCoveragePct,
-      ml_coverage_pct: fit.mlCoveragePct,
-      notching_risk_mm: fit.notchingRiskMm,
-      fit_status: fit.fitStatus,
-      is_confirmed: false,
-    }));
+    setFemoralComponent((prev) => {
+      const fit = evaluate(newSize, prev.position_2d);
+      return {
+        ...prev,
+        implant_size: newSize,
+        ap_dimension_mm: template.apMm,
+        ml_dimension_mm: template.mlMm,
+        ap_coverage_pct: fit.apCoveragePct,
+        ml_coverage_pct: fit.mlCoveragePct,
+        notching_risk_mm: fit.notchingRiskMm,
+        fit_status: fit.fitStatus,
+        is_confirmed: false,
+      };
+    });
   };
 
-  const handleOffsetChange = (
-    key: "x_offset_mm" | "y_offset_mm" | "rotation_deg",
-    delta: number
-  ) => {
+  const handleOffsetChange = (key: Axis, delta: number) => {
     if (isReadOnly) return;
     setFemoralComponent((prev) => {
       const newPos = {
         ...prev.position_2d,
         [key]: Number((prev.position_2d[key] + delta).toFixed(1)),
       };
-      const fit = evaluateFemoralFit(
-        prev.implant_size,
-        newPos.x_offset_mm,
-        newPos.y_offset_mm
-      );
+      const fit = evaluate(prev.implant_size, newPos);
       return {
         ...prev,
         position_2d: newPos,
@@ -75,20 +105,21 @@ export function FemoralControlsPanel({
         ml_coverage_pct: fit.mlCoveragePct,
         notching_risk_mm: fit.notchingRiskMm,
         fit_status: fit.fitStatus,
+        // Any move invalidates an earlier confirmation.
+        is_confirmed: false,
       };
     });
   };
 
+  useNudgeKeys(!isReadOnly, handleOffsetChange);
+
   const handleConfirmAndSave = async () => {
     if (isReadOnly) return;
-    const confirmedComponent: V1FemoralComponent = {
-      ...femoralComponent,
-      is_confirmed: true,
-    };
+    const confirmedComponent: V1FemoralComponent = { ...femoralComponent, is_confirmed: true };
     setFemoralComponent(confirmedComponent);
 
-    try {
-      await updatePlanPayload(plan.id, {
+    const ok = await save(
+      {
         v1_femoral: confirmedComponent,
         // Legacy compat fields
         femoral_planning: {
@@ -97,10 +128,11 @@ export function FemoralControlsPanel({
           y_offset_mm: confirmedComponent.position_2d.y_offset_mm,
           rotation_deg: confirmedComponent.position_2d.rotation_deg,
         },
-      });
-    } catch {
-      // best-effort local save
-    }
+      },
+      confirmedComponent,
+    );
+    // A confirmation the server never accepted must not unlock the next step.
+    if (!ok) setFemoralComponent((prev) => ({ ...prev, is_confirmed: false }));
   };
 
   const handleContinue = () => {
@@ -110,224 +142,143 @@ export function FemoralControlsPanel({
     });
   };
 
+  const pos = femoralComponent.position_2d;
+
   return (
     <div
       style={{
-        padding: "1.25rem",
+        padding: "var(--s-5)",
         backgroundColor: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "8px",
+        border: "var(--bw) solid var(--border)",
+        borderRadius: "var(--r-md)",
         height: "100%",
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
-        gap: "1.25rem",
+        gap: "var(--s-5)",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: "700" }}>
-          Femoral Component Sizing
-        </h3>
-        {femoralComponent.is_confirmed && (
-          <span
-            style={{
-              padding: "2px 8px",
-              borderRadius: "4px",
-              background: "rgba(16, 185, 129, 0.1)",
-              color: "#10b981",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-            }}
-          >
-            CONFIRMED
-          </span>
-        )}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
+        <h3 style={{ margin: 0, fontSize: "var(--t-h3)", fontWeight: 700, color: "var(--ink)" }}>Femoral Component Sizing</h3>
+        <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
+          {femoralComponent.is_confirmed && <span className={c.confirmed}>CONFIRMED</span>}
+          <SaveBadge status={status} onRetry={retry} />
+        </div>
       </div>
 
       {/* Sizing Toolbar: Discrete Sizes 1 to 8 */}
       <div>
-        <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: "600", marginBottom: "0.5rem", color: "var(--text-muted)" }}>
+        <label style={{ display: "block", fontSize: "var(--t-label)", fontWeight: 600, marginBottom: "var(--s-2)", color: "var(--text-muted)" }}>
           IMPLANT SIZE (1 to 8)
         </label>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "4px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--s-1)" }}>
           {FEMORAL_TEMPLATES.map((t) => {
             const isSelected = femoralComponent.implant_size === t.size;
             return (
               <button
                 key={t.size}
+                type="button"
                 disabled={isReadOnly}
                 onClick={() => handleSizeChange(t.size)}
-                style={{
-                  padding: "0.45rem 0",
-                  borderRadius: "4px",
-                  border: isSelected ? "2px solid #0284c7" : "1px solid var(--border)",
-                  background: isSelected ? "#e0f2fe" : "var(--surface)",
-                  color: isSelected ? "#0369a1" : "inherit",
-                  fontWeight: isSelected ? "700" : "500",
-                  cursor: isReadOnly ? "not-allowed" : "pointer",
-                  fontSize: "0.8125rem",
-                  transition: "all 0.15s",
-                }}
+                aria-pressed={isSelected}
+                className={`${c.sizeButton} ${isSelected ? c.sizeSelected : ""}`}
               >
                 Size {t.size}
               </button>
             );
           })}
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "var(--s-2)", fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>
           <span>AP: {currentTemplate.apMm.toFixed(1)} mm</span>
           <span>ML: {currentTemplate.mlMm.toFixed(1)} mm</span>
-          <span style={{ color: "#0284c7", fontWeight: 600 }}>Size 4 Suggested</span>
+          {suggestedSize !== undefined ? (
+            <button
+              type="button"
+              className={c.suggest}
+              disabled={isReadOnly || suggestedSize === femoralComponent.implant_size}
+              onClick={() => handleSizeChange(suggestedSize)}
+            >
+              {suggestedSize === femoralComponent.implant_size ? `Size ${suggestedSize} is the closest match` : `Use suggested: Size ${suggestedSize}`}
+            </button>
+          ) : (
+            <span>Suggestion needs measurements</span>
+          )}
         </div>
       </div>
 
       {/* 2D Position & Rotation Adjustment */}
-      <div style={{ padding: "0.75rem", border: "1px solid var(--border)", borderRadius: "6px", background: "rgba(0,0,0,0.015)" }}>
-        <h4 style={{ margin: "0 0 0.75rem", fontSize: "0.8125rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>
+      <div style={{ padding: "var(--s-3)", border: "var(--bw) solid var(--border)", borderRadius: "var(--r-sm)", background: "var(--surface-sunken)" }}>
+        <h4 style={{ margin: "0 0 var(--s-3)", fontSize: "var(--t-label)", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>
           2D CAD Position & Alignment
         </h4>
-        
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-          {/* X Offset */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.8125rem" }}>Medial / Lateral (X)</span>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <button
-                disabled={isReadOnly}
-                onClick={() => handleOffsetChange("x_offset_mm", -0.2)}
-                style={{ width: "26px", height: "26px", borderRadius: "4px", border: "1px solid var(--border)", cursor: isReadOnly ? "not-allowed" : "pointer" }}
-              >
-                -
-              </button>
-              <span style={{ width: "50px", textAlign: "center", fontFamily: "var(--font-mono)", fontSize: "0.8125rem" }}>
-                {femoralComponent.position_2d.x_offset_mm.toFixed(1)} mm
-              </span>
-              <button
-                disabled={isReadOnly}
-                onClick={() => handleOffsetChange("x_offset_mm", 0.2)}
-                style={{ width: "26px", height: "26px", borderRadius: "4px", border: "1px solid var(--border)", cursor: isReadOnly ? "not-allowed" : "pointer" }}
-              >
-                +
-              </button>
-            </div>
-          </div>
 
-          {/* Y Offset */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.8125rem" }}>Anterior / Posterior (Y)</span>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <button
-                disabled={isReadOnly}
-                onClick={() => handleOffsetChange("y_offset_mm", -0.2)}
-                style={{ width: "26px", height: "26px", borderRadius: "4px", border: "1px solid var(--border)", cursor: isReadOnly ? "not-allowed" : "pointer" }}
-              >
-                -
-              </button>
-              <span style={{ width: "50px", textAlign: "center", fontFamily: "var(--font-mono)", fontSize: "0.8125rem" }}>
-                {femoralComponent.position_2d.y_offset_mm.toFixed(1)} mm
-              </span>
-              <button
-                disabled={isReadOnly}
-                onClick={() => handleOffsetChange("y_offset_mm", 0.2)}
-                style={{ width: "26px", height: "26px", borderRadius: "4px", border: "1px solid var(--border)", cursor: isReadOnly ? "not-allowed" : "pointer" }}
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          {/* Rotation */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.8125rem" }}>Axial Rotation</span>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <button
-                disabled={isReadOnly}
-                onClick={() => handleOffsetChange("rotation_deg", -0.5)}
-                style={{ width: "26px", height: "26px", borderRadius: "4px", border: "1px solid var(--border)", cursor: isReadOnly ? "not-allowed" : "pointer" }}
-              >
-                -
-              </button>
-              <span style={{ width: "50px", textAlign: "center", fontFamily: "var(--font-mono)", fontSize: "0.8125rem" }}>
-                {femoralComponent.position_2d.rotation_deg.toFixed(1)}°
-              </span>
-              <button
-                disabled={isReadOnly}
-                onClick={() => handleOffsetChange("rotation_deg", 0.5)}
-                style={{ width: "26px", height: "26px", borderRadius: "4px", border: "1px solid var(--border)", cursor: isReadOnly ? "not-allowed" : "pointer" }}
-              >
-                +
-              </button>
-            </div>
-          </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+          <NudgeRow label="Medial / Lateral (X)" valueText={`${pos.x_offset_mm.toFixed(1)} mm`} step={0.2} unit="mm" disabled={isReadOnly} onDecrease={() => handleOffsetChange("x_offset_mm", -0.2)} onIncrease={() => handleOffsetChange("x_offset_mm", 0.2)} />
+          <NudgeRow label="Anterior / Posterior (Y)" valueText={`${pos.y_offset_mm.toFixed(1)} mm`} step={0.2} unit="mm" disabled={isReadOnly} onDecrease={() => handleOffsetChange("y_offset_mm", -0.2)} onIncrease={() => handleOffsetChange("y_offset_mm", 0.2)} />
+          <NudgeRow label="Axial Rotation" valueText={`${pos.rotation_deg.toFixed(1)}°`} step={0.5} unit="degrees" disabled={isReadOnly} onDecrease={() => handleOffsetChange("rotation_deg", -0.5)} onIncrease={() => handleOffsetChange("rotation_deg", 0.5)} />
         </div>
+        {!isReadOnly && (
+          <div style={{ marginTop: "var(--s-3)" }}>
+            <KeyboardHint />
+          </div>
+        )}
       </div>
 
       {/* Live Fit Metrics (V1 Clinical Tolerances) */}
       <div>
-        <h4 style={{ margin: "0 0 0.5rem", fontSize: "0.8125rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>
+        <h4 style={{ margin: "0 0 var(--s-3)", fontSize: "var(--t-label)", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>
           Fit & Sizing Evaluation
         </h4>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          {/* AP Coverage */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>AP Coverage</span>
-            <span
-              style={{
-                fontWeight: 700,
-                fontFamily: "var(--font-mono)",
-                color: fitResult.apCoveragePct >= 90.0 ? "#10b981" : "#f59e0b",
-              }}
-            >
-              {fitResult.apCoveragePct.toFixed(1)}%
-            </span>
-          </div>
-
-          {/* ML Coverage */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>ML Coverage</span>
-            <span
-              style={{
-                fontWeight: 700,
-                fontFamily: "var(--font-mono)",
-                color: fitResult.mlCoveragePct >= 90.0 ? "#10b981" : "#f59e0b",
-              }}
-            >
-              {fitResult.mlCoveragePct.toFixed(1)}%
-            </span>
-          </div>
-
-          {/* Anterior Notching Risk */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Anterior Notching Risk (KLAT)</span>
-            <span
-              style={{
-                fontWeight: 700,
-                fontFamily: "var(--font-mono)",
-                color: fitResult.notchingRiskMm === 0.0 ? "#10b981" : "#ef4444",
-              }}
-            >
-              {fitResult.notchingRiskMm === 0.0 ? "0.0 mm (Flush)" : `${fitResult.notchingRiskMm.toFixed(1)} mm`}
-            </span>
-          </div>
-
-          {/* Status Verdict */}
-          <div style={{ marginTop: "0.5rem", padding: "0.5rem", borderRadius: "4px", background: fitResult.fitStatus === "ACCEPTABLE FIT" ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)", textAlign: "center" }}>
-            <strong style={{ fontSize: "0.8125rem", color: fitResult.fitStatus === "ACCEPTABLE FIT" ? "#10b981" : "#ef4444" }}>
-              {fitResult.fitStatus}
-            </strong>
-          </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+          <FitGauge
+            label="AP Coverage"
+            value={measured ? fitResult.apCoveragePct : undefined}
+            unit="%"
+            tone={coverageTone(fitResult.apCoveragePct)}
+            min={60}
+            max={100}
+            zones={[...COVERAGE_ZONES]}
+            target="≥ 90%"
+          />
+          <FitGauge
+            label="ML Coverage"
+            value={measured ? fitResult.mlCoveragePct : undefined}
+            unit="%"
+            tone={coverageTone(fitResult.mlCoveragePct)}
+            min={60}
+            max={100}
+            zones={[...COVERAGE_ZONES]}
+            target="≥ 90%"
+          />
+          <FitGauge
+            label="Anterior Notching Risk (KLAT)"
+            value={measured ? fitResult.notchingRiskMm : undefined}
+            unit=" mm"
+            tone={notchTone(fitResult.notchingRiskMm)}
+            min={0}
+            max={2}
+            zones={[...NOTCH_ZONES]}
+            target="≤ 0.5 mm"
+            note={measured && fitResult.notchingRiskMm === 0 ? "Flush" : undefined}
+          />
+          <FitVerdict status={fitResult.fitStatus} />
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "0.5rem", paddingTop: "1rem" }}>
+      <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "var(--s-2)", paddingTop: "var(--s-4)" }}>
         {!isReadOnly && (
           <Button
             variant="secondary"
             onClick={handleConfirmAndSave}
+            disabled={status.kind === "saving"}
             style={{ width: "100%", justifyContent: "center", fontWeight: 600 }}
           >
-            {femoralComponent.is_confirmed ? "Update Femoral Confirmation" : "Confirm Femoral Component"}
+            {status.kind === "saving"
+              ? "Saving…"
+              : femoralComponent.is_confirmed
+                ? "Update Femoral Confirmation"
+                : "Confirm Femoral Component"}
           </Button>
         )}
 
@@ -339,6 +290,11 @@ export function FemoralControlsPanel({
         >
           {isPending ? "Loading..." : "Continue to Review →"}
         </Button>
+        {!isReadOnly && !femoralComponent.is_confirmed && (
+          <p style={{ margin: 0, fontSize: "var(--t-caption)", color: "var(--text-muted)", textAlign: "center" }}>
+            Confirm the component to continue. Moving or resizing it asks for a new confirmation.
+          </p>
+        )}
       </div>
     </div>
   );

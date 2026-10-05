@@ -334,7 +334,7 @@ export async function getReportsList(user?: Profile): Promise<ReportRow[]> {
     .map((session) => ({
       ...session,
       reportGeneratedAt: REPORT_BY_SESSION.get(session.id)!.generatedAt,
-      learnerName: PROFILE_BY_ID.get(session.userId)?.displayName,
+      learnerName: PROFILE_BY_ID.get(session.userId ?? "")?.displayName,
     }));
 }
 

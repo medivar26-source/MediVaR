@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "npx tsx --test src/app/plan/__tests__/calibration_pipeline.test.ts src/app/plan/__tests__/v1_workflow.test.ts src/app/plan/__tests__/demo_cases.test.ts"
+    "test": "npx tsx --test src/app/plan/__tests__/*.test.ts src/lib/__tests__/*.test.ts src/lib/server/calculations/engine.test.ts src/app/content/__tests__/content.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

@@ -50,7 +50,7 @@ export default async function CasesPage({
     <AppShell user={user} searchHint='Try searching "varus"'>
       <Breadcrumbs
         items={[
-          ...(isInstructor ? [{ label: "Content Library" }] : []),
+          ...(isInstructor ? [{ label: "Content Library", href: "/content?tab=procedures" }] : []),
           { label: isInstructor ? "Case Library" : "Cases" },
         ]}
       />
@@ -129,7 +129,11 @@ export default async function CasesPage({
                     <span className={s.cardBody}>
                       <span className={s.cardHead}>
                         <span className={s.cardTitle}>{item.title}</span>
-                        {item.bestScore !== undefined ? (
+                        {isInstructor ? (
+                          <Badge status={item.status === "active" ? "pass" : "warn"}>
+                            {item.status === "active" ? "Published" : titleCase(item.status ?? "draft")}
+                          </Badge>
+                        ) : item.bestScore !== undefined ? (
                           <Badge
                             status={item.bestScore >= passMark ? "pass" : "warn"}
                           >
@@ -165,7 +169,7 @@ export default async function CasesPage({
                           "Not yet attempted"
                         )}
                         <span className={s.cardCta}>
-                          {isInstructor ? "View & Reference →" : "Start planning →"}
+                          {isInstructor ? "Open case →" : "Start planning →"}
                         </span>
                       </span>
                     </span>

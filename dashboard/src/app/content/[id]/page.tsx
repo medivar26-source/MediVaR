@@ -1,3 +1,4 @@
+import { ScanPreview } from "@/components/cases/ScanPreview";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -144,7 +145,7 @@ export default async function CaseAuthoringPage({
                   <div key={view.view} className={s.imgCard}>
                     <div className={s.imgThumb}>
                       {view.src ? (
-                        <img
+                        <ScanPreview
                           src={view.src}
                           alt={view.placeholder ? `${view.label} (placeholder image)` : view.label}
                         />

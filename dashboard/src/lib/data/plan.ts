@@ -19,7 +19,7 @@
  */
 
 import { CASE_BY_ID, SESSIONS } from "@/lib/seed";
-import { PLAN_BY_ID } from "./plans";
+import { PLANS, PLAN_BY_ID } from "./plans";
 import {
   GUIDANCE,
   REFERENCE_RANGES,
@@ -128,41 +128,51 @@ function gatesFor(payload: PlanDetail["payload"]): StepGate[] {
 }
 
 export async function getPlan(planId: string): Promise<PlanDetail | null> {
+  const { getCurrentUser } = await import("@/lib/session");
+  const currentUser = await getCurrentUser();
+  const isStaff = currentUser.role === "instructor" || currentUser.role === "admin";
+
   let plan = PLAN_BY_ID.get(planId);
 
-  if (!plan) {
-    // If planId is not in the map, check if it's a valid caseId or if we can instantiate an on-demand plan
-    const { getCase } = await import("@/lib/data/cases");
-    const { getCurrentUser } = await import("@/lib/session");
-    const { CURRENT_USER } = await import("@/lib/seed");
-    const currentUser = await getCurrentUser();
-    const userId = currentUser?.id || CURRENT_USER.id;
+  // A plan belongs to the person who started it. Staff may open anyone's (read for review);
+  // everyone else gets "not found" rather than another learner's work.
+  if (plan && plan.userId !== currentUser.id && !isStaff) {
+    plan = undefined;
+  }
 
-    // Check seed cases or DB cases
+  if (!plan) {
+    // `planId` may be a case id: resolve it to this user's plan for that case, creating one on demand.
+    const { getCase } = await import("@/lib/data/cases");
+
     const seedCase = CASE_BY_ID.get(planId);
     let resolvedCaseId: string | null = seedCase ? planId : null;
 
     if (!resolvedCaseId) {
-      const dbCase = await getCase(planId, userId);
+      const dbCase = await getCase(planId, currentUser.id).catch(() => null);
       if (dbCase) resolvedCaseId = planId;
     }
 
     if (resolvedCaseId) {
-      plan = {
-        id: planId,
-        userId: userId,
-        caseId: resolvedCaseId,
-        payload: {
-          workflow: "tkr",
-          case_id: resolvedCaseId,
-          session_config: { mode: "training", difficulty: "intermediate" },
-        },
-        stepTimings: {},
-        isReadyForVr: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      PLAN_BY_ID.set(plan.id, plan);
+      plan = PLANS.find((p) => p.userId === currentUser.id && p.caseId === resolvedCaseId);
+      if (!plan) {
+        const now = new Date().toISOString();
+        plan = {
+          id: crypto.randomUUID(),
+          userId: currentUser.id,
+          caseId: resolvedCaseId,
+          payload: {
+            workflow: "tkr",
+            case_id: resolvedCaseId,
+            session_config: { mode: "training", difficulty: "intermediate" },
+          },
+          stepTimings: {},
+          isReadyForVr: false,
+          createdAt: now,
+          updatedAt: now,
+        };
+        PLANS.push(plan);
+        PLAN_BY_ID.set(plan.id, plan);
+      }
     }
   }
 
@@ -192,7 +202,7 @@ export async function getPlan(planId: string): Promise<PlanDetail | null> {
     const { getCase } = await import("@/lib/data/cases");
     const { getPersonalCase } = await import("@/lib/data/personal-cases");
     
-    let caseDetail = await getCase(plan.caseId, plan.userId).catch(() => null);
+    const caseDetail = await getCase(plan.caseId, plan.userId).catch(() => null);
     
     if (caseDetail) {
       planCase = {
@@ -228,7 +238,7 @@ export async function getPlan(planId: string): Promise<PlanDetail | null> {
               ...pc.patient,
               sex: pc.patient?.gender,
               rom: pc.patient?.range_of_motion,
-            } || {},
+            },
             VITALS
           ),
           narrative: fieldsOf(
@@ -236,7 +246,7 @@ export async function getPlan(planId: string): Promise<PlanDetail | null> {
               ...pc.patient,
               complaint: pc.patient?.clinical_notes,
               history: pc.patient?.history,
-            } || {},
+            },
             NARRATIVE
           ),
           imaging: (pc.imaging || []).map((img) => ({

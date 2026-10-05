@@ -23,12 +23,11 @@ import type { Persona } from "./roles";
  */
 
 export type SectionId =
+  | "assigned-activities"
   | "overview"
-  | "training"
   | "programs"
-  | "personal-space"
   | "content-library"
-  | "help"
+  | "performance"
   | "admin";
 
 export type PanelItem = {
@@ -61,39 +60,30 @@ export type NavSection = {
   groups: PanelGroup[];
 };
 
+/**
+ * Learner: Assigned Activities, Content Library, Performance.
+ * Instructor: Programs, Content Library, Performance.
+ * Admin: Admin.
+ *
+ * The dashboard is not a section. It is its own page at `/`, reached from the logo at the top
+ * of the rail, and it differs by persona (see app/page.tsx).
+ *
+ * The order here is the order of the rail for every persona that sees a section.
+ */
+const SKILL_ITEMS: PanelItem[] = [
+  { label: "Pre-op planning", href: "/performance/planning" },
+  { label: "Bone cuts & alignment", href: "/performance/bone-cuts" },
+  { label: "Gap assessment", href: "/performance/gaps" },
+  { label: "Trialling & stability", href: "/performance/trialling" },
+  { label: "Implantation", href: "/performance/implantation" },
+  { label: "Patellar management", href: "/performance/patella" },
+  { label: "Exposure & closure", href: "/performance/exposure" },
+];
+
 export const SECTIONS: NavSection[] = [
   {
-    id: "overview",
-    label: "Dashboard",
-    href: "/",
-    icon: Compass,
-    personas: ["learner", "instructor"],
-    groups: [
-      {
-        items: [
-          { label: "Dashboard", href: "/" },
-          { label: "Activity", href: "/activity" },
-          { label: "Performance", href: "/performance" },
-          { label: "Reports", href: "/reports" },
-        ],
-      },
-      {
-        label: "By skill",
-        items: [
-          { label: "Pre-op planning", href: "/performance/planning" },
-          { label: "Bone cuts & alignment", href: "/performance/bone-cuts" },
-          { label: "Gap assessment", href: "/performance/gaps" },
-          { label: "Trialling & stability", href: "/performance/trialling" },
-          { label: "Implantation", href: "/performance/implantation" },
-          { label: "Patellar management", href: "/performance/patella" },
-          { label: "Exposure & closure", href: "/performance/exposure" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "training",
-    label: "Training",
+    id: "assigned-activities",
+    label: "Assigned Activities",
     href: "/programs",
     icon: ClipboardList,
     personas: ["learner"],
@@ -101,24 +91,28 @@ export const SECTIONS: NavSection[] = [
       {
         items: [
           { label: "Your Programs", href: "/programs" },
-          { label: "Cases", href: "/cases" },
-          { label: "Pre-op Plans", href: "/plans" },
           { label: "Sessions", href: "/sessions" },
         ],
       },
     ],
   },
   {
-    id: "personal-space",
-    label: "Personal Space",
-    href: "/personal-cases",
-    icon: FolderOpen,
-    personas: ["learner"],
+    id: "overview",
+    label: "Performance",
+    href: "/performance",
+    icon: Compass,
+    personas: ["instructor"],
     groups: [
       {
         items: [
-          { label: "My Cases", href: "/personal-cases" },
+          { label: "Activity", href: "/activity" },
+          { label: "Performance", href: "/performance" },
+          { label: "Reports", href: "/reports" },
         ],
+      },
+      {
+        label: "By skill",
+        items: SKILL_ITEMS,
       },
     ],
   },
@@ -141,11 +135,6 @@ export const SECTIONS: NavSection[] = [
             href: "/programs?tab=cohorts",
             personas: ["instructor", "admin"],
           },
-          {
-            label: "Learners",
-            href: "/learners",
-            personas: ["instructor", "admin"],
-          },
         ],
       },
       {
@@ -162,38 +151,38 @@ export const SECTIONS: NavSection[] = [
   {
     id: "content-library",
     label: "Content Library",
-    href: "/cases",
+    href: "/content?tab=procedures",
     icon: FolderOpen,
-    personas: ["instructor"],
+    personas: ["learner", "instructor"],
     groups: [
       {
         items: [
-          {
-            label: "Case Library",
-            href: "/cases",
-            personas: ["instructor", "admin"],
-          },
-          {
-            label: "Procedures",
-            href: "/content?tab=procedures",
-            personas: ["instructor", "admin"],
-          },
+          { label: "Procedures", href: "/content?tab=procedures" },
+          { label: "Case Library", href: "/cases" },
+          // Learners can plan the same case more than once; their plans live here.
+          { label: "Planning", href: "/plans", personas: ["learner"] },
+          { label: "My Cases", href: "/personal-cases", personas: ["learner"] },
         ],
       },
     ],
   },
   {
-    id: "help",
-    label: "Help & guides",
-    href: "/library",
+    id: "performance",
+    label: "Performance",
+    href: "/performance",
     icon: BookOpen,
     personas: ["learner"],
     groups: [
       {
         items: [
-          { label: "Library", href: "/library" },
-          { label: "Help", href: "/help" },
+          { label: "Activity", href: "/activity" },
+          { label: "Performance", href: "/performance" },
+          { label: "Reports", href: "/reports" },
         ],
+      },
+      {
+        label: "By skill",
+        items: SKILL_ITEMS,
       },
     ],
   },
@@ -253,7 +242,7 @@ export function sectionsForPersona(
         .filter((group) => group.items.length > 0);
 
       // Pinned is the user's own last case and last report, or nothing.
-      if (section.id === "overview" && data?.pinned.length) {
+      if ((section.id === "overview" || section.id === "performance") && data?.pinned.length) {
         groups.push({ label: "Pinned", items: data.pinned });
       }
 
@@ -262,28 +251,30 @@ export function sectionsForPersona(
   );
 }
 
-/** Which section owns a route — used to open the right panel on load. */
-export function sectionForPath(path: string, persona: Persona): SectionId {
+/**
+ * Which section owns a route — used to open the right panel on load. `null` means the route is
+ * not part of any section (the dashboard at `/`, Settings, Help), and the panel then offers
+ * every section's destinations instead.
+ */
+export function sectionForPath(path: string, persona: Persona): SectionId | null {
   const cleanPath = path.split("?")[0];
   const on = (...prefixes: string[]) =>
     prefixes.some((prefix) => cleanPath === prefix || cleanPath.startsWith(prefix + "/"));
 
-  if (cleanPath === "/" || on("/activity", "/reports", "/performance")) {
-    return "overview";
-  }
+  if (cleanPath === "/" || on("/settings", "/help")) return null;
 
-  // A learner's whole training path lives in one section.
   if (persona === "learner") {
-    if (on("/programs", "/cases", "/plans", "/plan", "/sessions", "/simulations", "/setup")) {
-      return "training";
+    if (on("/programs", "/sessions", "/simulations", "/setup")) return "assigned-activities";
+    // Cases, the plans a learner makes against them, and their own authored cases.
+    if (on("/cases", "/plans", "/plan", "/content", "/library", "/personal-cases")) {
+      return "content-library";
     }
-    if (on("/personal-cases")) {
-      return "personal-space";
-    }
-    if (on("/library", "/help")) return "help";
-    return "overview";
+    return "performance";
   }
 
+  if (on("/activity", "/reports", "/performance")) {
+    return "overview";
+  }
   if (on("/admin")) return "admin";
   if (on("/programs", "/cohorts", "/learners", "/plans", "/sessions")) {
     return "programs";

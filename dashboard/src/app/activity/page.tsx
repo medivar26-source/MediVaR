@@ -120,14 +120,14 @@ export default async function ActivityPage() {
                             status={
                               (session.totalScore as number) >=
                                 PASS_MARK[session.difficulty] &&
-                              session.criticalErrors < 3
+                              (session.criticalErrors ?? 0) < 3
                                 ? "pass"
                                 : "fail"
                             }
                           >
                             {(session.totalScore as number) >=
                               PASS_MARK[session.difficulty] &&
-                            session.criticalErrors < 3
+                            (session.criticalErrors ?? 0) < 3
                               ? "Passed"
                               : "Not passed"}
                           </Badge>

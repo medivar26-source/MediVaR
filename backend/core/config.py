@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_ROLE_KEY: str = "" # Server-only. NEVER expose to the browser.
     SUPABASE_JWT_SECRET: str = ""       # Used to verify Supabase-issued JWTs server-side.
 
+    # Public URL of the dashboard. Used to build links in auth emails (password reset).
+    FRONTEND_URL: str = "http://localhost:3000"
+
     # DB direct connection (IPv4 pooler — verified working)
     SUPABASE_DB_URL: str = ""
 

@@ -65,7 +65,7 @@ export default async function ReportPage({
   let feedbackUnavailable: string | undefined;
   if (persona === "instructor" || persona === "admin") {
     try {
-      existingFeedback = await getFeedbackForAttempt(session.userId, id);
+      existingFeedback = await getFeedbackForAttempt(session.userId ?? "", id);
     } catch (err) {
       feedbackUnavailable =
         err instanceof ResidentApiError
@@ -359,7 +359,7 @@ export default async function ReportPage({
 
           {(persona === "instructor" || persona === "admin") && (
             <InstructorFeedback
-              residentId={session.userId}
+              residentId={session.userId ?? ""}
               attemptId={id}
               existing={existingFeedback}
               unavailableReason={feedbackUnavailable}

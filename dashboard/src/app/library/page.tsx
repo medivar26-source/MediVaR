@@ -29,7 +29,7 @@ export default async function LibraryPage() {
     <AppShell user={user} searchHint='Try searching "library"'>
       <Breadcrumbs
         items={[
-          ...(persona === "learner" ? [{ label: "Help & guides", href: "/library" }] : []),
+          ...(persona === "learner" ? [{ label: "Help", href: "/help" }] : []),
           { label: "Library" },
         ]}
       />

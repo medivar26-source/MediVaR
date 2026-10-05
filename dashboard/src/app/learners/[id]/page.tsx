@@ -87,7 +87,7 @@ export default async function ResidentDetailPage({
     <AppShell user={user} searchHint='Try searching "learners"'>
       <Breadcrumbs
         items={[
-          { label: "Learners", href: "/learners" },
+          { label: "Programs", href: "/programs" },
           { label: detail.displayName },
         ]}
       />
@@ -300,8 +300,8 @@ export default async function ResidentDetailPage({
 function BackLink() {
   return (
     <div style={{ marginBottom: "1rem" }}>
-      <Link href="/learners" className={p.clear} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
-        <ChevronLeft size={16} /> Back to Learners
+      <Link href="/programs" className={p.clear} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+        <ChevronLeft size={16} /> Back to Programs
       </Link>
     </div>
   );

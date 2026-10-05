@@ -127,6 +127,8 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
       medial_overhang_mm: fit.medialOverhangMm,
       lateral_overhang_mm: fit.lateralOverhangMm,
       fit_status: fit.fitStatus,
+      // Moving the implant invalidates an earlier confirmation.
+      is_confirmed: false,
     }));
   };
 

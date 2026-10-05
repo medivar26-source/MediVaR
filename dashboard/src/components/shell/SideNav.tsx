@@ -33,14 +33,23 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
   const searchParams = useSearchParams();
   const sections = sectionsForPersona(persona, nav);
   const activeSectionId = sectionForPath(pathname, persona);
-  const active = sections.find((x) => x.id === activeSectionId) ?? sections[0];
+  // `null`: a page outside every section (the dashboard, Settings, Help). Nothing is highlighted
+  // on the rail and the panel lists each section's destinations.
+  const active = activeSectionId ? sections.find((x) => x.id === activeSectionId) : undefined;
+  const isHome = !active;
 
   // Inspect path for contextual program and cohort hierarchy
   const programMatch = pathname.match(/^\/programs\/([^/]+)(?:\/cohorts\/([^/]+))?/);
   const programId = programMatch ? programMatch[1] : null;
   const cohortId = programMatch ? programMatch[2] : null;
 
-  let activeGroups = active?.groups ?? [];
+  let activeGroups: NavGroup[] = active
+    ? active.groups
+    : sections.map((section) => ({
+        label: section.label,
+        // Each section's headline links; the long "By skill" list stays inside Performance.
+        items: section.groups[0]?.items ?? [],
+      }));
   if (
     (persona === "instructor" || persona === "admin") &&
     active?.id === "programs" &&
@@ -49,11 +58,10 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
     const programGroup: NavGroup = {
       label: "Program Workspace",
       items: [
-        { label: "Overview", href: `/programs/${programId}?tab=overview` },
-        { label: "Curriculum", href: `/programs/${programId}?tab=curriculum` },
-        { label: "Skills", href: `/programs/${programId}?tab=skills` },
-        { label: "Assessment", href: `/programs/${programId}?tab=assessment` },
+        { label: "Activities", href: `/programs/${programId}?tab=activities` },
         { label: "Cohorts", href: `/programs/${programId}?tab=cohorts` },
+        { label: "Learners & Performance", href: `/programs/${programId}?tab=learners${cohortId ? `&cohort=${cohortId}` : ""}` },
+        { label: "Cohort Performance", href: `/programs/${programId}?tab=performance${cohortId ? `&cohort=${cohortId}` : ""}` },
       ],
     };
 
@@ -63,10 +71,7 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
       const cohortGroup: NavGroup = {
         label: "Cohort Workspace",
         items: [
-          { label: "Overview", href: `/programs/${programId}/cohorts/${cohortId}?tab=overview` },
-          { label: "Learners", href: `/programs/${programId}/cohorts/${cohortId}?tab=residents` },
           { label: "Sessions", href: `/programs/${programId}/cohorts/${cohortId}?tab=sessions` },
-          { label: "Reports", href: `/programs/${programId}/cohorts/${cohortId}?tab=reports` },
           { label: "Case Access", href: `/programs/${programId}/cohorts/${cohortId}?tab=cases` },
           { label: "Enrollment", href: `/programs/${programId}/cohorts/${cohortId}?tab=enrollment` },
         ],
@@ -76,9 +81,27 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
     activeGroups = newGroups;
   }
 
+  // An open case (not the "new" or "edit" screens) gets its own Details / Imaging / Planning group.
+  const caseMatch = pathname.match(/^\/cases\/([^/]+)$/);
+  const caseId = caseMatch && caseMatch[1] !== "new" ? caseMatch[1] : null;
+  if ((persona === "instructor" || persona === "admin") && active?.id === "content-library" && caseId) {
+    activeGroups = [
+      ...activeGroups,
+      {
+        label: "Case",
+        items: [
+          { label: "Details", href: `/cases/${caseId}?tab=details` },
+          { label: "Imaging", href: `/cases/${caseId}?tab=imaging` },
+          { label: "Planning", href: `/cases/${caseId}?tab=planning` },
+        ],
+      },
+    ];
+  }
+
   const isCurrent = (href: string) => {
     const [targetBase, targetQuery] = href.split("?");
-    const currentTab = searchParams.get("tab") ?? "overview";
+    // Each workspace has its own landing tab when none is in the URL.
+    const currentTab = searchParams.get("tab") ?? (cohortId ? "sessions" : programId ? "activities" : caseId ? "details" : "overview");
 
     if (targetQuery) {
       const targetTab = new URLSearchParams(targetQuery).get("tab");
@@ -126,7 +149,7 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
   return (
     <>
       <nav className={s.rail} aria-label="Sections">
-        <Link href="/" className={s.logo} aria-label="MediVeR XR home">
+        <Link href="/" className={s.logo} aria-label="Dashboard" aria-current={pathname === "/" ? "page" : undefined}>
           <Stethoscope className={s.logoGlyph} strokeWidth={2} />
         </Link>
 
@@ -169,10 +192,10 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
 
       <div className={s.panel}>
         <div className={s.panelHead}>
-          <span className={s.panelTitle}>{active?.label}</span>
+          <span className={s.panelTitle}>{isHome ? "Dashboard" : active?.label}</span>
         </div>
 
-        <nav className={s.panelScroll} aria-label={active?.label}>
+        <nav className={s.panelScroll} aria-label={isHome ? "All sections" : active?.label}>
           {activeGroups.map((group, i) => (
             <div className={s.group} key={group.label ?? `g-${i}`}>
               {group.label && <p className={s.groupLabel}>{group.label}</p>}

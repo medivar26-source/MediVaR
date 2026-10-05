@@ -20,13 +20,8 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 /**
- * The instructor authoring surface for what learners train against — not
- * the learner-facing catalogue at `/cases`, and not the TKR pre-operative
- * planner at `/plan/[id]`. This page manages content; those two consume it.
- *
- * Gated the same way `/cohorts/program/[id]` is: nav already hides the
- * entry point from a learner persona, and this redirect is the actual
- * boundary — a hidden link is convenience, not security.
+ * Procedures: the step sequences cases are built on. Read-only here, for instructors and
+ * learners alike.
  */
 export default async function ContentPage({
   searchParams,
@@ -43,8 +38,8 @@ export default async function ContentPage({
   const user = await getCurrentUser();
   const persona = personaFor(user.role);
 
-  if (persona === "learner") redirect("/");
-
+  // Procedures are readable by learners too (the Content Library is shared); only the case
+  // status and imaging management at /content/[id] is instructor-only.
   // Cases are managed in one place — the Case Library at `/cases`.
   if (!params.tab || params.tab === "cases") redirect("/cases");
 
@@ -63,7 +58,7 @@ export default async function ContentPage({
 
       <PageHeader
         title="Procedures"
-        lede="Author and manage the procedures and clinical step sequences your learners train against."
+        lede="The procedures your cases are built on, and the step sequence each one follows. Open a procedure to see its steps, then go to its cases."
         actions={
           tab === "cases" ? (
             <Button variant="primary" icon={FolderPlus} href="/content#new-case">

@@ -18,6 +18,7 @@ import type {
   ImplantDesign,
   Profile,
   SessionSummary,
+  SeedSession,
   Side,
   SimMode,
   UserRole,
@@ -1004,7 +1005,7 @@ const SPECS: SessionSpec[] = [
 const uuid = (prefix: string, n: number) =>
   `${prefix}-0000-4000-a000-${String(n).padStart(12, "0")}`;
 
-export const SESSIONS: SessionSummary[] = SPECS.map((spec) => {
+export const SESSIONS: SeedSession[] = SPECS.map((spec) => {
   const kase = CASE_BY_ID.get(spec.caseId)!;
   const started = new Date(BASE - spec.daysAgo * DAY);
   const live = spec.status === "live";
@@ -1181,14 +1182,14 @@ export function sceneResultsFor(sessionId: string): SceneResultRecord[] {
   return SCENE_RESULTS.filter((r) => r.sessionId === sessionId);
 }
 
-export function sessionsFor(userId: string): SessionSummary[] {
+export function sessionsFor(userId: string): SeedSession[] {
   return SESSIONS.filter((s) => s.userId === userId).sort((a, b) =>
     (b.startedAt ?? "").localeCompare(a.startedAt ?? ""),
   );
 }
 
 /** Every session an instructor may read — their cohort, plus their own. */
-export function sessionsForCohort(cohortId?: string): SessionSummary[] {
+export function sessionsForCohort(cohortId?: string): SeedSession[] {
   const members = new Set(
     PROFILES.filter((p) => !cohortId || p.cohortId === cohortId).map((p) => p.id),
   );

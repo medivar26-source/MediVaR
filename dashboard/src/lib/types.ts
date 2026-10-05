@@ -223,6 +223,10 @@ export type SessionSummary = {
   completedCount?: number;
 };
 
+/** A seeded session: always tied to a plan, learner and case, and always has an error count. */
+export type SeedSession = SessionSummary &
+  Required<Pick<SessionSummary, "planId" | "userId" | "caseId" | "criticalErrors">>;
+
 export type SceneResult = {
   sessionId: string;
   part: string;

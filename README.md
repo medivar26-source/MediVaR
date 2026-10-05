@@ -9,36 +9,39 @@ that: the dashboard people plan and review in.
 ## Where things are
 
 ```
-dashboard/    the web app — Next.js, TypeScript
-wireframe/    low-fidelity screen sketches, static HTML
+dashboard/              the web app: Next.js, TypeScript
+backend/                the API: FastAPI + Supabase (auth, storage, Postgres)
+backend/migrations/     SQL migrations, applied in order
+mediver_documentation/  product, API and clinical specs
+wireframe/              low-fidelity screen sketches, static HTML
 ```
 
 ## Running it
 
 ```sh
-cd dashboard
-npm install
-npm run dev
+cp .env.example .env            # fill in your Supabase values
+cd backend && pip install -r requirements.txt && uvicorn main:app --reload
+# in another terminal
+cd dashboard && npm install && npm run dev
 ```
 
-Then open <http://localhost:3000>.
+Then open <http://localhost:3000>. Sign-in is real (Supabase Auth through the backend).
+Note that the backend reads `.env` from the repo root, so running it locally talks to
+whichever Supabase project that file points at.
 
-There is no service to point it at yet, so the screens render from a local
-seed and nothing you type is kept. Sign-in accepts anything.
+Tests: `cd dashboard && npm test` (planning geometry, calibration, case authoring).
+Type-check: `npm run typecheck`.
 
 ## State of play
 
-Early. The planning flow, the case library, sessions and the report are
-walkable end to end; teaching and analytics are partly there; several
-addresses in the navigation still land on a placeholder. Nothing is wired to
-a backend, and the headset side is not in this repository.
-
-Treat the numbers on screen as scaffolding. They are shaped like the real
-thing so the layouts can be judged, but no score here was computed.
+Accounts, programs, cohorts, sessions scheduling, the case library and personal cases are
+backed by the API. Still on local seed data: parts of the performance, learners, sessions
+and dashboard screens. Planning work (`/plan/...`) is held in server memory and is lost on
+restart. Instructor presets, procedure steps, assessment criteria and headset pairing are
+not built. The headset side is not in this repository.
 
 ## Notes
 
 - One font, one accent colour, light theme only.
 - Screens read through `src/lib/data`; nothing queries from a component.
-- Writes all funnel through `src/app/actions` so there is one place to change
-  when there is somewhere to write to.
+- Writes funnel through `src/app/actions`.

@@ -15,9 +15,34 @@ export default function RequestAccessPage() {
   const [role, setRole] = useState("");
   const [reason, setReason] = useState("");
 
+  const [error, setError] = useState<string | null>(null);
+  const [opened, setOpened] = useState(false);
+
+  // There is no access-request inbox on the backend yet, so the request goes to support by
+  // email. Nothing is logged or stored client-side.
   function handleSubmit() {
-    console.log({ fullName, workEmail, institution, role, reason });
-    alert("Request submitted — this is a placeholder until the backend is wired up.");
+    setOpened(false);
+    if (fullName.trim().length < 2 || !institution.trim()) {
+      setError("Enter your full name and institution.");
+      return;
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(workEmail.trim())) {
+      setError("Enter a valid work email address.");
+      return;
+    }
+    setError(null);
+    const body = [
+      `Name: ${fullName.trim()}`,
+      `Work email: ${workEmail.trim()}`,
+      `Institution: ${institution.trim()}`,
+      `Role / department: ${role.trim()}`,
+      "",
+      reason.trim(),
+    ].join("\n");
+    window.location.href = `mailto:support@mediver.com?subject=${encodeURIComponent(
+      "MediVeR XR access request",
+    )}&body=${encodeURIComponent(body)}`;
+    setOpened(true);
   }
 
   return (
@@ -72,6 +97,14 @@ export default function RequestAccessPage() {
                 placeholder="Explain clinical or training goals (e.g. resident onboarding, pre-op practice)..."
                 value={reason} onChange={(e) => setReason(e.target.value)} />
             </div>
+
+            {error && <p role="alert" style={{ color: "#dc2626", fontSize: "0.875rem" }}>{error}</p>}
+            {opened && (
+              <p style={{ fontSize: "0.875rem" }}>
+                Your email app should have opened with the request ready to send. If it did not,
+                write to support@mediver.com with the same details.
+              </p>
+            )}
 
             <Button className={styles.submitButton} onClick={handleSubmit}>
               Submit request

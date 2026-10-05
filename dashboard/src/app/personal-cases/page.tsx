@@ -8,7 +8,7 @@ import { titleCase } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import s from "../cases/cases.module.css";
 
-export const metadata: Metadata = { title: "Personal Space" };
+export const metadata: Metadata = { title: "My Cases" };
 
 export default async function PersonalCasesPage() {
   const user = await getCurrentUser();
@@ -18,7 +18,7 @@ export default async function PersonalCasesPage() {
     <AppShell user={user}>
       <Breadcrumbs
         items={[
-          { label: "Personal Space" },
+          { label: "Content Library", href: "/content?tab=procedures" },
           { label: "My Cases" },
         ]}
       />

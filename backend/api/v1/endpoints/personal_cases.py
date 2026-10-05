@@ -1,3 +1,4 @@
+import os
 from typing import List
 from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
@@ -119,7 +120,11 @@ async def upload_personal_radiograph(
     mimetype = file.content_type or "image/jpeg"
 
     # Destination in private storage bucket: personal_cases/{case_id}/{view_type}_{uuid}.jpg
-    storage_path = f"personal_cases/{case_id}/{view_type.lower()}_{uuid4().hex[:8]}.jpg"
+    # Keep the original extension so DICOM (.dcm) scans are still recognised as DICOM downstream.
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in (".jpg", ".jpeg", ".png", ".dcm", ".dcim"):
+        ext = ".jpg"
+    storage_path = f"personal_cases/{case_id}/{view_type.lower()}_{uuid4().hex[:8]}{ext}"
 
     try:
         service_client = get_service_client()

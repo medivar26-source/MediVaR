@@ -78,6 +78,7 @@ function statsByCase(sessions: SessionSummary[]): AttemptStats {
   );
 
   for (const session of byRecency) {
+    if (!session.caseId) continue;
     const entry = stats.get(session.caseId) ?? { attempts: 0 };
     entry.attempts += 1;
     if (session.totalScore !== undefined) {

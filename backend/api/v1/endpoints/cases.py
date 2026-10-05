@@ -5,6 +5,7 @@ Exposes REST APIs for:
 - Instructor authoring workflow (drafting, editing, image uploading, checklist validation, publishing, previewing)
 - Learner presentation layer (strictly sanitized, program-scoped case access)
 """
+import os
 
 from typing import List, Optional, Union
 from uuid import UUID, uuid4
@@ -197,7 +198,7 @@ async def upload_asset(
         raise HTTPException(status_code=403, detail="Not authorized to upload assets.")
 
     contents = await file.read()
-    filename = file.filename or "asset.jpg"
+    filename = os.path.basename((file.filename or "asset.jpg").replace("\\", "/")).replace(" ", "_") or "asset.jpg"
     mimetype = file.content_type or "image/jpeg"
     
     # Store in a generic 'temp' or 'assets' path since case_id might not exist yet
@@ -258,7 +259,11 @@ async def upload_radiograph(
     mimetype = file.content_type or "image/jpeg"
 
     # Destination in private storage bucket: cases/{case_id}/{view_type}_{uuid}.jpg
-    storage_path = f"cases/{case_id}/{view_type.lower()}_{uuid4().hex[:8]}.jpg"
+    # Keep the original extension so DICOM (.dcm) scans are still recognised as DICOM downstream.
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in (".jpg", ".jpeg", ".png", ".dcm", ".dcim"):
+        ext = ".jpg"
+    storage_path = f"cases/{case_id}/{view_type.lower()}_{uuid4().hex[:8]}{ext}"
 
     # Upload to Supabase Storage
     try:

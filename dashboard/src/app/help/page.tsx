@@ -39,8 +39,8 @@ export default async function HelpPage({
         title="Help"
         lede="Pairing, sessions, reports and accounts. Every answer here describes what this build actually does."
         actions={
-          <Button href="/library" variant="secondary">
-            Library
+          <Button href="/cases" variant="secondary">
+            Case Library
           </Button>
         }
       />

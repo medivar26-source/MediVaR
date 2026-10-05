@@ -16,13 +16,12 @@ import styles from "./AuthFormPanel.module.css";
  * Server Action bound to the <form>'s `action`, not via client state + a
  * hand-rolled fetch/redirect. The password is never held in a React
  * useState — only UI-only concerns (which tab is active, whether the
- * password is masked, SSO button loading state) live on the client.
+ * password is masked, ) live on the client.
  */
 export default function AuthFormPanel({ next }: { next?: string }) {
   const [mode, setMode] = useState<"instructor" | "learner">("instructor");
   const [showPw, setShowPw] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
-  const [ssoLoading, setSsoLoading] = useState(false);
 
   const [state, formAction, pending] = useActionState<SignInState, FormData>(
     signIn,
@@ -31,15 +30,6 @@ export default function AuthFormPanel({ next }: { next?: string }) {
 
   function trackCapsLock(event: KeyboardEvent<HTMLInputElement>) {
     setCapsLock(event.getModifierState?.("CapsLock") ?? false);
-  }
-
-  function handleSSO() {
-    // Placeholder until a real SSO provider (e.g. SAML/OAuth via your institution) is wired up.
-    setSsoLoading(true);
-    setTimeout(() => {
-      setSsoLoading(false);
-      alert("Institution SSO isn't connected yet — this is a placeholder.");
-    }, 600);
   }
 
   return (
@@ -160,11 +150,11 @@ export default function AuthFormPanel({ next }: { next?: string }) {
           <Button
             variant="outline"
             className={styles.ssoButton}
-            onClick={handleSSO}
-            disabled={ssoLoading}
+            disabled
+            title="Institution single sign-on is not available yet. Sign in with your email or Learner ID."
           >
             <Building2 className={styles.ssoIcon} />
-            {ssoLoading ? "Connecting..." : "Continue with institution SSO"}
+            Institution SSO (not available yet)
           </Button>
 
           <p className={styles.signupPrompt}>

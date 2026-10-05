@@ -14,12 +14,13 @@ export function EditSessionModal({ session }: { session: SessionSummary }) {
     {},
   );
 
-  // Close modal on successful update
+  // Close modal on successful update. Depend on the state object, not `state.saved`: the
+  // saved message is the same string every time, so a second save would never re-fire.
   useEffect(() => {
     if (state.saved) {
       setIsOpen(false);
     }
-  }, [state.saved]);
+  }, [state]);
 
   // Format date string for datetime-local input (YYYY-MM-DDTHH:mm)
 const defaultScheduled = session.scheduledAt

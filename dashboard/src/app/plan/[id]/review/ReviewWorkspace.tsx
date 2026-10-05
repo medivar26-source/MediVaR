@@ -9,10 +9,18 @@ import type { PlanDetail, V1VrPayload } from "@/lib/plan";
 import { formatCalibration } from "@/lib/data/calibration";
 import s from "../plan.module.css";
 
+function fitStatusColor(status?: string): string {
+  if (!status) return "#f59e0b";
+  if (status === "ACCEPTABLE FIT") return "#10b981";
+  if (status === "POOR FIT") return "#ef4444";
+  return "#f59e0b";
+}
+
 export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
   const [isPending, startTransition] = useTransition();
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [sealError, setSealError] = useState<string | null>(null);
 
   const isLocked = plan.isReadyForVr || plan.lockedVersion !== undefined;
 
@@ -34,8 +42,8 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
   const femoral = plan.lockedVersion?.payload.v1_femoral || plan.payload.v1_femoral;
 
   // Determine if plan is actually complete
-  const isTibialComplete = tibial && tibial.fit_status !== "incomplete" && tibial.is_confirmed;
-  const isFemoralComplete = femoral && femoral.fit_status !== "incomplete" && femoral.is_confirmed;
+  const isTibialComplete = tibial && tibial.is_confirmed;
+  const isFemoralComplete = femoral && femoral.is_confirmed;
   const isCalibrationValid = plan.payload.calibration?.isValid !== false;
   
   const canSealPlan = isTibialComplete && isFemoralComplete && isCalibrationValid;
@@ -76,7 +84,11 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
     startTransition(async () => {
       const formData = new FormData();
       formData.set("planId", plan.id);
-      await sealTkrPlan({}, formData);
+      const result = await sealTkrPlan({}, formData);
+      if (result.error) {
+        setSealError(result.error);
+        return;
+      }
       setShowModal(false);
       window.location.reload();
     });
@@ -122,7 +134,7 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.875rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ color: "var(--text-muted)" }}>Patient ID:</span>
-              <strong>{vrPayload.patient_id}</strong>
+              <strong>{vrPayload?.patient_id ?? plan.caseId}</strong>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ color: "var(--text-muted)" }}>Operative Knee:</span>
@@ -273,7 +285,7 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
                     <strong>Tibial Baseplate: Size {tibial.implant_size}</strong>
-                    <span style={{ color: tibial.fit_status === "incomplete" ? "#f59e0b" : "#10b981", fontWeight: 700 }}>{tibial.fit_status}</span>
+                    <span style={{ color: fitStatusColor(tibial.fit_status), fontWeight: 700 }}>{tibial.fit_status}</span>
                   </div>
                   <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
                     Offsets: X: {tibial.position_2d.x_offset_mm.toFixed(1)}mm, Y: {tibial.position_2d.y_offset_mm.toFixed(1)}mm, Rot: {tibial.position_2d.rotation_deg.toFixed(1)}°
@@ -294,7 +306,7 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
                     <strong>Femoral Component: Size {femoral.implant_size}</strong>
-                    <span style={{ color: femoral.fit_status === "incomplete" ? "#f59e0b" : "#10b981", fontWeight: 700 }}>{femoral.fit_status}</span>
+                    <span style={{ color: fitStatusColor(femoral.fit_status), fontWeight: 700 }}>{femoral.fit_status}</span>
                   </div>
                   <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
                     Offsets: X: {femoral.position_2d.x_offset_mm.toFixed(1)}mm, Y: {femoral.position_2d.y_offset_mm.toFixed(1)}mm, Rot: {femoral.position_2d.rotation_deg.toFixed(1)}°
@@ -347,7 +359,7 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
             <ol style={{ margin: "0.4rem 0 0", paddingLeft: "1.1rem", fontSize: "0.8125rem", color: "#cbd5e1", lineHeight: 1.6 }}>
               <li>Your plan is sealed. It can no longer be edited.</li>
               <li>Put on the headset and pair it to load this plan (headset pairing is not connected yet).</li>
-              <li>Perform the operation. The score appears under <a href="/sessions" style={{ color: "#38bdf8" }}>Sessions</a>, with a report for each run.</li>
+              <li>Perform the operation. The score appears under <Link href="/sessions" style={{ color: "#38bdf8" }}>Sessions</Link>, with a report for each run.</li>
             </ol>
           </div>
 
@@ -509,8 +521,12 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
               Once locked, parameters cannot be modified in 2D software. The plan will be formatted into the immutable VR transfer payload for intraoperative execution.
             </p>
 
+            {sealError && (
+              <p role="alert" style={{ margin: 0, fontSize: "0.8125rem", color: "#dc2626" }}>{sealError}</p>
+            )}
+
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
-              <Button variant="secondary" onClick={() => setShowModal(false)} disabled={isPending}>
+              <Button variant="secondary" onClick={() => { setSealError(null); setShowModal(false); }} disabled={isPending}>
                 Cancel
               </Button>
               <Button

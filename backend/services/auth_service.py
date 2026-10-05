@@ -266,6 +266,104 @@ def change_user_password(
     return {"message": "Password changed successfully"}
 
 
+def update_own_profile(user: UserProfile, display_name: str, level: Optional[str], default_difficulty: str) -> UserProfile:
+    """Update the three self-service columns. Never touches role, institution or status."""
+    parts = display_name.split()
+    if not parts:
+        raise ValueError("A display name needs at least two characters.")
+    first_name = parts[0]
+    last_name = " ".join(parts[1:]) or user.last_name
+    clean_level = (level or "").strip() or None
+
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            UPDATE users
+               SET first_name = %s, last_name = %s, level = %s, default_difficulty = %s
+             WHERE id = %s
+            RETURNING *
+            """,
+            (first_name, last_name, clean_level, default_difficulty, user.id),
+        )
+        row = cur.fetchone()
+        conn.commit()
+    except Exception as exc:
+        conn.rollback()
+        raise ValueError(f"Could not update profile: {exc}")
+    finally:
+        conn.close()
+    if not row:
+        raise ValueError("Account not found.")
+    return _row_to_profile(dict(row))
+
+
+def request_password_reset(email: str) -> None:
+    """
+    Ask Supabase to email a recovery link. Never reveals whether the address exists.
+
+    Uses an implicit-flow client: the default PKCE flow needs a code verifier held by the
+    client that requested the reset, which this stateless backend cannot provide, so the
+    link would be unusable. The implicit flow puts the recovery token in the URL fragment
+    of the dashboard's /reset-password page.
+    """
+    from supabase import create_client
+    from supabase.lib.client_options import SyncClientOptions
+
+    client = create_client(
+        settings.SUPABASE_URL or "http://localhost:8000",
+        settings.SUPABASE_ANON_KEY or "dummy-key",
+        options=SyncClientOptions(flow_type="implicit"),
+    )
+    try:
+        client.auth.reset_password_for_email(
+            email.strip().lower(),
+            {"redirect_to": f"{settings.FRONTEND_URL.rstrip('/')}/reset-password"},
+        )
+    except Exception as exc:  # deliberately swallowed: do not leak account existence
+        logger.warning("Password reset request failed: %s", exc)
+
+
+def complete_password_reset(access_token: str, new_password: str) -> None:
+    """
+    Set a new password using a recovery token from the emailed link.
+
+    Only a recovery session is accepted. An ordinary sign-in token must not be able to
+    change the password without the current one, so tokens whose authentication methods
+    include "password" (or are older than 15 minutes) are rejected.
+    """
+    import base64
+    import json
+    import time
+
+    if len(new_password) < 8:
+        raise ValueError("New password must be at least 8 characters long.")
+
+    try:
+        user_response = get_anon_client().auth.get_user(access_token)
+        user_id = user_response.user.id
+    except Exception:
+        raise ValueError("This reset link is invalid or has expired. Request a new one.")
+
+    try:
+        payload_b64 = access_token.split(".")[1]
+        payload = json.loads(base64.urlsafe_b64decode(payload_b64 + "=" * (-len(payload_b64) % 4)))
+    except Exception:
+        raise ValueError("This reset link is invalid or has expired. Request a new one.")
+
+    methods = {str(a.get("method")) for a in payload.get("amr", []) if isinstance(a, dict)}
+    if not methods or "password" in methods or time.time() - float(payload.get("iat", 0)) > 15 * 60:
+        raise ValueError("This reset link is invalid or has expired. Request a new one.")
+
+    try:
+        get_service_client().auth.admin.update_user_by_id(user_id, {"password": new_password})
+    except Exception as exc:
+        logger.error("Failed to reset password for user_id=%s: %s", user_id, exc)
+        raise ValueError("Could not update the password. Try again.")
+    logger.info("Password reset completed for user_id=%s", user_id)
+
+
 # --------------------------------------------------------------------------- #
 # Instructor provisioning                                                      #
 # --------------------------------------------------------------------------- #

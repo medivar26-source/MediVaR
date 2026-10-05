@@ -16,41 +16,45 @@ export type ExistingPlan = {
   sessionId?: string;
 };
 
+/**
+ * A learner can plan the same case more than once. This resumes their latest draft if they have
+ * one; otherwise it starts a plan. `startFresh` always creates a new plan, even beside a draft.
+ */
 export function StartPlanning({
   caseId,
   config,
   plan,
+  hasPlans = false,
+  startFresh = false,
+  variant = "primary",
 }: {
   caseId: string;
   config: Record<string, string | undefined>;
-  /** The learner's latest plan on this case, if there is one. */
+  /** The learner's latest plan on this case that is still a draft, if there is one. */
   plan?: ExistingPlan;
+  /** Whether the learner has any plan on this case at all (including sealed ones). */
+  hasPlans?: boolean;
+  startFresh?: boolean;
+  variant?: "primary" | "secondary";
 }) {
-  // Past "draft" the plan is sealed: send them to where it now lives rather
-  // than through `startPlan`, which would bounce a finished plan back here.
-  if (plan?.state === "performed" && plan.sessionId) {
-    return (
-      <Button variant="primary" href={`/sessions/${plan.sessionId}/report`}>
-        View report
-      </Button>
-    );
-  }
-  if (plan && plan.state !== "draft") {
-    return (
-      <Button variant="primary" href={`/plan/${plan.id}/review`}>
-        View sealed plan
-      </Button>
-    );
-  }
+  const label = startFresh
+    ? "Start another plan"
+    : plan
+      ? "Resume planning"
+      : hasPlans
+        ? "Start a new plan"
+        : "Start planning";
+
   return (
     <form action={startPlan}>
       <input type="hidden" name="caseId" value={caseId} />
+      <input type="hidden" name="new" value={startFresh ? "1" : ""} />
       <input type="hidden" name="mode" value={config.mode ?? ""} />
       <input type="hidden" name="difficulty" value={config.difficulty ?? ""} />
       <input type="hidden" name="design" value={config.design ?? ""} />
       <input type="hidden" name="fixation" value={config.fixation ?? ""} />
-      <Button type="submit" variant="primary" icon={Play}>
-        {plan ? "Resume planning" : "Start planning"}
+      <Button type="submit" variant={variant} icon={Play}>
+        {label}
       </Button>
     </form>
   );

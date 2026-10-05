@@ -3,7 +3,8 @@
 import { useState, useCallback } from "react";
 import { fallbackNotice, resolveScan } from "@/lib/plan-scans";
 
-import { updatePlanPayload } from "@/app/actions";
+import { SaveBadge } from "../components/PlanControls";
+import { useSaveStatus } from "../components/planHooks";
 import s from "../plan.module.css";
 import { XRayCanvas } from "./XRayCanvas";
 import { MeasurementPanel } from "./MeasurementPanel";
@@ -81,6 +82,13 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
   const [flapDims, setFlapDims] = useState<{width: number, height: number} | null>(null);
   const [klatDims, setKlatDims] = useState<{width: number, height: number} | null>(null);
 
+  const { status: saveStatus, save, retry } = useSaveStatus<LandmarkState>(
+    plan.id,
+    landmarks,
+    rawLandmarks ? normalizeLandmarks(rawLandmarks) : null,
+    isReadOnly,
+  );
+
   const handleDimsLoaded = useCallback((mode: string, dims: { width: number; height: number }) => {
     if (mode === "FLAP") {
       setFlapDims(prev => prev?.width === dims.width && prev?.height === dims.height ? prev : dims);
@@ -143,8 +151,8 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
       ...(!Number.isNaN(patient_femoral_ap_mm) && patient_femoral_ap_mm !== undefined && { patient_femoral_ap_mm }),
     };
 
-    try {
-      await updatePlanPayload(plan.id, {
+    const ok = await save(
+      {
         v1_assessment: assessmentPayload as import("@/lib/plan").V1Assessment,
         assessment_landmarks: {
           ...landmarks,
@@ -153,10 +161,11 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
           tibial_knee_center: landmarks.kneeCenter,
           ankle_center: landmarks.ankleCenter,
         },
-      });
-    } catch {
-      // Best-effort local persistence if offline
-    }
+      },
+      landmarks,
+    );
+    // Let the surgeon keep adjusting if the server did not accept the assessment.
+    if (!ok) setIsAccepted(false);
   };
 
   return (
@@ -167,8 +176,9 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
             onClick={() => setViewMode("FLAP")}
             style={{
               padding: "0.5rem 1rem",
-              background: viewMode === "FLAP" ? "var(--accent)" : "var(--surface)",
-              color: viewMode === "FLAP" ? "white" : "inherit",
+              background: viewMode === "FLAP" ? "var(--brand)" : "var(--surface)",
+              color: viewMode === "FLAP" ? "var(--on-brand)" : "var(--ink)",
+              fontWeight: 600,
               border: "1px solid var(--border)",
               borderRadius: "4px",
               cursor: "pointer",
@@ -180,8 +190,9 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
             onClick={() => setViewMode("KLAT")}
             style={{
               padding: "0.5rem 1rem",
-              background: viewMode === "KLAT" ? "var(--accent)" : "var(--surface)",
-              color: viewMode === "KLAT" ? "white" : "inherit",
+              background: viewMode === "KLAT" ? "var(--brand)" : "var(--surface)",
+              color: viewMode === "KLAT" ? "var(--on-brand)" : "var(--ink)",
+              fontWeight: 600,
               border: "1px solid var(--border)",
               borderRadius: "4px",
               cursor: "pointer",
@@ -189,6 +200,9 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
           >
             KLAT View (Localized Knee)
           </button>
+          <div style={{ marginLeft: "auto", alignSelf: "center" }}>
+            <SaveBadge status={saveStatus} onRetry={retry} />
+          </div>
         </div>
 
         <div style={{ display: "flex", gap: "2rem", height: "700px" }}>

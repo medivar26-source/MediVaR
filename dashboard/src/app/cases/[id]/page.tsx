@@ -1,6 +1,8 @@
+import { ScanPreview } from "@/components/cases/ScanPreview";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ImageOff, ListChecks, Play } from "lucide-react";
+import { ClipboardList, ImageOff, ListChecks, Play } from "lucide-react";
 import { AppShell, Breadcrumbs, PageHeader } from "@/components/shell";
 import {
   Badge,
@@ -23,7 +25,8 @@ import { clock, longDuration, shortDate, titleCase } from "@/lib/format";
 import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import { PASS_MARK } from "@/lib/types";
-import { ConfigurePanel } from "./ConfigurePanel";
+import { PLAN_STATES } from "@/lib/plan";
+import { CASE_TABS, InstructorCaseView, type CaseTab } from "./_instructor/InstructorCaseView";
 import { getPlans } from "@/lib/data/plans";
 import { StartPlanning } from "./StartPlanning";
 import s from "./case.module.css";
@@ -67,12 +70,20 @@ export default async function CaseDetailPage({
   const persona = personaFor(user.role);
   const canConfigure = persona === "instructor" || persona === "admin";
   const presets = canConfigure ? await getInstructorConfigs(detail.id) : [];
+
+  // Instructors get the authoring view: Details, Imaging and Planning. The rest of this page is
+  // the learner's: their own scores, attempts and the plans they start.
+  if (canConfigure) {
+    const tab: CaseTab = CASE_TABS.find((t) => t.value === config.tab)?.value ?? "details";
+    return <InstructorCaseView user={user} detail={detail} presets={presets} tab={tab} />;
+  }
   const programs = persona === "learner" ? await getPrograms().catch(() => []) : [];
 
-  const myPlan =
-    persona === "learner"
-      ? (await getPlans(undefined, user.id)).plans.find((row) => row.caseId === detail.id)
-      : undefined;
+  // A learner can keep several plans for one case. Newest first.
+  const myPlans = (await getPlans(undefined, user.id)).plans
+    .filter((row) => row.caseId === detail.id)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const draftPlan = myPlans.find((row) => row.state === "draft");
 
   const passMark = PASS_MARK[detail.difficulty];
   const attempts = detail.attempts.length;
@@ -90,7 +101,7 @@ export default async function CaseDetailPage({
     <AppShell user={user} searchHint='Try searching "varus"'>
       <Breadcrumbs
         items={[
-          { label: canConfigure ? "Case Library" : "Cases", href: "/cases" },
+          { label: "Cases", href: "/cases" },
           { label: detail.title },
         ]}
       />
@@ -100,24 +111,11 @@ export default async function CaseDetailPage({
         lede={detail.summary}
         actions={
           <div style={{ display: "flex", gap: "0.5rem" }}>
-            {canConfigure && (
-              <>
-                <Button variant="secondary" href={`/content/${detail.id}`}>
-                  Status &amp; imaging
-                </Button>
-                <Button variant="secondary" href={`/cases/${detail.id}/edit`}>
-                  Edit Draft
-                </Button>
-              </>
-            )}
             <StartPlanning
               caseId={detail.id}
               config={config}
-              plan={
-                myPlan
-                  ? { id: myPlan.id, state: myPlan.state, sessionId: myPlan.sessionId }
-                  : undefined
-              }
+              plan={draftPlan ? { id: draftPlan.id, state: draftPlan.state } : undefined}
+              hasPlans={myPlans.length > 0}
             />
           </div>
         }
@@ -222,6 +220,73 @@ export default async function CaseDetailPage({
           <Card padding="none">
             <CardHeader
               flush
+              title="Your plans"
+              subtitle={
+                myPlans.length === 0
+                  ? "You can plan this case more than once and compare your attempts."
+                  : `${myPlans.length} plan${myPlans.length === 1 ? "" : "s"} on this case`
+              }
+              action={
+                draftPlan ? (
+                  <StartPlanning caseId={detail.id} config={config} startFresh variant="secondary" />
+                ) : undefined
+              }
+            />
+            {myPlans.length === 0 ? (
+              <div className={s.emptyWrap}>
+                <EmptyState icon={ClipboardList} title="No plans yet">
+                  Start planning to measure the radiographs and choose your implants.
+                </EmptyState>
+              </div>
+            ) : (
+              <Table label={`Your plans for ${detail.title}`}>
+                <THead>
+                  <Tr>
+                    <Th>Started</Th>
+                    <Th>Last updated</Th>
+                    <Th>Progress</Th>
+                    <Th>State</Th>
+                    <Th>
+                      <span className="srOnly">Open</span>
+                    </Th>
+                  </Tr>
+                </THead>
+                <TBody>
+                  {myPlans.map((plan) => (
+                    <Tr key={plan.id}>
+                      <Td head>{shortDate(plan.createdAt)}</Td>
+                      <Td>{shortDate(plan.updatedAt)}</Td>
+                      <Td>
+                        {plan.stepsAnswered} of {plan.stepsTotal} steps
+                      </Td>
+                      <Td>
+                        <Badge status={plan.state === "draft" ? "neutral" : plan.state === "performed" ? "pass" : "active"}>
+                          {PLAN_STATES.find((st) => st.value === plan.state)?.label ?? titleCase(plan.state)}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        <Link
+                          href={
+                            plan.state === "draft"
+                              ? `/plan/${plan.id}/assessment`
+                              : plan.state === "performed" && plan.sessionId
+                                ? `/sessions/${plan.sessionId}/report`
+                                : `/plan/${plan.id}/review`
+                          }
+                        >
+                          {plan.state === "draft" ? "Continue" : plan.state === "performed" ? "Report" : "View"}
+                        </Link>
+                      </Td>
+                    </Tr>
+                  ))}
+                </TBody>
+              </Table>
+            )}
+          </Card>
+
+          <Card padding="none">
+            <CardHeader
+              flush
               title="Attempt history"
               subtitle={
                 attempts === 0
@@ -241,7 +306,7 @@ export default async function CaseDetailPage({
                 <EmptyState
                   icon={Play}
                   title="You have not attempted this case"
-                  action={<StartPlanning caseId={detail.id} config={config} />}
+                  action={<StartPlanning caseId={detail.id} config={config} hasPlans={myPlans.length > 0} plan={draftPlan ? { id: draftPlan.id, state: draftPlan.state } : undefined} />}
                 >
                   Plan it on the desktop, then perform it in the headset. The
                   report compares the two.
@@ -323,18 +388,7 @@ export default async function CaseDetailPage({
                             {view.calibration?.is_valid ? "Calibrated (25mm)" : "Pending calibration"}
                           </span>
                         </div>
-                        <img
-                          src={view.url}
-                          alt={view.label}
-                          style={{
-                            width: "100%",
-                            maxHeight: "220px",
-                            objectFit: "contain",
-                            background: "#000",
-                            borderRadius: "var(--r-sm)",
-                            border: "var(--bw) solid var(--border)",
-                          }}
-                        />
+                        <ScanPreview src={view.url} alt={view.label} />
                       </div>
                     ) : (
                       <>
@@ -398,62 +452,10 @@ export default async function CaseDetailPage({
               </ul>
             </Card>
           )}
-
-          {canConfigure && detail.reference_plan && (
-            <Card padding="lg">
-              <CardHeader
-                title="Authoritative Reference Plan"
-                subtitle="Instructor Reference Layer · Strictly omitted from learner views."
-              />
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem", fontSize: "0.85rem" }}>
-                <div>
-                  <h4 style={{ color: "#f0f6fc", margin: "0 0 0.5rem 0" }}>6 Canonical Measurements</h4>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.5rem", background: "rgba(255,255,255,0.03)", padding: "0.75rem", borderRadius: "6px" }}>
-                    <div>MAD: <strong>{detail.reference_plan.assessment?.MAD_mm ?? "—"} mm</strong></div>
-                    <div>AMA: <strong>{detail.reference_plan.assessment?.AMA_deg ?? "—"}°</strong></div>
-                    <div>mHKA: <strong>{detail.reference_plan.assessment?.mHKA_deg ?? "—"}°</strong></div>
-                    <div>MPTA: <strong>{detail.reference_plan.assessment?.MPTA_deg ?? "—"}°</strong></div>
-                    <div>LDFA: <strong>{detail.reference_plan.assessment?.LDFA_deg ?? "—"}°</strong></div>
-                    <div>PTS: <strong>{detail.reference_plan.assessment?.PTS_deg ?? "—"}°</strong></div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 style={{ color: "#f0f6fc", margin: "0 0 0.5rem 0" }}>Reference Component Templates</h4>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-                    <div style={{ padding: "0.75rem", background: "rgba(255,255,255,0.03)", borderRadius: "6px" }}>
-                      <div>Tibial Baseplate: <strong>Size {detail.reference_plan.tibial_component?.implant_size}</strong></div>
-                      <div style={{ color: "#768390", fontSize: "0.8rem", marginTop: "0.25rem" }}>
-                        Coverage: {detail.reference_plan.tibial_component?.cortical_coverage_pct}% · Overhang: {detail.reference_plan.tibial_component?.medial_overhang_mm}mm
-                      </div>
-                    </div>
-                    <div style={{ padding: "0.75rem", background: "rgba(255,255,255,0.03)", borderRadius: "6px" }}>
-                      <div>Femoral Component: <strong>Size {detail.reference_plan.femoral_component?.implant_size}</strong></div>
-                      <div style={{ color: "#768390", fontSize: "0.8rem", marginTop: "0.25rem" }}>
-                        AP/ML: {detail.reference_plan.femoral_component?.ap_coverage_pct}% / {detail.reference_plan.femoral_component?.ml_coverage_pct}% · Notch: {detail.reference_plan.femoral_component?.notching_risk_mm}mm
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {detail.reference_plan.instructor_notes && (
-                  <div>
-                    <h4 style={{ color: "#f0f6fc", margin: "0 0 0.25rem 0" }}>Instructor Notes</h4>
-                    <p style={{ margin: 0, color: "#adbac7" }}>{detail.reference_plan.instructor_notes}</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-          )}
         </div>
       </div>
 
 
-      {canConfigure && (
-        <div className={s.configureWrap}>
-          <ConfigurePanel caseId={detail.id} presets={presets} />
-        </div>
-      )}
     </AppShell>
   );
 }

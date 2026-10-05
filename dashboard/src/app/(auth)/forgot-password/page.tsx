@@ -1,7 +1,8 @@
 // app/(auth)/forgot-password/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { requestPasswordReset } from "@/app/actions";
 import Link from "next/link";
 import { ArrowLeft, Mail } from "lucide-react";
 import { Input } from "@/components/auth/ui/input";
@@ -11,12 +12,18 @@ import styles from "./forgot-password.module.css";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
 
   function handleSubmit() {
-    if (!email) return;
-    // Placeholder until a real password-reset endpoint exists.
-    setSent(true);
+    setError(null);
+    setMessage(null);
+    startTransition(async () => {
+      const result = await requestPasswordReset(email);
+      if (result.error) setError(result.error);
+      else setMessage(result.message ?? "If an account exists for that address, a reset link is on its way.");
+    });
   }
 
   return (
@@ -55,14 +62,17 @@ export default function ForgotPasswordPage() {
             <Button
               className={styles.submitButton}
               onClick={handleSubmit}
+              disabled={pending || !email.trim()}
             >
-              Send reset link
+              {pending ? "Sending…" : "Send reset link"}
             </Button>
 
-            {sent && (
+            {error && <p role="alert" style={{ color: "#dc2626", fontSize: "0.875rem" }}>{error}</p>}
+
+            {message && (
               <div className={styles.successBox}>
                 <Mail className={styles.successIcon} />
-                <p>Check your inbox for a reset link. It may take a few minutes to arrive.</p>
+                <p>{message} It may take a few minutes to arrive.</p>
               </div>
             )}
           </div>
@@ -70,7 +80,7 @@ export default function ForgotPasswordPage() {
 
         {/* back to sign in */}
         <Link
-          href="/"
+          href="/login"
           className={styles.backLink}
         >
           <ArrowLeft className={styles.backIcon} />
@@ -81,8 +91,7 @@ export default function ForgotPasswordPage() {
       {/* footer */}
       <footer className={styles.footer}>
         © 2026 MediVeR, Inc. ·{" "}
-        <a href="#" className={styles.footerLink}>Privacy</a> ·{" "}
-        <a href="#" className={styles.footerLink}>Terms</a>
+        <Link href="/support" className={styles.footerLink}>Support</Link>
       </footer>
 
     </div>

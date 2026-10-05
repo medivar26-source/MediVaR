@@ -12,6 +12,10 @@ from fastapi.security import OAuth2PasswordBearer
 
 from core.security import get_current_active_user
 from schemas.auth import (
+    ProfileUpdate,
+    ForgotPasswordRequest,
+    MessageResponse,
+    ResetPasswordRequest,
     ChangePasswordRequest,
     ChangePasswordResponse,
     LoginRequest,
@@ -128,6 +132,24 @@ async def me(current_user: UserProfile = Depends(get_current_active_user)):
     return MeResponse(user=current_user)
 
 
+@router.patch(
+    "/me",
+    response_model=MeResponse,
+    summary="Update the current user's own display name, level and default difficulty",
+)
+async def update_me(
+    payload: ProfileUpdate,
+    current_user: UserProfile = Depends(get_current_active_user),
+):
+    try:
+        updated = auth_service.update_own_profile(
+            current_user, payload.display_name.strip(), payload.level, payload.default_difficulty
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    return MeResponse(user=updated)
+
+
 @router.post(
     "/logout",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -135,6 +157,7 @@ async def me(current_user: UserProfile = Depends(get_current_active_user)):
 )
 async def logout(
     current_user: UserProfile = Depends(get_current_active_user),
+    token: str = Depends(oauth2_scheme),
 ):
     """
     Sign the user out. The client must discard its local token copy.
@@ -143,7 +166,9 @@ async def logout(
     from db.session import get_service_client
     client = get_service_client()
     try:
-        client.auth.sign_out()
+        # Revoke this specific access token's session; a bare sign_out() on the
+        # service client has no user session to act on and revokes nothing.
+        client.auth.admin.sign_out(token)
     except Exception as exc:
         # Log but don't fail — the client should discard the token regardless
         logger.warning("Error revoking session for user %s: %s", current_user.id, exc)
@@ -184,3 +209,30 @@ async def change_password(
             detail="Failed to change password. Please try again later.",
         )
 
+
+
+@router.post(
+    "/forgot-password",
+    response_model=MessageResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Email a password-reset link (instructor/admin accounts)",
+)
+async def forgot_password(payload: ForgotPasswordRequest):
+    """Always answers 202 with the same message, whether or not the address has an account."""
+    auth_service.request_password_reset(payload.email)
+    return MessageResponse(
+        message="If an account exists for that address, a reset link is on its way."
+    )
+
+
+@router.post(
+    "/reset-password",
+    response_model=MessageResponse,
+    summary="Set a new password using the emailed recovery token",
+)
+async def reset_password(payload: ResetPasswordRequest):
+    try:
+        auth_service.complete_password_reset(payload.access_token, payload.new_password)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    return MessageResponse(message="Password updated. You can now sign in.")

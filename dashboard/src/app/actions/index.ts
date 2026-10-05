@@ -10,7 +10,7 @@ import {
   ContentApiError,
   type ApiDifficulty,
 } from "@/lib/data/content-api";
-import { getSessionToken } from "@/lib/session";
+import { getCurrentUser, getSessionToken } from "@/lib/session";
 
 
 /**
@@ -92,7 +92,9 @@ export async function signIn(
     maxAge: 60 * 60,
   });
 
-  redirect(next.startsWith("/") ? next : "/");
+  // Only same-site relative paths: "//host" and "/\host" are protocol-relative and would leave the site.
+  const safeNext = next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/";
+  redirect(safeNext);
 }
 
 export async function signOut() {
@@ -115,6 +117,53 @@ export async function signOut() {
   redirect("/login");
 }
 
+/* ----------------------------- password reset ----------------------------- */
+
+export type ResetState = { error?: string; message?: string };
+
+export async function requestPasswordReset(email: string): Promise<ResetState> {
+  const trimmed = email.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
+    return { error: "Enter the email address for your instructor account." };
+  }
+  try {
+    const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: trimmed }),
+    });
+    if (!res.ok) return { error: "Could not send the reset link. Try again in a moment." };
+    const data = await res.json();
+    return { message: data?.message };
+  } catch {
+    return { error: "Cannot reach the server. Check your connection and try again." };
+  }
+}
+
+export async function completePasswordReset(
+  accessToken: string,
+  newPassword: string,
+  confirmPassword: string,
+): Promise<ResetState> {
+  if (newPassword.length < 8) return { error: "New password must be at least 8 characters long." };
+  if (newPassword !== confirmPassword) return { error: "New password and confirmation do not match." };
+  if (!accessToken) return { error: "This reset link is invalid or has expired. Request a new one." };
+  try {
+    const res = await fetch(`${API_BASE}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_token: accessToken, new_password: newPassword }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { error: typeof data?.detail === "string" ? data.detail : "Could not reset the password." };
+    }
+    return { message: data?.message };
+  } catch {
+    return { error: "Cannot reach the server. Check your connection and try again." };
+  }
+}
+
 /* --------------------------------- account -------------------------------- */
 
 export type AccountState = { error?: string; savedAt?: string };
@@ -128,12 +177,39 @@ export async function saveAccount(
   formData: FormData,
 ): Promise<AccountState> {
   const displayName = String(formData.get("displayName") ?? "").trim();
+  const level = String(formData.get("level") ?? "").trim();
+  const defaultDifficulty = String(formData.get("defaultDifficulty") ?? "");
 
   if (displayName.length < 2) {
     return { error: "A display name needs at least two characters." };
   }
+  if (!["beginner", "intermediate", "expert"].includes(defaultDifficulty)) {
+    return { error: "Choose a default difficulty." };
+  }
 
-  return { error: NOT_PERSISTED };
+  const token = await getSessionToken();
+  if (!token) return { error: "Your session has expired. Sign in again." };
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/me`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        display_name: displayName,
+        level: level || null,
+        default_difficulty: defaultDifficulty,
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return { error: typeof data?.detail === "string" ? data.detail : "Could not save your details." };
+    }
+  } catch {
+    return { error: "Cannot reach the server. Check your connection and try again." };
+  }
+
+  revalidatePath("/", "layout");
+  return { savedAt: new Date().toISOString() };
 }
 
 import { validatePasswordChange } from "@/lib/auth-validation";
@@ -204,13 +280,17 @@ export async function startPlan(formData: FormData): Promise<void> {
   const caseId = String(formData.get("caseId") ?? "");
   if (!caseId) throw new Error("No case was supplied.");
 
-  const { getCurrentUser } = await import("@/lib/session");
-  const { CURRENT_USER } = await import("@/lib/seed");
   const user = await getCurrentUser();
-  const userId = user?.id || CURRENT_USER.id;
+  const userId = user.id;
 
-  let existing = PLANS.find((plan: PlanRecord) => plan.caseId === caseId && plan.userId === userId);
-  
+  // A learner can keep several plans for one case. "Start" resumes the most recent plan that is
+  // still a draft; once none is left, or when they ask for a fresh one, it creates a new plan.
+  const startFresh = formData.get("new") === "1";
+  let existing = startFresh
+    ? undefined
+    : PLANS.filter((plan: PlanRecord) => plan.caseId === caseId && plan.userId === userId && !plan.isReadyForVr)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+
   if (!existing) {
     existing = {
       id: crypto.randomUUID(),
@@ -242,10 +322,17 @@ export async function updatePlanPayload(
   planId: string,
   updates: Record<string, unknown>
 ): Promise<{ success: boolean; error?: string }> {
+  // Resolve the caller first (redirects to /login when signed out) — Server Actions are
+  // reachable without a page load, so the route proxy alone is not enough.
+  const user = await getCurrentUser();
   try {
     const plan = PLAN_BY_ID.get(planId);
+    if (plan && plan.userId !== user.id) {
+      return { success: false, error: "You can only change your own plans." };
+    }
     if (plan) {
       plan.payload = { ...plan.payload, ...updates };
+      plan.updatedAt = new Date().toISOString();
       return { success: true };
     }
     return { success: false, error: "Plan not found." };
@@ -293,12 +380,14 @@ export async function sealTkrPlan(
   const planId = String(formData.get("planId") ?? "");
   if (!planId) return { error: "This form is missing its plan." };
 
+  const user = await getCurrentUser();
+
   const { PLAN_BY_ID } = await import("@/lib/data/plans");
-  const { CURRENT_USER } = await import("@/lib/seed");
   const plan = PLAN_BY_ID.get(planId);
 
   if (!plan) return { error: "Plan not found." };
-  
+  if (plan.userId !== user.id) return { error: "You can only lock your own plans." };
+
   const v1Assessment = plan.payload.v1_assessment || {
     MAD_mm: 12.0,
     AMA_deg: 6.0,
@@ -355,7 +444,7 @@ export async function sealTkrPlan(
   plan.isReadyForVr = true;
   plan.lockedVersion = {
     versionId: crypto.randomUUID(),
-    sealedBy: CURRENT_USER.id,
+    sealedBy: user.id,
     sealedAt: new Date().toISOString(),
     payload: JSON.parse(JSON.stringify(plan.payload)),
   };

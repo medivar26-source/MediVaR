@@ -774,7 +774,7 @@ export function LearnerDashboard({
                 d.session.caseTitle,
                 d.session.totalScore ?? "",
                 clock(d.session.durationS),
-                d.session.criticalErrors,
+                d.session.criticalErrors ?? 0,
                 d.session.mode,
               ]),
             ]}

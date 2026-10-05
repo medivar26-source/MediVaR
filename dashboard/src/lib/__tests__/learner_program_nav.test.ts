@@ -4,47 +4,45 @@ import { sectionsForPersona, sectionForPath } from "../nav";
 import type { ProgramSummary } from "../data/programs";
 
 test("Navigation persona separation & approved hierarchy", async (t) => {
-  await t.test("learner persona should see role-appropriate sections and never cohort admin", () => {
+  await t.test("learner persona sees exactly Assigned Activities, Content Library, Performance", () => {
     const learnerSections = sectionsForPersona("learner");
 
-    // Learners get one Training section for their whole path
-    const trainingSection = learnerSections.find((s) => s.id === "training");
-    assert.ok(trainingSection, "Learner must have a 'training' section");
-    assert.equal(trainingSection.label, "Training");
+    assert.deepEqual(
+      learnerSections.map((s) => [s.id, s.label]),
+      [
+        ["assigned-activities", "Assigned Activities"],
+        ["content-library", "Content Library"],
+        ["performance", "Performance"],
+      ],
+    );
     assert.equal(
       learnerSections.find((s) => s.id === "programs"),
       undefined,
       "Learner must NOT get the instructor 'programs' workspace",
     );
 
-    // All items across all groups for learner
-    const allItems = learnerSections.flatMap((s) => s.groups.flatMap((g) => g.items));
-    const hrefs = allItems.map((i) => i.href);
-    const labels = allItems.map((i) => i.label.toLowerCase());
+    const hrefsOf = (id: string) =>
+      learnerSections.find((s) => s.id === id)!.groups.flatMap((g) => g.items.map((i) => i.href));
 
-    assert.ok(hrefs.includes("/programs"), "Learner must have /programs destination");
-    assert.ok(!hrefs.includes("/cohorts"), "Learner must NOT have /cohorts destination in nav");
-    assert.ok(!hrefs.includes("/learners"), "Learner must NOT have /learners destination");
-    assert.ok(!labels.includes("cohorts"), "Learner must NOT see 'Cohorts' label");
-    assert.ok(!labels.includes("learners"), "Learner must NOT see 'Learners' label");
+    // Assigned Activities: the programs they are enrolled in, and their sessions
+    assert.deepEqual(hrefsOf("assigned-activities"), ["/programs", "/sessions"]);
 
-    // Training path: Programs, Cases, Pre-op Plans, Sessions, in that order
-    const trainingHrefs = trainingSection.groups.flatMap((g) => g.items.map((i) => i.href));
-    assert.deepEqual(trainingHrefs, ["/programs", "/cases", "/plans", "/sessions"]);
+    // Content Library: Procedures, Cases, Planning (many plans per case), their own cases
+    assert.deepEqual(hrefsOf("content-library"), ["/content?tab=procedures", "/cases", "/plans", "/personal-cases"]);
 
-    // Simulations / setup are no longer navigation destinations
-    assert.ok(!hrefs.includes("/simulations"), "Simulations leaves learner navigation");
-    assert.ok(!hrefs.includes("/setup"), "Setup leaves learner navigation");
+    // Performance: activity, performance, reports, and the seven skills. The dashboard is not
+    // a section: it is its own page, reached from the logo.
+    const performance = hrefsOf("performance");
+    assert.deepEqual(performance.slice(0, 3), ["/activity", "/performance", "/reports"]);
+    assert.ok(!performance.includes("/"), "Dashboard is not a Performance item");
+    assert.equal(performance.filter((h) => h.startsWith("/performance/")).length, 7);
 
-    // All seven skills are listed
-    const skillHrefs = allItems.filter((i) => i.href.startsWith("/performance/")).map((i) => i.href);
-    assert.equal(skillHrefs.length, 7);
-    assert.ok(skillHrefs.includes("/performance/planning"));
-
-    // Help & guides
-    const helpSection = learnerSections.find((s) => s.id === "help");
-    assert.ok(helpSection, "Learner must have a 'help' section");
-    assert.ok(helpSection.groups.flatMap((g) => g.items).some((i) => i.href === "/library"));
+    // Nothing instructor-only leaks in
+    const all = learnerSections.flatMap((s) => s.groups.flatMap((g) => g.items));
+    const labels = all.map((i) => i.label.toLowerCase());
+    assert.ok(!all.some((i) => i.href === "/cohorts" || i.href === "/learners"));
+    assert.ok(!labels.includes("cohorts") && !labels.includes("learners"));
+    assert.ok(!all.some((i) => i.href === "/simulations" || i.href === "/setup"));
   });
 
   await t.test("instructor persona should follow approved hierarchy: Programs, Content Library, Reports", () => {
@@ -84,7 +82,11 @@ test("Navigation persona separation & approved hierarchy", async (t) => {
       "Instructor should not have Library in Content Library",
     );
 
-    // 3. Reports lives inside Overview, not as a section of its own
+    // 3. Reports lives inside Performance, not as a section of its own; no Dashboard item
+    assert.ok(
+      !instructorSections.flatMap((s) => s.groups.flatMap((g) => g.items)).some((i) => i.href === "/"),
+      "The dashboard is reached from the logo, not from the navigation",
+    );
     assert.equal(instructorSections.find((s) => (s.id as string) === "reports"), undefined);
     const overviewItems = instructorSections
       .find((s) => s.id === "overview")!
@@ -94,11 +96,15 @@ test("Navigation persona separation & approved hierarchy", async (t) => {
       "Instructor must have Reports at /reports under Overview",
     );
 
-    // 4. Sessions, Cohorts and Learners are all one click away
+    // 4. Sessions and Cohorts are one click away. There is no standalone Learners list:
+    // learners are read against their performance inside a program.
+    assert.ok(
+      !programItems.some((i) => i.label === "Learners" || i.href === "/learners"),
+      "Instructor navigation has no separate Learners page",
+    );
     for (const [label, href] of [
       ["Sessions", "/sessions"],
       ["Cohorts", "/programs?tab=cohorts"],
-      ["Learners", "/learners"],
     ]) {
       assert.ok(
         programItems.some((i) => i.label === label && i.href === href),
@@ -108,14 +114,21 @@ test("Navigation persona separation & approved hierarchy", async (t) => {
   });
 
   await t.test("sectionForPath resolves correctly by persona", () => {
-    assert.equal(sectionForPath("/programs", "learner"), "training");
-    assert.equal(sectionForPath("/programs/prog-123", "learner"), "training");
-    assert.equal(sectionForPath("/cases/abc", "learner"), "training");
-    assert.equal(sectionForPath("/plan/abc/tibial", "learner"), "training");
-    assert.equal(sectionForPath("/plans", "learner"), "training");
-    assert.equal(sectionForPath("/sessions/abc/report", "learner"), "training");
-    assert.equal(sectionForPath("/library", "learner"), "help");
-    assert.equal(sectionForPath("/performance/planning", "learner"), "overview");
+    assert.equal(sectionForPath("/programs", "learner"), "assigned-activities");
+    assert.equal(sectionForPath("/programs/prog-123", "learner"), "assigned-activities");
+    assert.equal(sectionForPath("/sessions/abc/report", "learner"), "assigned-activities");
+    assert.equal(sectionForPath("/cases/abc", "learner"), "content-library");
+    assert.equal(sectionForPath("/plan/abc/tibial", "learner"), "content-library");
+    assert.equal(sectionForPath("/plans", "learner"), "content-library");
+    assert.equal(sectionForPath("/personal-cases", "learner"), "content-library");
+    assert.equal(sectionForPath("/content", "learner"), "content-library");
+    // The dashboard, Settings and Help belong to no section, for either persona.
+    assert.equal(sectionForPath("/", "learner"), null);
+    assert.equal(sectionForPath("/", "instructor"), null);
+    assert.equal(sectionForPath("/settings", "learner"), null);
+    assert.equal(sectionForPath("/help", "instructor"), null);
+    assert.equal(sectionForPath("/activity", "learner"), "performance");
+    assert.equal(sectionForPath("/performance/planning", "learner"), "performance");
     assert.equal(sectionForPath("/programs", "instructor"), "programs");
     assert.equal(sectionForPath("/programs/prog-123", "instructor"), "programs");
     assert.equal(sectionForPath("/cohorts", "instructor"), "programs");
@@ -124,8 +137,8 @@ test("Navigation persona separation & approved hierarchy", async (t) => {
     assert.equal(sectionForPath("/reports", "instructor"), "overview");
     assert.equal(sectionForPath("/learners/abc", "instructor"), "programs");
     assert.equal(sectionForPath("/content", "instructor"), "content-library");
-    assert.equal(sectionForPath("/reports", "learner"), "overview");
-    assert.equal(sectionForPath("/", "instructor"), "overview");
+    assert.equal(sectionForPath("/reports", "learner"), "performance");
+    assert.equal(sectionForPath("/activity", "instructor"), "overview");
   });
 });
 

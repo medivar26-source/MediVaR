@@ -68,8 +68,8 @@ export function InstructorDashboard({
           tone="fail"
           title={`${urgent.length} learner${urgent.length === 1 ? " is" : "s are"} below the pass mark`}
           action={
-            <Button size="sm" href="/learners">
-              Review all
+            <Button size="sm" href="/programs">
+              Open programs
             </Button>
           }
         >
@@ -125,7 +125,7 @@ export function InstructorDashboard({
           fallback: 7,
           options: WEEK_OPTIONS,
         }}
-        action={{ label: "All learners", href: "/learners" }}
+        action={{ label: "Programs", href: "/programs" }}
         exportRows={[
           ["Learner", "Role", "Sessions", "Assessments", "Mean", "Critical"],
           ...data.learners.map((l) => [

@@ -603,7 +603,7 @@ export function PersonalCaseAuthoringWizard({
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
                       <h4 style={{ fontSize: "0.9rem", fontWeight: 600 }}>Calibration Status</h4>
                       {img.storage_path && img.calibration?.detected_marker_pixel_diameter > 0 ? (
-                        <Badge status="success">Calibrated</Badge>
+                        <Badge status="pass">Calibrated</Badge>
                       ) : img.storage_path ? (
                         <Badge status="warn">Manual Needed</Badge>
                       ) : (

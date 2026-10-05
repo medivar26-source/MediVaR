@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Users, Calendar, FileText, FolderOpen } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { AppShell, Breadcrumbs, PageHeader, SectionHeader } from "@/components/shell";
 import {
   Badge,
   Button,
   Chip,
   EmptyState,
-  ProgressBar,
   Table,
   TBody,
   Td,
@@ -16,21 +15,13 @@ import {
   THead,
   Tr,
 } from "@/components/ui";
-import { RankedList, StatCard, StatRow } from "@/components/viz";
 import { getProgramDetail } from "@/lib/data/programs";
-import {
-  getCohort,
-  getCohortCases,
-  getCohortSessions,
-  type SessionSummary,
-} from "@/lib/data/cohorts";
+import { getCohort, getCohortCases, getCohortSessions } from "@/lib/data/cohorts";
 import { listCasesForAuthoring } from "@/lib/data/content";
-import { getReportsList } from "@/lib/data/performance";
-import { clock, relativeTime, shortDate, titleCase } from "@/lib/format";
+import { shortDate, titleCase } from "@/lib/format";
 import { cx } from "@/lib/cx";
-import { personaFor, ROLE_LABEL } from "@/lib/roles";
+import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
-import { PASS_MARK } from "@/lib/types";
 import { AssignPreset } from "@/app/cohorts/AssignPreset";
 import { ManageLearnersPanel } from "@/app/cohorts/ManageLearnersPanel";
 import { AssignCasesPanel } from "@/app/cohorts/AssignCasesPanel";
@@ -51,14 +42,23 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * A cohort's workspace is where it is *managed*: scheduling sessions, choosing which cases it
+ * can open, and enrolling learners. How its learners are performing lives in the program's
+ * "Learners & Performance" and "Cohort Performance" tabs.
+ */
 const COHORT_TABS = [
-  { value: "overview", label: "Overview" },
-  { value: "residents", label: "Learners" },
   { value: "sessions", label: "Sessions" },
-  { value: "reports", label: "Reports" },
   { value: "cases", label: "Case Access" },
   { value: "enrollment", label: "Enrollment" },
 ] as const;
+
+/** Old cohort tabs and where their content moved. */
+const MOVED_TABS: Record<string, string> = {
+  overview: "performance",
+  residents: "learners",
+  reports: "learners",
+};
 
 type CohortTab = (typeof COHORT_TABS)[number]["value"];
 
@@ -88,16 +88,18 @@ export default async function CohortWorkspacePage({
     notFound();
   }
 
-  const tab: CohortTab =
-    (COHORT_TABS.find((t) => t.value === rawTab)?.value ?? "overview") as CohortTab;
+  if (rawTab && MOVED_TABS[rawTab]) {
+    redirect(`/programs/${programId}?tab=${MOVED_TABS[rawTab]}&cohort=${cohortId}`);
+  }
 
-  const { cohort, learners, categories, hotspots, presets } = detail;
+  const tab: CohortTab = COHORT_TABS.find((t) => t.value === rawTab)?.value ?? "sessions";
 
-  const [cohortCases, sessions, catalogue, allReports] = await Promise.all([
+  const { cohort, presets } = detail;
+
+  const [cohortCases, sessions, catalogue] = await Promise.all([
     getCohortCases(cohort.id),
     getCohortSessions(cohort.id),
     listCasesForAuthoring({ status: "active" }).catch(() => ({ cases: [] })),
-    getReportsList(user).catch(() => []),
   ]);
 
   const assignableCases = catalogue.cases.map((c) => ({
@@ -106,15 +108,12 @@ export default async function CohortWorkspacePage({
     difficulty: c.difficulty,
   }));
 
-  const now = new Date().toISOString();
-  const scored = learners.filter((l) => l.meanScore !== undefined);
-
   const assignable = presets.filter(
     (preset) => preset.ownerId === user.id || persona === "admin",
   );
 
   const activeTabLabel =
-    COHORT_TABS.find((t) => t.value === tab)?.label ?? "Overview";
+    COHORT_TABS.find((t) => t.value === tab)?.label ?? "Sessions";
 
   // Filter cohort sessions based on session status chip
   const filterKey = (sessionStatusFilter ?? "all").toLowerCase();
@@ -126,10 +125,6 @@ export default async function CohortWorkspacePage({
     if (filterKey === "completed") return s.status === "completed";
     return true;
   });
-
-  // Filter reports belonging to learners of this cohort
-  const cohortLearnerIds = new Set(learners.map((l) => l.id));
-  const cohortReports = allReports.filter((r) => cohortLearnerIds.has(r.userId));
 
   return (
     <AppShell user={user} searchHint='Try searching "cohorts"'>
@@ -151,12 +146,17 @@ export default async function CohortWorkspacePage({
         title={cohort.name}
         lede={`${cohort.learners} learner${cohort.learners === 1 ? "" : "s"} · owned by ${cohort.ownerName ?? "—"} · created ${shortDate(cohort.createdAt)}`}
         actions={
-          <Button
-            href={`/programs/${program.id}?tab=cohorts`}
-            variant="secondary"
-          >
-            All Cohorts
-          </Button>
+          <div style={{ display: "flex", gap: "var(--s-2)", flexWrap: "wrap" }}>
+            <Button href={`/programs/${program.id}?tab=learners&cohort=${cohort.id}`} variant="secondary">
+              Learners &amp; Performance
+            </Button>
+            <Button href={`/programs/${program.id}?tab=performance&cohort=${cohort.id}`} variant="secondary">
+              Cohort Performance
+            </Button>
+            <Button href={`/programs/${program.id}?tab=cohorts`} variant="secondary">
+              All Cohorts
+            </Button>
+          </div>
         }
       />
 
@@ -165,11 +165,7 @@ export default async function CohortWorkspacePage({
         {COHORT_TABS.map((t) => (
           <Link
             key={t.value}
-            href={
-              t.value === "overview"
-                ? `/programs/${program.id}/cohorts/${cohort.id}`
-                : `/programs/${program.id}/cohorts/${cohort.id}?tab=${t.value}`
-            }
+            href={`/programs/${program.id}/cohorts/${cohort.id}?tab=${t.value}`}
             className={cx(p.tab, tab === t.value && p.tabOn)}
             aria-current={tab === t.value ? "page" : undefined}
           >
@@ -177,175 +173,6 @@ export default async function CohortWorkspacePage({
           </Link>
         ))}
       </nav>
-
-      {/* 1. OVERVIEW TAB */}
-      {tab === "overview" && (
-        <>
-          <StatRow>
-            <StatCard
-              label="Mean score"
-              value={cohort.meanScore !== undefined ? String(cohort.meanScore) : "—"}
-              variant="accent"
-              sub={
-                cohort.meanScore === undefined
-                  ? "no scored reports yet"
-                  : `across ${scored.length} learner${scored.length === 1 ? "" : "s"}`
-              }
-            />
-            <StatCard
-              label="Below pass"
-              value={String(cohort.belowPass)}
-              variant="accent"
-              sub="against intermediate mark"
-            />
-            <StatCard
-              label="Critical errors"
-              value={String(
-                learners.reduce((sum, l) => sum + l.criticalErrors, 0),
-              )}
-              variant="accent"
-              sub="across every session"
-            />
-            <StatCard
-              label="No sessions yet"
-              value={String(learners.filter((l) => l.sessions === 0).length)}
-              variant="accent"
-              sub="have not performed once"
-            />
-          </StatRow>
-
-          <div className={p.even}>
-            <section className={p.panel} aria-label="Cohort weakness profile">
-              <div>
-                <p className={p.panelTitle}>Weakness profile</p>
-                <p className={p.panelSub}>
-                  What this cohort is weak <em>at</em>. Every scored report from a member, averaged across the assessment categories.
-                </p>
-              </div>
-              {categories.length === 0 ? (
-                <p className={p.panelSub}>
-                  No scored reports yet, so there is nothing to average.
-                </p>
-              ) : (
-                <div className={p.rows}>
-                  {categories.map((category) => (
-                    <div key={category.key} className={p.row}>
-                      <div className={p.rowBody}>
-                        <p className={p.rowTitle}>{category.label}</p>
-                        <ProgressBar
-                          value={category.pct}
-                          threshold={70}
-                          tone={category.pct >= 70 ? "pass" : "warn"}
-                        />
-                      </div>
-                      <div className={p.rowAside}>
-                        <Badge status={category.pct >= 70 ? "pass" : "warn"}>
-                          {category.pct}%
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section className={p.panel} aria-label="Scene hotspots">
-              <div>
-                <p className={p.panelTitle}>Scene hotspots</p>
-                <p className={p.panelSub}>
-                  <em>Where</em> in the operation it goes wrong. The scenes that most often ended in a failed or borderline verdict.
-                </p>
-              </div>
-              {hotspots.length === 0 ? (
-                <p className={p.panelSub}>
-                  No scene has cost this cohort marks yet.
-                </p>
-              ) : (
-                <RankedList
-                  items={hotspots.map((hotspot) => ({
-                    tag: hotspot.scene,
-                    label: hotspot.label,
-                    value: `${hotspot.affected}`,
-                    pct: hotspot.learners
-                      ? Math.round((hotspot.affected / hotspot.learners) * 100)
-                      : 0,
-                  }))}
-                />
-              )}
-            </section>
-          </div>
-        </>
-      )}
-
-      {/* 2. RESIDENTS TAB */}
-      {tab === "residents" && (
-        <>
-          <SectionHeader
-            title="Enrolled Learners"
-            action={
-              <Button
-                variant="secondary"
-                size="sm"
-                href={`/programs/${program.id}/cohorts/${cohort.id}?tab=enrollment`}
-              >
-                Enroll resident
-              </Button>
-            }
-          />
-          {learners.length === 0 ? (
-            <EmptyState icon={Users} title="Nobody has joined yet">
-              Provision new resident accounts or enroll existing residents using the Enrollment tab.
-            </EmptyState>
-          ) : (
-            <Table label={`Learners in ${cohort.name}`}>
-              <THead>
-                <Tr>
-                  <Th>Learner</Th>
-                  <Th>Role</Th>
-                  <Th numeric>Sessions</Th>
-                  <Th numeric>Assessments</Th>
-                  <Th numeric>Mean</Th>
-                  <Th>Weakest</Th>
-                  <Th numeric>Critical</Th>
-                  <Th>Last active</Th>
-                </Tr>
-              </THead>
-              <TBody>
-                {learners.map((learner) => (
-                  <Tr key={learner.id}>
-                    <Td head>
-                      <Link href={`/learners/${learner.id}`}>
-                        {learner.displayName}
-                      </Link>
-                    </Td>
-                    <Td>{ROLE_LABEL[learner.role]}</Td>
-                    <Td numeric>{learner.sessions}</Td>
-                    <Td numeric>{learner.assessments}</Td>
-                    <Td numeric>{learner.meanScore ?? "—"}</Td>
-                    <Td>
-                      {learner.weakestCategory ? (
-                        <Chip tone="muted">{learner.weakestCategory}</Chip>
-                      ) : (
-                        "—"
-                      )}
-                    </Td>
-                    <Td numeric>{learner.criticalErrors}</Td>
-                    <Td>
-                      {learner.lastActiveAt
-                        ? relativeTime(learner.lastActiveAt, now)
-                        : "Never"}
-                    </Td>
-                  </Tr>
-                ))}
-              </TBody>
-            </Table>
-          )}
-
-          <p className={p.note}>
-            The pass mark is 70 for intermediate simulations. A resident&rsquo;s individual reports reflect the standard applicable to each session.
-          </p>
-        </>
-      )}
 
       {/* 3. SESSIONS TAB (WITH STATUS FILTERS IN PAGE) */}
       {tab === "sessions" && (
@@ -491,74 +318,6 @@ export default async function CohortWorkspacePage({
                             Report
                           </Button>
                         )}
-                      </Td>
-                    </Tr>
-                  );
-                })}
-              </TBody>
-            </Table>
-          )}
-        </>
-      )}
-
-      {/* 4. REPORTS TAB */}
-      {tab === "reports" && (
-        <>
-          <SectionHeader title="Cohort Performance Reports" />
-          {cohortReports.length === 0 ? (
-            <EmptyState icon={FileText} title="No cohort reports yet">
-              Evaluation reports appear here once residents in this cohort complete simulations in the headset.
-            </EmptyState>
-          ) : (
-            <Table label="Cohort Reports">
-              <THead>
-                <Tr>
-                  <Th>Date</Th>
-                  <Th>Learner</Th>
-                  <Th>Case</Th>
-                  <Th>Mode</Th>
-                  <Th>Difficulty</Th>
-                  <Th numeric>Duration</Th>
-                  <Th numeric>Score</Th>
-                  <Th>Outcome</Th>
-                  <Th>
-                    <span className="srOnly">Open</span>
-                  </Th>
-                </Tr>
-              </THead>
-              <TBody>
-                {cohortReports.map((report) => {
-                  const passMark = PASS_MARK[report.difficulty];
-                  const scored = report.totalScore !== undefined;
-                  const passed =
-                    scored &&
-                    (report.totalScore as number) >= passMark &&
-                    report.criticalErrors < 3;
-
-                  return (
-                    <Tr key={report.id}>
-                      <Td head>{shortDate(report.endedAt ?? report.startedAt)}</Td>
-                      <Td>{report.learnerName ?? "—"}</Td>
-                      <Td>{report.caseTitle}</Td>
-                      <Td>{titleCase(report.mode)}</Td>
-                      <Td>{titleCase(report.difficulty)}</Td>
-                      <Td numeric>{clock(report.durationS)}</Td>
-                      <Td numeric>{scored ? report.totalScore : "—"}</Td>
-                      <Td>
-                        {scored && (
-                          <Badge status={passed ? "pass" : "fail"}>
-                            {passed ? "Passed" : "Not passed"}
-                          </Badge>
-                        )}
-                      </Td>
-                      <Td>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          href={`/sessions/${report.id}/report`}
-                        >
-                          Report
-                        </Button>
                       </Td>
                     </Tr>
                   );

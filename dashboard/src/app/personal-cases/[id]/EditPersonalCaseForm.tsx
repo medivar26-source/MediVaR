@@ -138,12 +138,12 @@ export function EditPersonalCaseForm({ initialData }: { initialData: any }) {
           <div style={{ position: "relative", display: "inline-block" }}>
             <input 
               type="file" 
-              accept="image/*"
+              accept="image/*,.dcm,.dcim"
               onChange={handleUploadRadiograph}
               disabled={saving}
               style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
             />
-            <Button variant="secondary" icon={Upload} disabled={saving} as="span">
+            <Button variant="secondary" icon={Upload} disabled={saving} tabIndex={-1}>
               Upload Radiograph
             </Button>
           </div>

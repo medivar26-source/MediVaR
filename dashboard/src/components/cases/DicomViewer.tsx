@@ -12,6 +12,11 @@ let initialized = false;
 export default function DicomViewer({ src, alt, className, onLoad, style }: { src: string, alt?: string, className?: string, onLoad?: (size: { naturalWidth: number, naturalHeight: number }) => void, style?: React.CSSProperties }) {
   const elementRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(false);
+  // Latest callback without re-running the load effect every time the parent re-renders.
+  const onLoadRef = useRef(onLoad);
+  useEffect(() => {
+    onLoadRef.current = onLoad;
+  });
 
   useEffect(() => {
     if (!initialized) {
@@ -38,60 +43,69 @@ export default function DicomViewer({ src, alt, className, onLoad, style }: { sr
       initialized = true;
     }
 
-    if (!elementRef.current) return;
-    
+    const element = elementRef.current;
+    if (!element) return;
+
+    let cancelled = false;
+    setError(false);
+
     // Enable the DOM element
-    cornerstone.enable(elementRef.current);
-    
+    cornerstone.enable(element);
+
+    // Keep the cornerstone canvas in sync with its container. The parent stage is
+    // resized once the DICOM's natural size is known, so without this the canvas
+    // stays at its initial (often wrong/zero) size and the scan looks blank.
+    const resize = () => {
+      try {
+        cornerstone.resize(element, true);
+      } catch {
+        // element not enabled / no image yet
+      }
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(element);
+
     const loadAndDisplayImage = async () => {
       try {
-        // Fetch the file as an ArrayBuffer since wadouri might fail with CORS if not configured,
-        // but if it's in the same origin or Supabase Storage with CORS it should work.
-        // Wait, for Supabase URLs we can just use wadouri:
         const imageId = src.startsWith('wadouri:') ? src : `wadouri:${src}`;
-        
-        // Let's first try just loading the image directly
         const image = await cornerstone.loadImage(imageId);
-        
-        if (elementRef.current) {
-          cornerstone.displayImage(elementRef.current, image);
-          if (onLoad) {
-            onLoad({ naturalWidth: image.width, naturalHeight: image.height });
-          }
-        }
+
+        if (cancelled) return;
+        cornerstone.displayImage(element, image);
+        resize();
+        onLoadRef.current?.({ naturalWidth: image.width, naturalHeight: image.height });
       } catch (err) {
+        if (cancelled) return;
         console.error('Error loading DICOM via URL:', err);
         setError(true);
       }
     };
-    
+
     loadAndDisplayImage();
-    
+
     return () => {
-      if (elementRef.current) {
-        try {
-          cornerstone.disable(elementRef.current);
-        } catch (e) {
-          // Ignore DOM removal errors during React unmount
-        }
+      cancelled = true;
+      observer.disconnect();
+      try {
+        cornerstone.disable(element);
+      } catch {
+        // Ignore DOM removal errors during React unmount
       }
     };
   }, [src]);
 
-  if (error) {
-    return (
-      <div className={className} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#333', color: '#fff', fontSize: '12px' }}>
-        Failed to load DICOM
-      </div>
-    );
-  }
-
   return (
-    <div 
-      ref={elementRef} 
-      className={className} 
-      style={{ width: '100%', height: '100%', minHeight: '150px', background: '#000', overflow: 'hidden', ...style }}
+    <div
+      ref={elementRef}
+      className={className}
+      style={{ position: 'relative', width: '100%', height: '100%', minHeight: '150px', background: '#000', overflow: 'hidden', ...style }}
       title={alt}
-    />
+    >
+      {error && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#333', color: '#fff', fontSize: '12px' }}>
+          Failed to load DICOM
+        </div>
+      )}
+    </div>
   );
 }

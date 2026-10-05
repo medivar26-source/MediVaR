@@ -93,13 +93,13 @@ export default async function ReportsPage() {
                       <Badge
                         status={
                           (report.totalScore as number) >= passMark &&
-                          report.criticalErrors < 3
+                          (report.criticalErrors ?? 0) < 3
                             ? "pass"
                             : "fail"
                         }
                       >
                         {(report.totalScore as number) >= passMark &&
-                        report.criticalErrors < 3
+                        (report.criticalErrors ?? 0) < 3
                           ? "Passed"
                           : "Not passed"}
                       </Badge>

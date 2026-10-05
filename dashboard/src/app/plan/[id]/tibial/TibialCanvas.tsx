@@ -366,7 +366,7 @@ export function TibialCanvas({
                 <div><strong>Physical ML:</strong> {template.mlMm.toFixed(1)} mm</div>
                 <div><strong>Expected ML in image px:</strong> {(template.mlMm * pxPerMm).toFixed(2)} px</div>
                 <div><strong>Rendered ML in image px:</strong> {(template.mlMm * pxPerMm).toFixed(2)} px</div>
-                <div><strong>Patient tibial boundary:</strong> ML: {patientMl.toFixed(1)} mm × AP: {patientAp.toFixed(1)} mm</div>
+                <div><strong>Patient tibial boundary:</strong> {patientBone ? `ML: ${patientBone.mlMm.toFixed(1)} mm × AP: ${patientBone.apMm.toFixed(1)} mm` : "not measured"}</div>
                 <div><strong>Coverage:</strong> {tibialComponent.cortical_coverage_pct ?? 0}%</div>
                 <div><strong>Medial overhang:</strong> {tibialComponent.medial_overhang_mm ?? 0} mm</div>
                 <div><strong>Lateral overhang:</strong> {tibialComponent.lateral_overhang_mm ?? 0} mm</div>

@@ -1,0 +1,257 @@
+/* Shared pieces of the planning side panels. Colours come from tokens only:
+   --brand is interactive, --pass/--warn/--fail are status and always travel
+   with an icon and a text label. */
+
+/* ---------- fit gauge ---------- */
+
+.gauge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.gaugeHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+
+.gaugeLabel {
+  font-size: var(--t-caption);
+  line-height: var(--t-caption-lh);
+  color: var(--text-muted);
+}
+
+.gaugeValue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-family: var(--font-mono);
+  font-size: var(--t-label);
+  font-weight: var(--fw-bold);
+}
+
+.tone-pass { color: var(--pass); }
+.tone-warn { color: var(--warn); }
+.tone-fail { color: var(--fail); }
+.tone-none { color: var(--text-muted); }
+
+.track {
+  position: relative;
+  display: flex;
+  height: 8px;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  background: var(--surface-sunken);
+}
+
+.zone-pass { background: var(--pass-border); }
+.zone-warn { background: var(--warn-border); }
+.zone-fail { background: var(--fail-border); }
+
+.marker {
+  position: absolute;
+  top: -3px;
+  width: 4px;
+  height: 14px;
+  margin-left: -2px;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  box-shadow: 0 0 0 2px var(--surface);
+  transition: left var(--m-base) var(--ease-out);
+}
+
+.gaugeFoot {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--t-overline);
+  line-height: var(--t-overline-lh);
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marker { transition: none; }
+}
+
+/* ---------- verdict ---------- */
+
+.verdict {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-xs);
+  font-size: var(--t-label);
+  font-weight: var(--fw-bold);
+  text-align: center;
+}
+
+.verdict-pass { background: var(--pass-surface); border-color: var(--pass-border); color: var(--pass); }
+.verdict-warn { background: var(--warn-surface); border-color: var(--warn-border); color: var(--warn); }
+.verdict-fail { background: var(--fail-surface); border-color: var(--fail-border); color: var(--fail); }
+.verdict-none { background: var(--surface-sunken); color: var(--text-muted); }
+
+/* ---------- nudge row ---------- */
+
+.nudgeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+
+.nudgeLabel {
+  font-size: var(--t-label);
+  color: var(--text);
+}
+
+.nudgeControls {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.nudgeValue {
+  min-width: 64px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--t-label);
+  color: var(--ink);
+}
+
+.nudgeButton {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: var(--bw) solid var(--border-strong);
+  border-radius: var(--r-xs);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--m-fast) var(--ease-out), border-color var(--m-fast) var(--ease-out);
+}
+
+.nudgeButton:hover:not(:disabled) {
+  background: var(--brand-surface);
+  border-color: var(--brand-border);
+}
+
+.nudgeButton:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+/* ---------- save badge ---------- */
+
+.save {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 2px var(--s-2);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+}
+
+.save-saved { color: var(--pass); background: var(--pass-surface); border-color: var(--pass-border); }
+.save-dirty { color: var(--warn); background: var(--warn-surface); border-color: var(--warn-border); }
+.save-error { color: var(--fail); background: var(--fail-surface); border-color: var(--fail-border); }
+.save-idle, .save-saving, .save-locked { color: var(--text-muted); background: var(--surface-sunken); }
+
+.retry {
+  margin-left: var(--s-1);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+/* ---------- keyboard hint ---------- */
+
+.hint {
+  margin: 0;
+  font-size: var(--t-caption);
+  line-height: var(--t-caption-lh);
+  color: var(--text-muted);
+}
+
+.kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 5px;
+  border: var(--bw) solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: var(--t-overline);
+  text-align: center;
+  color: var(--ink);
+}
+
+/* ---------- size picker ---------- */
+
+.sizeButton {
+  padding: var(--s-2) 0;
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-xs);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--t-label);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: all var(--m-fast) var(--ease-out);
+}
+
+.sizeButton:hover:not(:disabled) { background: var(--brand-surface); border-color: var(--brand-border); }
+
+.sizeSelected {
+  border: var(--bw-emphasis) solid var(--brand);
+  background: var(--brand-surface);
+  color: var(--brand-pressed);
+  font-weight: var(--fw-bold);
+}
+
+.sizeButton:disabled { cursor: not-allowed; }
+
+.suggest {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.suggest:hover:not(:disabled) { color: var(--brand-hover); text-decoration: underline; }
+.suggest:disabled { color: var(--text-muted); cursor: default; }
+
+.confirmed {
+  padding: 2px var(--s-2);
+  border: var(--bw) solid var(--pass-border);
+  border-radius: var(--r-pill);
+  background: var(--pass-surface);
+  color: var(--pass);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-bold);
+}

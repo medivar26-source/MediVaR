@@ -114,7 +114,7 @@ function toDetail(
 
   const recentCases: RecentCase[] = scored.slice(0, 5).map((s) => ({
     sessionId: s.id,
-    caseId: s.caseId,
+    caseId: s.caseId ?? "",
     caseTitle: s.caseTitle,
     score: s.totalScore,
     passed: s.totalScore !== undefined ? s.totalScore >= PASS_MARK[s.difficulty] : undefined,
@@ -126,7 +126,7 @@ function toDetail(
     worst && weaknesses[0]
       ? {
           skillLabel: weaknesses[0].label,
-          caseId: worst.caseId,
+          caseId: worst.caseId ?? "",
           caseTitle: worst.caseTitle,
           score: worst.totalScore as number,
         }
@@ -147,7 +147,7 @@ function toDetail(
     skillPerformance,
     weaknesses,
     recentCases,
-    criticalErrorsCount: sessions.reduce((sum, s) => sum + s.criticalErrors, 0),
+    criticalErrorsCount: sessions.reduce((sum, s) => sum + (s.criticalErrors ?? 0), 0),
     recommendation,
     notes,
     assignments,

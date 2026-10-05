@@ -1,5 +1,5 @@
 import { Wrench } from "lucide-react";
-import { Chip, EmptyState } from "@/components/ui";
+import { Button, Chip, EmptyState } from "@/components/ui";
 import { ExpandableRow } from "@/components/viz";
 import { listProceduresForAuthoring, getProcedureForAuthoring } from "@/lib/data/content";
 import { titleCase } from "@/lib/format";
@@ -55,6 +55,12 @@ async function ProcedureRow({ procedureId }: { procedureId: string }) {
     >
       <div>
         {detail.summary && <p className={c.usageSub}>{detail.summary}</p>}
+
+        <div style={{ margin: "var(--s-3) 0" }}>
+          <Button variant="secondary" size="sm" href="/cases">
+            View cases
+          </Button>
+        </div>
 
         {detail.steps.length === 0 ? (
           <EmptyState icon={Wrench} title="No steps authored for this procedure" />

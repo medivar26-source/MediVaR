@@ -56,7 +56,8 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
       DEFAULT_FEMORAL_COMPONENT.position_2d.x_offset_mm,
       DEFAULT_FEMORAL_COMPONENT.position_2d.y_offset_mm,
       patientBone.apMm,
-      patientBone.mlMm
+      patientBone.mlMm,
+      DEFAULT_FEMORAL_COMPONENT.position_2d.rotation_deg
     ) : { apCoveragePct: 0, mlCoveragePct: 0, notchingRiskMm: 0, fitStatus: "incomplete" as any };
     return {
       ...DEFAULT_FEMORAL_COMPONENT,
@@ -77,7 +78,8 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
     femoralComponent.position_2d.x_offset_mm,
     femoralComponent.position_2d.y_offset_mm,
     patientBone.apMm,
-    patientBone.mlMm
+    patientBone.mlMm,
+    femoralComponent.position_2d.rotation_deg
   ) : { apCoveragePct: 0, mlCoveragePct: 0, notchingRiskMm: 0, fitStatus: "incomplete" as any };
 
   const rawLandmarks = (plan.payload?.assessment_landmarks as Record<string, any>) || {};
@@ -113,7 +115,8 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
       newPos.x_offset_mm, 
       newPos.y_offset_mm, 
       patientBone.apMm, 
-      patientBone.mlMm
+      patientBone.mlMm,
+      newPos.rotation_deg
     ) : { apCoveragePct: 0, mlCoveragePct: 0, notchingRiskMm: 0, fitStatus: "incomplete" as any };
 
     setFemoralComponent((prev) => ({
@@ -123,6 +126,8 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
       ml_coverage_pct: fit.mlCoveragePct,
       notching_risk_mm: fit.notchingRiskMm,
       fit_status: fit.fitStatus,
+      // Moving the implant invalidates an earlier confirmation.
+      is_confirmed: false,
     }));
   };
 
@@ -190,6 +195,7 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
               setFemoralComponent={setFemoralComponent}
               fitResult={fitResult}
               plan={plan}
+              patientBone={patientBone}
             />
           </div>
         </div>

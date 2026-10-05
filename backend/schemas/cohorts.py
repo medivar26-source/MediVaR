@@ -49,7 +49,8 @@ class CohortDetail(BaseModel):
 class CreateLearnerRequest(BaseModel):
     first_name: str = Field(..., min_length=1)
     last_name: str = Field(..., min_length=1)
-    role: str = "resident"
+    # Learner roles only. Instructor/admin accounts must never be creatable through cohort enrolment.
+    role: Literal["student", "intern", "resident", "surgeon"] = "resident"
 
 
 class CreateLearnerResponse(BaseModel):
