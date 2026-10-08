@@ -1,5 +1,20 @@
 import type { Point2D } from "./coordinates";
+import {
+  GENERIC_TKA_TEMPLATE,
+  TIBIAL_SIZE_DIMENSIONS,
+  estimatedTibialPlateauOutline,
+  type ImplantTemplate,
+} from "./implant_templates";
 
+/**
+ * Tibial geometry catalogue — a thin adapter over the implant-template module
+ * (`lib/data/implant_templates`). The shapes are generic, engineering-derived templates, not a
+ * manufacturer's implant; see that module for provenance and geometry versioning.
+ *
+ *   flapPolygon          outline of the template in the AP (coronal) view
+ *   klatPolygon          outline of the template in the lateral (sagittal) view
+ *   transverseTrayPolygon axial footprint of the baseplate
+ */
 export type TibialGeometry = {
   size: number;
   apMm: number;
@@ -13,50 +28,16 @@ export type TibialGeometry = {
   transverseTrayPolygon: Point2D[];
 };
 
-export const TIBIAL_DIMENSIONS: Record<number, { apMm: number; mlMm: number }> = {
-  1: { apMm: 38.0, mlMm: 61.0 },
-  2: { apMm: 40.0, mlMm: 64.5 },
-  3: { apMm: 42.5, mlMm: 68.2 },
-  4: { apMm: 45.0, mlMm: 72.0 },
-  5: { apMm: 48.0, mlMm: 76.5 },
-  6: { apMm: 51.0, mlMm: 81.0 },
-};
+export const TIBIAL_DIMENSIONS: Record<number, { apMm: number; mlMm: number }> = Object.fromEntries(
+  TIBIAL_SIZE_DIMENSIONS.map((d) => [d.size, { apMm: d.apMm, mlMm: d.mlMm }]),
+);
 
 /**
- * Normalized 2D transverse perimeter of a standard clinical TKA tibial baseplate/plateau.
- * Origin (0,0) is the plateau center. -Y is anterior, +Y is posterior, -X is medial, +X is lateral.
- * Includes medial/lateral condylar contours, anterior patellar tendon curve, and posterior PCL notch.
- */
-export const NORMALIZED_TIBIAL_PLATEAU_CONTOUR: Point2D[] = [
-  { x: 0.0, y: -1.0 },        // anterior midline (patellar tendon curve)
-  { x: 0.35, y: -0.92 },
-  { x: 0.68, y: -0.72 },
-  { x: 0.90, y: -0.40 },
-  { x: 1.0, y: 0.0 },         // lateral extreme margin
-  { x: 0.92, y: 0.42 },
-  { x: 0.72, y: 0.78 },
-  { x: 0.40, y: 0.96 },       // posterolateral plateau contour
-  { x: 0.0, y: 0.98 },        // posterior midline resection margin
-  { x: -0.40, y: 0.96 },      // posteromedial plateau contour
-  { x: -0.72, y: 0.78 },
-  { x: -0.92, y: 0.42 },
-  { x: -1.0, y: 0.0 },        // medial extreme margin
-  { x: -0.90, y: -0.40 },
-  { x: -0.68, y: -0.72 },
-  { x: -0.35, y: -0.92 },
-];
-
-/**
- * Generate anatomical transverse tibial cortical bone boundary polygon in physical mm
- * based on patient AP and ML dimensions.
+ * The tibial plateau outline ESTIMATED from the two measured spans (a generic shape scaled to the
+ * surgeon's medio-lateral and antero-posterior marks). It is not traced anatomy.
  */
 export function generateTibialBoneBoundary(patientMlMm: number, patientApMm: number): Point2D[] {
-  const halfMl = patientMlMm / 2;
-  const halfAp = patientApMm / 2;
-  return NORMALIZED_TIBIAL_PLATEAU_CONTOUR.map((p) => ({
-    x: p.x * halfMl,
-    y: p.y * halfAp,
-  }));
+  return estimatedTibialPlateauOutline(patientMlMm, patientApMm);
 }
 
 /**
@@ -176,116 +157,68 @@ export function transformPhysicalPolygon(
   });
 }
 
-function generateTibialSizeGeometry(size: number): TibialGeometry {
-  const { apMm, mlMm } = TIBIAL_DIMENSIONS[size] ?? TIBIAL_DIMENSIONS[3];
-  const halfMl = mlMm / 2;
-  const halfAp = apMm / 2;
+/** True when `p` lies inside `poly` (ray casting). */
+export function pointInPolygon(p: Point2D, poly: Point2D[]): boolean {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i];
+    const b = poly[j];
+    const crosses =
+      a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x;
+    if (crosses) inside = !inside;
+  }
+  return inside;
+}
 
-  // Insert height: 6mm, Tray height: 4mm, Stem total depth: 36mm
-  const insertHeight = 6.0;
-  const trayHeight = 4.0;
-  const stemWidth = Math.min(12.0, mlMm * 0.18);
-  const halfStem = stemWidth / 2;
-  const keelWidth = Math.min(36.0, mlMm * 0.52);
-  const halfKeel = keelWidth / 2;
-  const stemDepth = 32.0;
-  const stemTipY = 36.0;
+/** The point on `poly`'s outline closest to `p`, and how far away it is. */
+export function nearestOnBoundary(p: Point2D, poly: Point2D[]): { point: Point2D; distance: number } {
+  let best = { point: poly[0], distance: Infinity };
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % poly.length];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
+    const q = { x: a.x + t * dx, y: a.y + t * dy };
+    const d = Math.hypot(p.x - q.x, p.y - q.y);
+    if (d < best.distance) best = { point: q, distance: d };
+  }
+  return best;
+}
 
-  // Polyethylene insert polygon (top layer)
-  const insertPolygon: Point2D[] = [
-    { x: -halfMl + 2.0, y: -insertHeight },
-    { x: halfMl - 2.0, y: -insertHeight },
-    { x: halfMl, y: -insertHeight + 2.0 },
-    { x: halfMl, y: 0.0 },
-    { x: -halfMl, y: 0.0 },
-    { x: -halfMl, y: -insertHeight + 2.0 },
-  ];
+/** Insert points along each edge so no gap is longer than `maxStepMm`. */
+export function densifyPolygon(poly: Point2D[], maxStepMm = 1.0): Point2D[] {
+  const out: Point2D[] = [];
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % poly.length];
+    const steps = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / maxStepMm));
+    for (let k = 0; k < steps; k++) {
+      out.push({ x: a.x + ((b.x - a.x) * k) / steps, y: a.y + ((b.y - a.y) * k) / steps });
+    }
+  }
+  return out;
+}
 
-  // Baseplate tray plateau polygon
-  const baseplatePolygon: Point2D[] = [
-    { x: -halfMl, y: 0.0 },
-    { x: halfMl, y: 0.0 },
-    { x: halfMl, y: trayHeight },
-    { x: -halfMl, y: trayHeight },
-  ];
+const layerPath = (t: ImplantTemplate, view: "ap" | "lateral", role: string): Point2D[] =>
+  t.views[view].layers.find((l) => l.role === role)?.path ?? [];
 
-  // Keel and central stem polygon extending distal into tibial canal
-  const keelPolygon: Point2D[] = [
-    { x: -halfKeel, y: trayHeight },
-    { x: halfKeel, y: trayHeight },
-    { x: halfStem + 2.0, y: trayHeight + 12.0 },
-    { x: halfStem, y: stemDepth },
-    { x: 0.0, y: stemTipY },
-    { x: -halfStem, y: stemDepth },
-    { x: -halfStem - 2.0, y: trayHeight + 12.0 },
-  ];
-
-  // Central stem 3D highlight core
-  const stemCorePolygon: Point2D[] = [
-    { x: -halfStem * 0.6, y: trayHeight + 2.0 },
-    { x: halfStem * 0.6, y: trayHeight + 2.0 },
-    { x: halfStem * 0.5, y: stemDepth - 2.0 },
-    { x: 0.0, y: stemTipY - 2.0 },
-    { x: -halfStem * 0.5, y: stemDepth - 2.0 },
-  ];
-
-  // Complete outer perimeter polygon for FLAP (Coronal View) used for exact intersection/fit math
-  const flapPolygon: Point2D[] = [
-    { x: -halfMl + 2.0, y: -insertHeight },
-    { x: halfMl - 2.0, y: -insertHeight },
-    { x: halfMl, y: -insertHeight + 2.0 },
-    { x: halfMl, y: trayHeight },
-    { x: halfKeel, y: trayHeight },
-    { x: halfStem + 2.0, y: trayHeight + 12.0 },
-    { x: halfStem, y: stemDepth },
-    { x: 0.0, y: stemTipY },
-    { x: -halfStem, y: stemDepth },
-    { x: -halfStem - 2.0, y: trayHeight + 12.0 },
-    { x: -halfKeel, y: trayHeight },
-    { x: -halfMl, y: trayHeight },
-    { x: -halfMl, y: -insertHeight + 2.0 },
-  ];
-
-  // Complete outer perimeter polygon for KLAT (Sagittal View)
-  const klatPolygon: Point2D[] = [
-    { x: -halfAp + 2.0, y: -insertHeight },
-    { x: halfAp - 2.0, y: -insertHeight },
-    { x: halfAp, y: -insertHeight + 2.0 },
-    { x: halfAp, y: trayHeight },
-    { x: halfStem * 0.9, y: trayHeight },
-    { x: halfStem * 0.8, y: stemDepth },
-    { x: 0.0, y: stemTipY - 1.0 },
-    { x: -halfStem * 0.8, y: stemDepth },
-    { x: -halfStem * 0.9, y: trayHeight },
-    { x: -halfAp, y: trayHeight },
-    { x: -halfAp, y: -insertHeight + 2.0 },
-  ];
-
-  // Transverse baseplate tray footprint in physical mm
-  const transverseTrayPolygon: Point2D[] = NORMALIZED_TIBIAL_PLATEAU_CONTOUR.map((p) => ({
-    x: p.x * halfMl,
-    y: p.y * halfAp,
-  }));
-
+function toGeometry(t: ImplantTemplate): TibialGeometry {
   return {
-    size,
-    apMm,
-    mlMm,
-    flapPolygon,
-    klatPolygon,
-    insertPolygon,
-    baseplatePolygon,
-    keelPolygon,
-    stemCorePolygon,
-    transverseTrayPolygon,
+    size: t.size,
+    apMm: t.dimensionsMm.ap,
+    mlMm: t.dimensionsMm.ml,
+    flapPolygon: t.views.ap.silhouette,
+    klatPolygon: t.views.lateral.silhouette,
+    insertPolygon: layerPath(t, "ap", "insert"),
+    baseplatePolygon: layerPath(t, "ap", "baseplate"),
+    keelPolygon: layerPath(t, "ap", "keel"),
+    stemCorePolygon: layerPath(t, "ap", "stem"),
+    transverseTrayPolygon: t.footprint,
   };
 }
 
-export const TIBIAL_GEOMETRY_CATALOG: Record<number, TibialGeometry> = {
-  1: generateTibialSizeGeometry(1),
-  2: generateTibialSizeGeometry(2),
-  3: generateTibialSizeGeometry(3),
-  4: generateTibialSizeGeometry(4),
-  5: generateTibialSizeGeometry(5),
-  6: generateTibialSizeGeometry(6),
-};
+export const TIBIAL_GEOMETRY_CATALOG: Record<number, TibialGeometry> = Object.fromEntries(
+  GENERIC_TKA_TEMPLATE.tibialTemplates.map((t) => [t.size, toGeometry(t)]),
+);

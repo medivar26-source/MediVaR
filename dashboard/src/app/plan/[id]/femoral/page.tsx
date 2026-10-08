@@ -22,7 +22,7 @@ export default async function FemoralPlanningPage({
       plan={plan}
       currentStepId="femoral"
       title="Femoral Component Planning"
-      lede="Step 3 of 4: Select femoral component size (1–8), adjust 2D CAD template position & rotation, and verify AP/ML coverage and anterior notching risk."
+      lede="Step 3 of 4. Mark the bone, pick a size, and check it spans the bone without notching the front."
     >
       <FemoralWorkspace plan={plan} />
     </TkrPlanShell>

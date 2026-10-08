@@ -22,7 +22,7 @@ export default async function TkrAssessmentPage({
       plan={plan}
       currentStepId="assessment"
       title="Assessment & Deformity Measurement"
-      lede="Step 1 of 4: Place anatomical landmarks on FLAP and KLAT radiographs to measure mechanical axes, angles, and slope."
+      lede="Step 1 of 4. Place 13 points on the two scans. The six leg measurements follow from them."
     >
       <AssessmentWorkspace plan={plan} />
     </TkrPlanShell>

@@ -94,6 +94,23 @@ export type V1Calibration = {
   isValid?: boolean;
 };
 
+/**
+ * A scale the surgeon measured on this plan, by clicking two points a known distance apart on the scan
+ * (normally the two sides of the 25 mm calibration marker). It overrides whatever the case carries.
+ */
+export type V1ScanCalibration = {
+  mm_per_px: number;
+  /** The real distance between the two clicked points. */
+  known_mm: number;
+  /** How far apart they were on the image, in natural image pixels. */
+  measured_px: number;
+  /** "two_point": the surgeon clicked two points a known distance apart. "assisted_detection": the marker finder proposed a circle and the surgeon confirmed it. */
+  method: "two_point" | "assisted_detection";
+  calibrated_at: string;
+};
+
+export type V1ScanCalibrations = Partial<Record<"FLAP" | "KLAT", V1ScanCalibration>>;
+
 export type V1Assessment = {
   MAD_mm: number;
   AMA_deg: number;
@@ -102,6 +119,8 @@ export type V1Assessment = {
   LDFA_deg: number;
   PTS_deg: number;
   alignment_type?: "VARUS" | "VALGUS" | "NEUTRAL";
+  /** MAD was converted to millimetres with a scale that was not verified. */
+  scale_estimated?: boolean;
   patient_tibial_ml_mm?: number;
   patient_tibial_ap_mm?: number;
   patient_femoral_ml_mm?: number;
@@ -114,6 +133,41 @@ export type V1Position2D = {
   rotation_deg: number;
 };
 
+/** A point on a scan, as a percentage of the image width and height. */
+export type V1MarkerPoint = { x: number; y: number };
+
+/**
+ * The four bone edges a surgeon marks on the scans so the fit is measured against the real bone.
+ * Medial / lateral go on the AP (front) view, anterior / posterior on the lateral view.
+ * `confirmed` means the surgeon has looked at all four and accepted them; moving one clears it.
+ */
+export type V1FitMarkers = {
+  medial?: V1MarkerPoint;
+  lateral?: V1MarkerPoint;
+  anterior?: V1MarkerPoint;
+  posterior?: V1MarkerPoint;
+  confirmed?: boolean;
+};
+
+/**
+ * "ACCEPTABLE FIT" — every metric is on target.
+ * "BORDERLINE FIT" — at least one metric is between target and limit.
+ * "POOR FIT" — at least one metric is beyond the limit.
+ * The two "CAUTION: …" values are what older saved plans carry; they are still read, never written
+ * for new fits except the femoral anterior-notch caution, which the spec defines.
+ */
+export type V1TibialFitStatus =
+  | "ACCEPTABLE FIT"
+  | "BORDERLINE FIT"
+  | "POOR FIT"
+  | "CAUTION: Overhang > 1.5mm";
+
+export type V1FemoralFitStatus =
+  | "ACCEPTABLE FIT"
+  | "BORDERLINE FIT"
+  | "POOR FIT"
+  | "CAUTION: Anterior Notch Risk";
+
 export type V1TibialComponent = {
   implant_size: number;
   position_2d: V1Position2D;
@@ -122,8 +176,22 @@ export type V1TibialComponent = {
   cortical_coverage_pct?: number;
   medial_overhang_mm?: number;
   lateral_overhang_mm?: number;
-  fit_status?: "ACCEPTABLE FIT" | "CAUTION: Overhang > 1.5mm" | "POOR FIT";
+  anterior_overhang_mm?: number;
+  posterior_overhang_mm?: number;
+  fit_status?: V1TibialFitStatus;
   is_confirmed?: boolean;
+  /** Where the surgeon marked the bone edges, and the bone size those marks give. */
+  fit_markers?: V1FitMarkers;
+  bone_ml_mm?: number;
+  bone_ap_mm?: number;
+  /** True when the scan had no verified 25 mm calibration, so millimetres are estimates. */
+  scale_estimated?: boolean;
+  /** The scale (mm per pixel) each scan had when this was confirmed. If it changes, the fit is stale. */
+  scales?: { FLAP?: number; KLAT?: number };
+  /** The surgeon chose to continue on an unverified scale. Never set silently. */
+  estimated_scale_accepted?: boolean;
+  /** How far the component sits below (+) or above (-) the marked cut level on the scans. Drawing only: it does not change the fit. */
+  level_offset_mm?: number;
 };
 
 export type V1FemoralComponent = {
@@ -134,8 +202,18 @@ export type V1FemoralComponent = {
   ap_coverage_pct?: number;
   ml_coverage_pct?: number;
   notching_risk_mm?: number;
-  fit_status?: "ACCEPTABLE FIT" | "CAUTION: Anterior Notch Risk" | "POOR FIT";
+  fit_status?: V1FemoralFitStatus;
   is_confirmed?: boolean;
+  fit_markers?: V1FitMarkers;
+  bone_ml_mm?: number;
+  bone_ap_mm?: number;
+  scale_estimated?: boolean;
+  /** The scale (mm per pixel) each scan had when this was confirmed. If it changes, the fit is stale. */
+  scales?: { FLAP?: number; KLAT?: number };
+  /** The surgeon chose to continue on an unverified scale. Never set silently. */
+  estimated_scale_accepted?: boolean;
+  /** How far the component sits below (+) or above (-) the marked cut level on the scans. Drawing only: it does not change the fit. */
+  level_offset_mm?: number;
 };
 
 export type V1VrPayload = {
@@ -207,6 +285,8 @@ export type PlanPayload = {
   femoral_planning?: Record<string, number>;
   tibial_planning?: Record<string, number>;
   calibration?: V1Calibration;
+  /** Per-scan scales measured on this plan; they win over the case's own calibration. */
+  scan_calibration?: V1ScanCalibrations;
   v1_assessment?: V1Assessment;
   v1_tibial?: V1TibialComponent;
   v1_femoral?: V1FemoralComponent;

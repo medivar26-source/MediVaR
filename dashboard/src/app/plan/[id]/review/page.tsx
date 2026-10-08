@@ -22,7 +22,7 @@ export default async function TkrReviewPage({
       plan={plan}
       currentStepId="review"
       title="Review & Send to VR"
-      lede="Step 4 of 4: Verify patient radiographs, assessment measurements, and component fit before sealing the immutable VR transfer payload."
+      lede="Step 4 of 4. Check everything, then lock the plan to send it to VR."
     >
       <ReviewWorkspace plan={plan} />
     </TkrPlanShell>

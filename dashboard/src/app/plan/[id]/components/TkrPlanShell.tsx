@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Lock, ShieldCheck, Info } from "lucide-react";
+import { ArrowLeft, Check, Lock, ShieldCheck } from "lucide-react";
 import { cx } from "@/lib/cx";
 import {
   V1_TKR_STEPS,
   type PlanDetail,
   type V1TkrStepId,
 } from "@/lib/plan";
-import { formatCalibration } from "@/lib/data/calibration";
+import { SCAN_VIEW_NAME, resolvePlanScales } from "@/lib/data/scan_scale";
+import { resolvePatientIdentity } from "@/lib/data/planner_identity";
 import s from "../plan.module.css";
 
 export function TkrPlanShell({
@@ -26,23 +27,11 @@ export function TkrPlanShell({
   const isLocked = plan.isReadyForVr || plan.lockedVersion !== undefined;
 
   // Evaluation of completed steps for deterministic gating
-  const isAssessmentDone = Boolean(
-    plan.payload.v1_assessment ||
-    (plan.payload.assessment_landmarks && Object.keys(plan.payload.assessment_landmarks).length > 0) ||
-    isLocked
-  );
-
-  const isTibialDone = Boolean(
-    plan.payload.v1_tibial?.is_confirmed ||
-    plan.payload.tibial_planning ||
-    isLocked
-  );
-
-  const isFemoralDone = Boolean(
-    plan.payload.v1_femoral?.is_confirmed ||
-    plan.payload.femoral_planning ||
-    isLocked
-  );
+  // A step is done only when its result exists: a measured assessment, a confirmed component. Points
+  // placed but never measured, or a component moved but never confirmed, do not unlock the next step.
+  const isAssessmentDone = Boolean(plan.payload.v1_assessment || isLocked);
+  const isTibialDone = Boolean(plan.payload.v1_tibial?.is_confirmed || isLocked);
+  const isFemoralDone = Boolean(plan.payload.v1_femoral?.is_confirmed || isLocked);
 
   // Stepper gate map
   const stepStatus: Record<V1TkrStepId, { accessible: boolean; completed: boolean }> = {
@@ -64,11 +53,18 @@ export function TkrPlanShell({
     },
   };
 
-  const patient = plan.case.patient;
-  const age = patient?.find((p) => p.label.toLowerCase() === "age")?.value || "68";
-  const sex = patient?.find((p) => p.label.toLowerCase() === "sex")?.value || "Male";
+  // Identity comes from the case record only (V1: read-only, "hard-coded for V1"). Nothing is defaulted.
+  const identity = resolvePatientIdentity(plan.caseId, plan.case.patient);
   const operativeSide = (plan.case.side || "right").toUpperCase();
-  const calibrationText = formatCalibration(plan.payload.calibration);
+  // Each scan has its own scale, and a scale nobody verified must not look verified.
+  const scanScales = resolvePlanScales(plan);
+  const anyEstimated = !scanScales.FLAP.calibrated || !scanScales.KLAT.calibrated;
+  const calibrationText =
+    (["FLAP", "KLAT"] as const)
+      .map((v) => `${SCAN_VIEW_NAME[v] === "AP" ? "AP" : "Lateral"} ${scanScales[v].mmPerPx.toFixed(3)}`)
+      .join(" · ") +
+    " mm/px" +
+    (anyEstimated ? " (estimated)" : "");
 
   return (
     <div className={s.page}>
@@ -166,123 +162,64 @@ export function TkrPlanShell({
       {/* Main Surface */}
       <main className={s.main}>
         <div className={s.surface}>
-          {/* V1 Persistent Header Banner */}
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "1rem",
-              padding: "1rem 1.5rem",
-              background: "var(--surface)",
-              borderBottom: "1px solid var(--border)",
-              borderRadius: "8px 8px 0 0",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap" }}>
-              <div>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "block" }}>Patient ID</span>
-                <strong style={{ fontSize: "0.9375rem" }}>{plan.caseId}</strong>
+          {/* V1 global header: persistent patient banner on all four pages. */}
+          <header className={s.patientBar} aria-label="Patient and plan">
+            <dl className={s.patientFacts}>
+              <div title={`Source: ${identity.patientIdSource}`}>
+                <dt>Patient ID</dt>
+                <dd>{identity.patientId}</dd>
               </div>
-              <div style={{ width: 1, height: 28, background: "var(--border)" }} />
               <div>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "block" }}>Demographics</span>
-                <span style={{ fontSize: "0.875rem", fontWeight: 600 }}>{age} yrs, {sex}</span>
+                <dt>Age</dt>
+                <dd>{identity.age ?? "Not recorded"}</dd>
               </div>
-              <div style={{ width: 1, height: 28, background: "var(--border)" }} />
               <div>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "block" }}>Operative Knee</span>
-                <span
-                  style={{
-                    display: "inline-block",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                    background: "#0284c7",
-                    color: "white",
-                    fontWeight: 700,
-                    fontSize: "0.8125rem",
-                    letterSpacing: "0.02em",
-                  }}
-                >
-                  {operativeSide} KNEE
-                </span>
+                <dt>Sex</dt>
+                <dd>{identity.sex ?? "Not recorded"}</dd>
               </div>
-              <div style={{ width: 1, height: 28, background: "var(--border)" }} />
+              <div title="Hard-locked once the session starts">
+                <dt>Surgical side</dt>
+                <dd>{operativeSide === "LEFT" ? "Left" : "Right"} knee</dd>
+              </div>
               <div>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "block" }}>Procedure</span>
-                <span style={{ fontSize: "0.875rem", fontWeight: 600 }}>Primary TKA</span>
+                <dt>Procedure</dt>
+                <dd>Primary TKA</dd>
               </div>
-              <div style={{ width: 1, height: 28, background: "var(--border)" }} />
               <div>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "block" }}>Calibration Scale</span>
-                <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
-                  {calibrationText}
-                </span>
+                <dt>Plan state</dt>
+                <dd>
+                  {isLocked ? (
+                    <span className={s.chipLocked}>
+                      <Lock width={12} height={12} aria-hidden="true" />
+                      Locked
+                    </span>
+                  ) : (
+                    <span className={s.chipDraft}>Draft</span>
+                  )}
+                </dd>
               </div>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-              {isLocked ? (
-                <span
-                  style={{
-                    padding: "4px 10px",
-                    borderRadius: "4px",
-                    background: "#1e293b",
-                    color: "#38bdf8",
-                    fontWeight: 700,
-                    fontSize: "0.75rem",
-                    letterSpacing: "0.04em",
-                    border: "1px solid #334155",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  <Lock width={12} height={12} />
-                  PLAN LOCKED (READ-ONLY)
-                </span>
-              ) : (
-                <span
-                  style={{
-                    padding: "4px 10px",
-                    borderRadius: "4px",
-                    background: "rgba(234, 88, 12, 0.1)",
-                    color: "#ea580c",
-                    fontWeight: 700,
-                    fontSize: "0.75rem",
-                    letterSpacing: "0.04em",
-                    border: "1px solid rgba(234, 88, 12, 0.2)",
-                  }}
-                >
-                  DRAFT / EDITABLE
+            </dl>
+            <div className={s.chips}>
+              <span className={anyEstimated ? s.chipWarn : s.chipOk} title={calibrationText}>
+                {anyEstimated ? "Scale estimated" : "Scale verified"}
+              </span>
+              {identity.patientIdSource === "synthetic fixture" && (
+                <span className={s.chipDemo} title="Synthetic demo case. Not for clinical use.">
+                  Demo data
                 </span>
               )}
-
-              <span
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  background: "#fee2e2",
-                  color: "#dc2626",
-                  fontWeight: 700,
-                  fontSize: "0.7rem",
-                  border: "1px solid #fca5a5",
-                }}
-              >
-                DEMO DATA - NOT FOR CLINICAL USE
-              </span>
             </div>
-          </div>
+          </header>
 
-          {/* Section Header */}
-          <div className={s.head} style={{ padding: "1.25rem 1.5rem 0.5rem" }}>
-            <h1 className={s.title}>{title}</h1>
-            <p className={s.lede}>{lede}</p>
+          <div className={s.topbar}>
+            <div className={s.topTitle}>
+              <h1 className={s.titleSm}>{title}</h1>
+              <p className={s.ledeSm}>{lede}</p>
+            </div>
           </div>
 
           {/* Page Body */}
-          <div style={{ padding: "0 1.5rem 1.5rem" }}>
+          <div className={s.stepBody}>
             {children}
           </div>
         </div>

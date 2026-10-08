@@ -22,7 +22,7 @@ export default async function TibialPlanningPage({
       plan={plan}
       currentStepId="tibial"
       title="Tibial Component Planning"
-      lede="Step 2 of 4: Select tibial component size (1–6), adjust 2D CAD template position & rotation, and verify cortical coverage (≥90%) and overhang (≤1.0mm)."
+      lede="Step 2 of 4. Mark the bone, pick a tray size, and check it covers the bone without hanging over."
     >
       <TibialWorkspace plan={plan} />
     </TkrPlanShell>

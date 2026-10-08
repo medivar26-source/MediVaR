@@ -7,6 +7,12 @@ Implements canonical TKA planning mathematics:
 - Component fit evaluation (coverage, overhang, notching risk).
 
 All formulas conform to MediVeR-XR V1 Clinical Planning Specification.
+
+NOTE (non-authoritative for the planner UI): the dashboard's planner computes component fit with its
+own canonical engine (dashboard/src/lib/data/tkr_templates.ts, driven by the size-specific templates in
+dashboard/src/lib/data/implant_templates/). The catalogues and fit evaluation here are retained for the
+backend calculation tests and have NOT been aligned with that engine. Do not use them to decide a plan's
+fit verdict until the two are reconciled.
 """
 
 from typing import Dict, Any, List, Optional

@@ -1,21 +1,35 @@
 /**
- * CAD template geometries, sizing catalogs, and fit evaluation metrics
- * for MediVeR-XR Pre-operative TKA Planning (V1 Specification).
+ * Implant size catalogue lookups and the CANONICAL V1 fit engine for the pre-operative TKA planner.
  *
- * Exclusions from V1:
- * - Resection depths, posterior slope controls, poly thickness, and 3D cut planes
- *   are NOT part of 2D planning and are deferred to VR.
- * - Only 2D sizing, positioning (x, y, rotation), coverage %, overhang, and notching risk.
+ * Exclusions from V1 (deferred to VR): resection depths, posterior slope controls, polyethylene
+ * thickness, gap balancing and 3-D cut planes. Only 2-D sizing, positioning (x, y, rotation),
+ * coverage, overhang and notching are evaluated here.
+ *
+ * ── How a fit is measured ───────────────────────────────────────────────────────────────────────────
+ * The two radiographs are calibrated 2-D views, not a 3-D reconstruction, so each metric is measured in
+ * the view that shows it:
+ *   • Medio-lateral extent and overhang   → the AP (FLAP) drawing of the template, including its in-plane rotation.
+ *   • Antero-posterior extent and overhang → the lateral (KLAT) drawing of the template.
+ *   • Tibial "cortical coverage"          → area of the axial baseplate footprint ∩ the ESTIMATED plateau outline.
+ *     Radiographs do not show the axial outline; it is a generic shape scaled to the surgeon's ML and AP
+ *     marks. The number is an estimate and the UI says so.
+ *
+ * ── Where each rule comes from ──────────────────────────────────────────────────────────────────────
+ * See FIT_RULES below. Only the rules marked SOURCE_VERIFIED are in the V1 PDF.
  */
 
 import type { Point2D } from "./coordinates";
 import {
-  TIBIAL_GEOMETRY_CATALOG,
-  generateTibialBoneBoundary,
-  calculatePolygonArea,
-  calculatePolygonIntersectionArea,
-  transformPhysicalPolygon,
-} from "./tibial_geometry";
+  FEMORAL_SIZE_DIMENSIONS,
+  TIBIAL_SIZE_DIMENSIONS,
+  estimatedTibialPlateauOutline,
+  extentsOf,
+  getFemoralImplant,
+  getTibialImplant,
+  placePolygon,
+  area,
+} from "./implant_templates";
+import { calculatePolygonIntersectionArea, transformPhysicalPolygon } from "./tibial_geometry";
 
 export type TibialTemplate = {
   size: number;
@@ -31,25 +45,19 @@ export type FemoralTemplate = {
   label: string;
 };
 
-export const TIBIAL_TEMPLATES: TibialTemplate[] = [
-  { size: 1, apMm: 38.0, mlMm: 61.0, label: "Size 1 (38.0 × 61.0 mm)" },
-  { size: 2, apMm: 40.0, mlMm: 64.5, label: "Size 2 (40.0 × 64.5 mm)" },
-  { size: 3, apMm: 42.5, mlMm: 68.2, label: "Size 3 (42.5 × 68.2 mm) - Suggested" },
-  { size: 4, apMm: 45.0, mlMm: 72.0, label: "Size 4 (45.0 × 72.0 mm)" },
-  { size: 5, apMm: 48.0, mlMm: 76.5, label: "Size 5 (48.0 × 76.5 mm)" },
-  { size: 6, apMm: 51.0, mlMm: 81.0, label: "Size 6 (51.0 × 81.0 mm)" },
-];
+const label = (size: number, apMm: number, mlMm: number) => `Size ${size} (${apMm.toFixed(1)} × ${mlMm.toFixed(1)} mm)`;
 
-export const FEMORAL_TEMPLATES: FemoralTemplate[] = [
-  { size: 1, apMm: 52.0, mlMm: 58.0, label: "Size 1 (52.0 × 58.0 mm)" },
-  { size: 2, apMm: 54.0, mlMm: 60.0, label: "Size 2 (54.0 × 60.0 mm)" },
-  { size: 3, apMm: 56.2, mlMm: 62.0, label: "Size 3 (56.2 × 62.0 mm)" },
-  { size: 4, apMm: 58.4, mlMm: 64.1, label: "Size 4 (58.4 × 64.1 mm) - Suggested" },
-  { size: 5, apMm: 61.0, mlMm: 67.0, label: "Size 5 (61.0 × 67.0 mm)" },
-  { size: 6, apMm: 63.5, mlMm: 70.0, label: "Size 6 (63.5 × 70.0 mm)" },
-  { size: 7, apMm: 66.5, mlMm: 73.0, label: "Size 7 (66.5 × 73.0 mm)" },
-  { size: 8, apMm: 70.0, mlMm: 77.0, label: "Size 8 (70.0 × 77.0 mm)" },
-];
+/** V1 tibial sizes 1-6. Dimensions: ENGINEERING_DERIVATION, CLINICAL_APPROVAL_REQUIRED (see implant_templates/dimensions.ts). */
+export const TIBIAL_TEMPLATES: TibialTemplate[] = TIBIAL_SIZE_DIMENSIONS.map((d) => ({
+  ...d,
+  label: label(d.size, d.apMm, d.mlMm),
+}));
+
+/** V1 femoral sizes 1-8. Same provenance. */
+export const FEMORAL_TEMPLATES: FemoralTemplate[] = FEMORAL_SIZE_DIMENSIONS.map((d) => ({
+  ...d,
+  label: label(d.size, d.apMm, d.mlMm),
+}));
 
 export function getTibialTemplate(size: number): TibialTemplate {
   return TIBIAL_TEMPLATES.find((t) => t.size === size) ?? TIBIAL_TEMPLATES[2];
@@ -59,7 +67,7 @@ export function getFemoralTemplate(size: number): FemoralTemplate {
   return FEMORAL_TEMPLATES.find((t) => t.size === size) ?? FEMORAL_TEMPLATES[3];
 }
 
-/** Suggest tibial size based on measured ML dimension */
+/** The size whose ML dimension is closest to the measured one (used to highlight a size, not to prescribe it). */
 export function suggestTibialSize(patientMlMm: number): number {
   let closest = TIBIAL_TEMPLATES[0];
   let minDiff = Math.abs(closest.mlMm - patientMlMm);
@@ -73,7 +81,7 @@ export function suggestTibialSize(patientMlMm: number): number {
   return closest.size;
 }
 
-/** Suggest femoral size based on measured AP dimension */
+/** The size whose AP dimension is closest to the measured one. */
 export function suggestFemoralSize(patientApMm: number): number {
   let closest = FEMORAL_TEMPLATES[0];
   let minDiff = Math.abs(closest.apMm - patientApMm);
@@ -87,195 +95,304 @@ export function suggestFemoralSize(patientApMm: number): number {
   return closest.size;
 }
 
-import { FEMORAL_GEOMETRY_CATALOG } from "./femoral_geometry";
-
 export type { Point2D };
-
-// Normalized axial polygons for reference
-export const TIBIAL_AXIAL_POLYGON: Point2D[] = [
-  { x: 0.0, y: 0.5 }, { x: 0.25, y: 0.45 }, { x: 0.45, y: 0.2 }, { x: 0.5, y: -0.1 },
-  { x: 0.4, y: -0.4 }, { x: 0.15, y: -0.5 }, { x: 0.0, y: -0.3 }, 
-  { x: -0.15, y: -0.5 }, { x: -0.4, y: -0.4 }, { x: -0.5, y: -0.1 },
-  { x: -0.45, y: 0.2 }, { x: -0.25, y: 0.45 }
-];
-
-export const FEMORAL_AXIAL_POLYGON: Point2D[] = [
-  { x: -0.4, y: 0.5 }, { x: 0.4, y: 0.5 }, { x: 0.5, y: 0.3 }, { x: 0.5, y: -0.5 },
-  { x: 0.2, y: -0.5 }, { x: 0.15, y: -0.1 }, { x: -0.15, y: -0.1 }, { x: -0.2, y: -0.5 },
-  { x: -0.5, y: -0.5 }, { x: -0.5, y: 0.3 }
-];
-
 export { transformPhysicalPolygon };
 
-export function transformPolygon(poly: Point2D[], widthMm: number, heightMm: number, xOffsetMm: number, yOffsetMm: number, rotationDeg: number): Point2D[] {
-  const rad = (rotationDeg * Math.PI) / 180;
-  const cos = Math.cos(rad);
-  const sin = Math.sin(rad);
-  return poly.map(p => {
-    const sx = p.x * widthMm;
-    const sy = p.y * heightMm;
-    const rx = sx * cos - sy * sin;
-    const ry = sx * sin + sy * cos;
-    return { x: rx + xOffsetMm, y: ry + yOffsetMm };
-  });
+/* ───────────────────────────── rule provenance ───────────────────────────── */
+
+export type RuleClass =
+  | "SOURCE_VERIFIED"
+  | "PROJECT_RULE"
+  | "ENGINEERING_DERIVATION"
+  | "CLINICAL_APPROVAL_REQUIRED"
+  | "UNKNOWN";
+
+export type FitRule = {
+  id: string;
+  component: "tibial" | "femoral";
+  label: string;
+  /** Human-readable rule, e.g. "≥ 90.0 %". */
+  rule: string;
+  classification: RuleClass;
+  /** Where it appears in the V1 PDF, or why it is not there. */
+  source: string;
+  /** True for rules defined by the V1 PDF; false for project/engineering additions. */
+  v1: boolean;
+};
+
+/**
+ * Every threshold the engine applies, and where it comes from. The UI uses `v1` to separate what the
+ * V1 specification requires from rules the project added.
+ */
+export const FIT_RULES: readonly FitRule[] = [
+  { id: "tibial.coverage.min", component: "tibial", label: "Cortical coverage", rule: "≥ 90.0 %", classification: "SOURCE_VERIFIED", source: "V1 PDF p.4-5 (Fit Metrics table)", v1: true },
+  { id: "tibial.overhang.max", component: "tibial", label: "Medial / lateral overhang", rule: "≤ 1.0 mm", classification: "SOURCE_VERIFIED", source: "V1 PDF p.5 (Fit Metrics table)", v1: true },
+  { id: "tibial.overhang.caution", component: "tibial", label: "Overhang caution", rule: "> 1.5 mm → \"CAUTION: Medial Overhang > 1.5mm\"", classification: "SOURCE_VERIFIED", source: "V1 PDF p.5 (below the table)", v1: true },
+  { id: "tibial.coverage.poor", component: "tibial", label: "Poor coverage", rule: "< 85 %", classification: "PROJECT_RULE", source: "doc 09 only; not in the V1 PDF — clinical approval required", v1: false },
+  { id: "tibial.ap.overhang", component: "tibial", label: "Anterior / posterior overhang", rule: "same 1.0 / 1.5 mm limits", classification: "ENGINEERING_DERIVATION", source: "Not in the V1 PDF (it lists medial and lateral only)", v1: false },
+  { id: "femoral.coverage.min", component: "femoral", label: "AP / ML coverage", rule: "≥ 90.0 %", classification: "PROJECT_RULE", source: "V1 PDF p.5 shows example values only (97.1 % / 95.8 %); the limit is reused from Page 2", v1: false },
+  { id: "femoral.coverage.poor", component: "femoral", label: "Poor coverage", rule: "< 85 %", classification: "PROJECT_RULE", source: "doc 09 only — clinical approval required", v1: false },
+  { id: "femoral.notch.limit", component: "femoral", label: "Anterior notching risk", rule: "> 0.5 mm gap → caution", classification: "PROJECT_RULE", source: "V1 PDF shows \"0.0 mm (Flush)\" as an example only; the limit is from doc 09 — clinical approval required", v1: false },
+] as const;
+
+/* ───────────────────────────── tones and thresholds ───────────────────────────── */
+
+export type FitTone = "pass" | "warn" | "fail";
+
+const TONE_RANK: Record<FitTone, number> = { pass: 0, warn: 1, fail: 2 };
+
+/** The worst of several tones. A fit is only as good as its weakest edge. */
+export function worstTone(tones: FitTone[]): FitTone {
+  return tones.reduce<FitTone>((w, t) => (TONE_RANK[t] > TONE_RANK[w] ? t : w), "pass");
 }
+
+/**
+ * Which side of the image each anatomical side is on. The medial cortex is the bone edge the
+ * surgeon marked as "medial", so this follows the markers instead of assuming left or right.
+ * `negX` is the image's left edge in the AP view; `negY` is the anterior side.
+ */
+export type FitOrientation = {
+  medialSide: "negX" | "posX";
+  anteriorSide: "negY" | "posY";
+};
+
+export const DEFAULT_ORIENTATION: FitOrientation = { medialSide: "negX", anteriorSide: "negY" };
+
+/** Outer bounds of the placed component, in the frame of the offsets: x to the image right, +y posterior. */
+export type FitExtents = { minX: number; maxX: number; minY: number; maxY: number };
 
 export type TibialFitThresholds = {
   minCoveragePct: number;
   maxOverhangMm: number;
   cautionOverhangMm: number;
+  /** Coverage below this is a poor fit; between this and `minCoveragePct` it is borderline (PROJECT_RULE). */
+  poorCoveragePct: number;
 };
 
 export const DEFAULT_TIBIAL_FIT_THRESHOLDS: TibialFitThresholds = {
   minCoveragePct: 90.0,
   maxOverhangMm: 1.0,
   cautionOverhangMm: 1.5,
+  poorCoveragePct: 85.0,
 };
+
+export const coverageTone = (pct: number, t = DEFAULT_TIBIAL_FIT_THRESHOLDS): FitTone =>
+  pct >= t.minCoveragePct ? "pass" : pct >= t.poorCoveragePct ? "warn" : "fail";
+
+export const overhangTone = (mm: number, t = DEFAULT_TIBIAL_FIT_THRESHOLDS): FitTone =>
+  mm <= t.maxOverhangMm ? "pass" : mm <= t.cautionOverhangMm ? "warn" : "fail";
 
 export type TibialFitResult = {
   coveragePct: number;
   medialOverhangMm: number;
   lateralOverhangMm: number;
-  fitStatus: "ACCEPTABLE FIT" | "CAUTION: Overhang > 1.5mm" | "POOR FIT";
+  anteriorOverhangMm: number;
+  posteriorOverhangMm: number;
+  coverageTone: FitTone;
+  medialTone: FitTone;
+  lateralTone: FitTone;
+  anteriorTone: FitTone;
+  posteriorTone: FitTone;
+  worstTone: FitTone;
+  extents: FitExtents;
+  fitStatus: "ACCEPTABLE FIT" | "BORDERLINE FIT" | "POOR FIT";
+  /** The V1 PDF's caution text for each medial/lateral overhang beyond the caution limit. */
+  cautionTags: string[];
 };
 
+const round1 = (v: number) => Number(v.toFixed(1));
+
+/** The PDF's exact caution wording (p.5): "CAUTION: Medial Overhang > 1.5mm". */
+export const overhangCautionTag = (side: "Medial" | "Lateral", cautionMm: number) =>
+  `CAUTION: ${side} Overhang > ${cautionMm}mm`;
+
+/**
+ * Tibial fit of a tray against the patient's plateau.
+ *
+ * `patientApMm` / `patientMlMm` are the surgeon's measured spans. When omitted the bone is taken to be
+ * exactly the template's own size ("nominal") — never a borrowed example value.
+ *
+ * Offsets are measured from the middle of the marked bone edges. `rotationDeg` is the IN-PLANE rotation
+ * of the AP overlay about its centre handle (V1: "minor 2-D alignment with the MPTA axis line"); it does
+ * not affect the axial coverage estimate or the lateral view.
+ */
 export function evaluateTibialFit(
   size: number,
   xOffsetMm: number,
   yOffsetMm: number,
-  patientApMm = 42.5,
-  patientMlMm = 68.2,
+  patientApMm?: number,
+  patientMlMm?: number,
   rotationDeg = 0,
   customBoneBoundary?: Point2D[],
-  thresholds: TibialFitThresholds = DEFAULT_TIBIAL_FIT_THRESHOLDS
+  thresholds: TibialFitThresholds = DEFAULT_TIBIAL_FIT_THRESHOLDS,
+  orientation: FitOrientation = DEFAULT_ORIENTATION,
 ): TibialFitResult {
-  const geom = TIBIAL_GEOMETRY_CATALOG[size] ?? TIBIAL_GEOMETRY_CATALOG[3];
-  
-  // 1. Patient tibial bone boundary polygon in physical mm
-  const bonePoly = customBoneBoundary && customBoneBoundary.length >= 3
-    ? customBoneBoundary
-    : generateTibialBoneBoundary(patientMlMm, patientApMm);
+  const tpl = getTibialImplant(size);
+  const ml = patientMlMm ?? tpl.dimensionsMm.ml;
+  const ap = patientApMm ?? tpl.dimensionsMm.ap;
 
-  // 2. Transformed implant tray footprint in physical mm
-  const trayPoly = transformPhysicalPolygon(
-    geom.transverseTrayPolygon,
-    xOffsetMm,
-    yOffsetMm,
-    rotationDeg
-  );
+  const bonePoly =
+    customBoneBoundary && customBoneBoundary.length >= 3 ? customBoneBoundary : estimatedTibialPlateauOutline(ml, ap);
 
-  // 3. Exact geometric intersection area and cortical bone area
-  const boneArea = calculatePolygonArea(bonePoly);
-  const intersectionArea = calculatePolygonIntersectionArea(trayPoly, bonePoly);
+  // Coverage: axial footprint (translated only) against the estimated plateau outline.
+  const footprint = placePolygon(tpl.footprint, xOffsetMm, yOffsetMm, 0);
+  const boneArea = area(bonePoly);
+  const coveragePct = round1(boneArea > 0 ? (calculatePolygonIntersectionArea(footprint, bonePoly) / boneArea) * 100 : 0);
 
-  // Cortical Coverage (%): Area(Implant ∩ Bone) / Area(Bone) * 100
-  const rawCoverage = boneArea > 0 ? (intersectionArea / boneArea) * 100 : 0;
-  const coveragePct = Number(rawCoverage.toFixed(1));
+  // ML: the AP drawing, rotated in-plane, against the marked medio-lateral edges.
+  const boneX = extentsOf(bonePoly);
+  const apExt = extentsOf(placePolygon(tpl.views.ap.silhouette, xOffsetMm, 0, rotationDeg));
+  // AP: the lateral drawing against the marked antero-posterior edges.
+  const latMin = tpl.views.lateral.extents.minX + yOffsetMm;
+  const latMax = tpl.views.lateral.extents.maxX + yOffsetMm;
 
-  // 4. Medial & Lateral Overhang: Evaluated from transformed tray perimeter
-  // Medial is negative X, Lateral is positive X.
-  const transformedBaseplate = transformPhysicalPolygon(
-    geom.baseplatePolygon,
-    xOffsetMm,
-    yOffsetMm,
-    rotationDeg
-  );
+  const o = {
+    negX: Math.max(0, boneX.minX - apExt.minX),
+    posX: Math.max(0, apExt.maxX - boneX.maxX),
+    negY: Math.max(0, boneX.minY - latMin),
+    posY: Math.max(0, latMax - boneX.maxY),
+  };
+  const medialKey = orientation.medialSide;
+  const lateralKey = medialKey === "negX" ? "posX" : "negX";
+  const anteriorKey = orientation.anteriorSide;
+  const posteriorKey = anteriorKey === "negY" ? "posY" : "negY";
 
-  let minX = Infinity;
-  let maxX = -Infinity;
-  for (const p of transformedBaseplate) {
-    if (p.x < minX) minX = p.x;
-    if (p.x > maxX) maxX = p.x;
-  }
+  const medialOverhangMm = round1(o[medialKey]);
+  const lateralOverhangMm = round1(o[lateralKey]);
+  const anteriorOverhangMm = round1(o[anteriorKey]);
+  const posteriorOverhangMm = round1(o[posteriorKey]);
 
-  const halfPatientMl = patientMlMm / 2;
-  // Medial overhang is the physical distance the implant extends past the medial bone cortex (-halfPatientMl)
-  const medialOverhangMm = Number(Math.max(0, -halfPatientMl - minX).toFixed(1));
-  // Lateral overhang is the physical distance the implant extends past the lateral bone cortex (+halfPatientMl)
-  const lateralOverhangMm = Number(Math.max(0, maxX - halfPatientMl).toFixed(1));
+  const tones = {
+    coverageTone: coverageTone(coveragePct, thresholds),
+    medialTone: overhangTone(medialOverhangMm, thresholds),
+    lateralTone: overhangTone(lateralOverhangMm, thresholds),
+    anteriorTone: overhangTone(anteriorOverhangMm, thresholds),
+    posteriorTone: overhangTone(posteriorOverhangMm, thresholds),
+  };
+  const worst = worstTone(Object.values(tones));
 
-  // 5. Fit Status determination based on configurable thresholds
-  const maxOverhang = Math.max(medialOverhangMm, lateralOverhangMm);
-  let fitStatus: TibialFitResult["fitStatus"] = "ACCEPTABLE FIT";
-
-  if (maxOverhang > thresholds.cautionOverhangMm) {
-    fitStatus = "CAUTION: Overhang > 1.5mm";
-  } else if (coveragePct < thresholds.minCoveragePct || maxOverhang > thresholds.maxOverhangMm) {
-    fitStatus = "POOR FIT";
-  }
+  const cautionTags: string[] = [];
+  if (medialOverhangMm > thresholds.cautionOverhangMm) cautionTags.push(overhangCautionTag("Medial", thresholds.cautionOverhangMm));
+  if (lateralOverhangMm > thresholds.cautionOverhangMm) cautionTags.push(overhangCautionTag("Lateral", thresholds.cautionOverhangMm));
 
   return {
     coveragePct,
     medialOverhangMm,
     lateralOverhangMm,
-    fitStatus,
+    anteriorOverhangMm,
+    posteriorOverhangMm,
+    ...tones,
+    worstTone: worst,
+    extents: { minX: apExt.minX, maxX: apExt.maxX, minY: latMin, maxY: latMax },
+    fitStatus: worst === "pass" ? "ACCEPTABLE FIT" : worst === "warn" ? "BORDERLINE FIT" : "POOR FIT",
+    cautionTags,
   };
 }
 
 export type FemoralFitResult = {
   apCoveragePct: number;
   mlCoveragePct: number;
+  /** Gap between the anterior flange and the anterior cortex. Flush is 0; the project limit is 0.5 mm. */
   notchingRiskMm: number;
-  fitStatus: "ACCEPTABLE FIT" | "CAUTION: Anterior Notch Risk" | "POOR FIT";
+  /** How far the flange sits past the anterior cortex, if it does. */
+  anteriorProudMm: number;
+  medialOverhangMm: number;
+  lateralOverhangMm: number;
+  posteriorOverhangMm: number;
+  apCoverageTone: FitTone;
+  mlCoverageTone: FitTone;
+  notchTone: FitTone;
+  worstTone: FitTone;
+  extents: FitExtents;
+  fitStatus: "ACCEPTABLE FIT" | "BORDERLINE FIT" | "CAUTION: Anterior Notch Risk" | "POOR FIT";
 };
 
+export const FEMORAL_NOTCH_LIMIT_MM = 0.5;
+
+/** Where the femoral template sits once placed: the same extents the fit is measured on. */
+export function femoralExtents(size: number, xOffsetMm: number, yOffsetMm: number, rotationDeg = 0): FitExtents {
+  const tpl = getFemoralImplant(size);
+  const apExt = extentsOf(placePolygon(tpl.views.ap.silhouette, xOffsetMm, 0, rotationDeg));
+  return {
+    minX: apExt.minX,
+    maxX: apExt.maxX,
+    minY: tpl.views.lateral.extents.minX + yOffsetMm,
+    maxY: tpl.views.lateral.extents.maxX + yOffsetMm,
+  };
+}
+
+/**
+ * Femoral fit of a component against the marked distal femur.
+ *
+ * Coverage is span-based (no area claim): ML coverage from the AP drawing's horizontal extent, AP coverage
+ * from the lateral drawing's extent, each as a share of the marked bone dimension. The anterior gap is the
+ * notching-risk reading (flush = 0). The PDF sets no limit for side or posterior overhang, so they are
+ * reported but do not change the verdict.
+ */
 export function evaluateFemoralFit(
   size: number,
   xOffsetMm: number,
   yOffsetMm: number,
-  patientApMm = 59.0,
-  patientMlMm = 65.0,
-  rotationDeg = 0
+  patientApMm?: number,
+  patientMlMm?: number,
+  rotationDeg = 0,
+  orientation: FitOrientation = DEFAULT_ORIENTATION,
 ): FemoralFitResult {
-  const template = getFemoralTemplate(size);
-  const geometry = FEMORAL_GEOMETRY_CATALOG[size];
-  
-  // The geometry is defined in physical mm for this specific size.
-  // Transform it based on the user's manual offset and rotation.
-  const poly = transformPhysicalPolygon(geometry.flapPolygon, xOffsetMm, yOffsetMm, rotationDeg);
-  
-  // 1. Patient femoral bone boundaries (assuming centered at origin)
-  const boneMinX = -patientMlMm / 2;
-  const boneMaxX = patientMlMm / 2;
-  const boneMinY = -patientApMm / 2;
-  const boneMaxY = patientApMm / 2;
+  const tpl = getFemoralImplant(size);
+  const ml = patientMlMm ?? tpl.dimensionsMm.ml;
+  const ap = patientApMm ?? tpl.dimensionsMm.ap;
+  const ext = femoralExtents(size, xOffsetMm, yOffsetMm, rotationDeg);
 
-  // 2. Transformed implant footprint boundaries
-  let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity;
-  for (const p of poly) {
-    if (p.x < minX) minX = p.x;
-    if (p.x > maxX) maxX = p.x;
-    if (p.y < minY) minY = p.y;
-    if (p.y > maxY) maxY = p.y;
-  }
+  const boneMinX = -ml / 2;
+  const boneMaxX = ml / 2;
+  const boneMinY = -ap / 2;
+  const boneMaxY = ap / 2;
 
-  // 3. Exact geometric bounding box intersection for AP/ML coverage
-  const overlapMinX = Math.max(boneMinX, minX);
-  const overlapMaxX = Math.min(boneMaxX, maxX);
-  const overlapMinY = Math.max(boneMinY, minY);
-  const overlapMaxY = Math.min(boneMaxY, maxY);
+  const overlapMl = Math.max(0, Math.min(boneMaxX, ext.maxX) - Math.max(boneMinX, ext.minX));
+  const overlapAp = Math.max(0, Math.min(boneMaxY, ext.maxY) - Math.max(boneMinY, ext.minY));
+  const apCoveragePct = round1((overlapAp / ap) * 100);
+  const mlCoveragePct = round1((overlapMl / ml) * 100);
 
-  const overlapAp = Math.max(0, overlapMaxY - overlapMinY);
-  const overlapMl = Math.max(0, overlapMaxX - overlapMinX);
+  const over = {
+    negX: Math.max(0, boneMinX - ext.minX),
+    posX: Math.max(0, ext.maxX - boneMaxX),
+    negY: Math.max(0, boneMinY - ext.minY),
+    posY: Math.max(0, ext.maxY - boneMaxY),
+  };
+  const anteriorKey = orientation.anteriorSide;
+  const posteriorKey = anteriorKey === "negY" ? "posY" : "negY";
+  const medialKey = orientation.medialSide;
+  const lateralKey = medialKey === "negX" ? "posX" : "negX";
 
-  const apCoveragePct = Number((overlapAp / patientApMm * 100).toFixed(1));
-  const mlCoveragePct = Number((overlapMl / patientMlMm * 100).toFixed(1));
+  // The anterior edge is the one nearest the anterior cortex. A flange short of the cortex is a gap
+  // (notching risk); one past it is proud.
+  const anteriorGap =
+    anteriorKey === "negY" ? Math.max(0, ext.minY - boneMinY) : Math.max(0, boneMaxY - ext.maxY);
+  const notchingRiskMm = round1(anteriorGap);
 
-  // 4. Anterior notching risk: physical mm distance the anterior flange (minY) is posterior to anterior cortex (boneMinY)
-  // Assuming anterior is -Y. If minY is greater than boneMinY, the flange is "inside" the bone (notching).
-  const notchingRiskMm = Number(Math.max(0, minY - boneMinY).toFixed(1));
+  const apCoverageTone = coverageTone(apCoveragePct);
+  const mlCoverageTone = coverageTone(mlCoveragePct);
+  const notchTone: FitTone = notchingRiskMm > FEMORAL_NOTCH_LIMIT_MM ? "warn" : "pass";
+  const worst = worstTone([apCoverageTone, mlCoverageTone, notchTone]);
 
   let fitStatus: FemoralFitResult["fitStatus"] = "ACCEPTABLE FIT";
-  if (notchingRiskMm > 0.5) {
-    fitStatus = "CAUTION: Anterior Notch Risk";
-  } else if (apCoveragePct < 85.0 || mlCoveragePct < 85.0) {
-    fitStatus = "POOR FIT";
-  }
+  if (worst === "fail") fitStatus = "POOR FIT";
+  else if (notchTone === "warn") fitStatus = "CAUTION: Anterior Notch Risk";
+  else if (worst === "warn") fitStatus = "BORDERLINE FIT";
 
   return {
     apCoveragePct,
     mlCoveragePct,
     notchingRiskMm,
+    anteriorProudMm: round1(over[anteriorKey]),
+    medialOverhangMm: round1(over[medialKey]),
+    lateralOverhangMm: round1(over[lateralKey]),
+    posteriorOverhangMm: round1(over[posteriorKey]),
+    apCoverageTone,
+    mlCoverageTone,
+    notchTone,
+    worstTone: worst,
+    extents: ext,
     fitStatus,
   };
 }

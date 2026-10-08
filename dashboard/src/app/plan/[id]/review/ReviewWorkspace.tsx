@@ -1,13 +1,14 @@
 "use client";
 
+import { resolvePatientIdentity } from "@/lib/data/planner_identity";
+import { buildV1VrPayload } from "@/lib/data/vr_payload";
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Copy, Lock, ShieldCheck, AlertCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Copy, Lock, AlertCircle } from "lucide-react";
 import { sealTkrPlan } from "@/app/actions";
 import { Button } from "@/components/ui";
 import type { PlanDetail, V1VrPayload } from "@/lib/plan";
-import { formatCalibration } from "@/lib/data/calibration";
-import s from "../plan.module.css";
+import { SCAN_VIEW_NAME, resolvePlanScales } from "@/lib/data/scan_scale";
 
 function fitStatusColor(status?: string): string {
   if (!status) return "#f59e0b";
@@ -24,16 +25,8 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
 
   const isLocked = plan.isReadyForVr || plan.lockedVersion !== undefined;
 
-  // Derive assessment values from payload or defaults
-  const assessment = plan.lockedVersion?.payload.v1_assessment || plan.payload.v1_assessment || {
-    MAD_mm: 12.0,
-    AMA_deg: 6.0,
-    mHKA_deg: 7.0,
-    MPTA_deg: 89.0,
-    LDFA_deg: 88.0,
-    PTS_deg: 7.0,
-    alignment_type: (plan.case.side === "left" || plan.caseId.includes("VALGUS")) ? "VALGUS" : "VARUS",
-  };
+  // What was actually measured. Nothing is filled in when the assessment has not been done.
+  const assessment = plan.lockedVersion?.payload.v1_assessment || plan.payload.v1_assessment;
 
   // Derive tibial values
   const tibial = plan.lockedVersion?.payload.v1_tibial || plan.payload.v1_tibial;
@@ -44,41 +37,36 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
   // Determine if plan is actually complete
   const isTibialComplete = tibial && tibial.is_confirmed;
   const isFemoralComplete = femoral && femoral.is_confirmed;
-  const isCalibrationValid = plan.payload.calibration?.isValid !== false;
+  // A plan goes to the headset only on scales somebody verified. An estimate is fine for exploring a
+  // plan, never for sealing one.
+  const scanScales = resolvePlanScales(plan);
+  const unverifiedViews = (["FLAP", "KLAT"] as const).filter((v) => !scanScales[v].calibrated);
+  const isCalibrationValid = unverifiedViews.length === 0 || isLocked;
   
-  const canSealPlan = isTibialComplete && isFemoralComplete && isCalibrationValid;
+  const canSealPlan = Boolean(assessment) && isTibialComplete && isFemoralComplete && isCalibrationValid;
 
+  // One list of what is still needed, each with the place to fix it.
+  const checks: { label: string; done: boolean; href: string }[] = [
+    { label: "Leg measured", done: Boolean(assessment), href: `/plan/${plan.id}/assessment` },
+    { label: "Tibial tray confirmed", done: Boolean(isTibialComplete), href: `/plan/${plan.id}/tibial` },
+    { label: "Femoral component confirmed", done: Boolean(isFemoralComplete), href: `/plan/${plan.id}/femoral` },
+    {
+      label: isCalibrationValid ? "Scan scales verified" : `Scan scale not verified (${unverifiedViews.map((v) => SCAN_VIEW_NAME[v]).join(", ")})`,
+      done: isCalibrationValid,
+      href: `/plan/${plan.id}/assessment`,
+    },
+  ];
+
+  const identity = resolvePatientIdentity(plan.caseId, plan.case.patient);
   const kneeSide: "RIGHT" | "LEFT" = (plan.case.side || "right").toUpperCase() as "RIGHT" | "LEFT";
 
   // Exact V1 VR Payload schema matching Pages 6-7 of PDF
-  const vrPayload: V1VrPayload | null = plan.lockedVersion?.payload.v1_vr_payload || plan.payload.v1_vr_payload || (canSealPlan ? {
-    patient_id: plan.caseId === "SYNTH-VARUS-001" ? "P-0247" : plan.caseId === "SYNTH-VALGUS-001" ? "P-0891" : plan.caseId,
-    knee_side: kneeSide,
-    assessment: {
-      MAD_mm: assessment.MAD_mm,
-      AMA_deg: assessment.AMA_deg,
-      mHKA_deg: assessment.mHKA_deg,
-      MPTA_deg: assessment.MPTA_deg,
-      LDFA_deg: assessment.LDFA_deg,
-      PTS_deg: assessment.PTS_deg,
-    },
-    tibial_component: {
-      implant_size: tibial!.implant_size,
-      position_2d: {
-        x_offset_mm: tibial!.position_2d.x_offset_mm,
-        y_offset_mm: tibial!.position_2d.y_offset_mm,
-        rotation_deg: tibial!.position_2d.rotation_deg,
-      },
-    },
-    femoral_component: {
-      implant_size: femoral!.implant_size,
-      position_2d: {
-        x_offset_mm: femoral!.position_2d.x_offset_mm,
-        y_offset_mm: femoral!.position_2d.y_offset_mm,
-        rotation_deg: femoral!.position_2d.rotation_deg,
-      },
-    },
-  } : null);
+  const vrPayload: V1VrPayload | null =
+    plan.lockedVersion?.payload.v1_vr_payload ||
+    plan.payload.v1_vr_payload ||
+    (canSealPlan && assessment
+      ? buildV1VrPayload({ patientId: identity.patientId, kneeSide, assessment, tibial: tibial!, femoral: femoral! })
+      : null);
 
   const handleConfirmLock = () => {
     startTransition(async () => {
@@ -102,7 +90,41 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      {/* 3 Structured Summary Cards */}
+      {!isLocked && (
+        <section
+          aria-label="Ready to lock?"
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: "0.5rem 1.25rem",
+            padding: "0.875rem 1.25rem",
+            border: "1px solid var(--border)",
+            borderRadius: "8px",
+            background: "var(--surface)",
+          }}
+        >
+          <strong style={{ fontSize: "0.9375rem" }}>{canSealPlan ? "Ready to lock" : "Not ready to lock yet"}</strong>
+          {checks.map((check) => (
+            <span key={check.label} style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem" }}>
+              {check.done ? (
+                <CheckCircle2 width={15} height={15} color="#16a34a" aria-hidden="true" />
+              ) : (
+                <AlertCircle width={15} height={15} color="#d97706" aria-hidden="true" />
+              )}
+              {check.done ? (
+                <span>{check.label}</span>
+              ) : (
+                <Link href={check.href} style={{ color: "#b45309", fontWeight: 600 }}>
+                  {check.label}
+                </Link>
+              )}
+            </span>
+          ))}
+        </section>
+      )}
+
+      {/* Three summary cards */}
       <div
         style={{
           display: "grid",
@@ -124,7 +146,7 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
         >
           <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.5rem" }}>
             <span style={{ fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.05em" }}>
-              Card 1 · Patient & Imaging
+              Patient & scans
             </span>
             <h3 style={{ margin: "0.25rem 0 0", fontSize: "1.125rem", fontWeight: 700 }}>
               {plan.case.title}
@@ -158,46 +180,12 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ color: "var(--text-muted)" }}>Calibration Marker:</span>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem" }}>
-                {formatCalibration(plan.payload.calibration)}
+                {`AP ${scanScales.FLAP.mmPerPx.toFixed(3)} · Lateral ${scanScales.KLAT.mmPerPx.toFixed(3)} mm/px`}
+                {unverifiedViews.length > 0 && !isLocked ? " (estimated)" : ""}
               </span>
             </div>
           </div>
 
-          <div style={{ marginTop: "auto", paddingTop: "0.75rem", borderTop: "1px solid var(--border)" }}>
-            <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "0.5rem" }}>
-              Calibrated Radiograph Views:
-            </span>
-            <div style={{ display: "flex", gap: "0.75rem" }}>
-              <div
-                style={{
-                  flex: 1,
-                  padding: "0.5rem",
-                  background: "rgba(0,0,0,0.03)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "4px",
-                  fontSize: "0.75rem",
-                  textAlign: "center",
-                }}
-              >
-                <strong>FLAP View</strong>
-                <div style={{ color: "var(--text-muted)", fontSize: "0.6875rem" }}>Full-Length AP</div>
-              </div>
-              <div
-                style={{
-                  flex: 1,
-                  padding: "0.5rem",
-                  background: "rgba(0,0,0,0.03)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "4px",
-                  fontSize: "0.75rem",
-                  textAlign: "center",
-                }}
-              >
-                <strong>KLAT View</strong>
-                <div style={{ color: "var(--text-muted)", fontSize: "0.6875rem" }}>Knee Lateral</div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Card 2: Assessment Measurements */}
@@ -214,47 +202,64 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
         >
           <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.5rem" }}>
             <span style={{ fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.05em" }}>
-              Card 2 · Assessment
+              Measurements
             </span>
             <h3 style={{ margin: "0.25rem 0 0", fontSize: "1.125rem", fontWeight: 700 }}>
-              6 Target Measurements
+              Leg measurements
             </h3>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem", fontSize: "0.875rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "var(--text-muted)" }}>1. MAD (Mechanical Axis Dev):</span>
-              <strong style={{ fontFamily: "var(--font-mono)" }}>{assessment.MAD_mm.toFixed(1)} mm ({assessment.alignment_type})</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "var(--text-muted)" }}>2. AMA (Anat-Mech Angle):</span>
-              <strong style={{ fontFamily: "var(--font-mono)" }}>{assessment.AMA_deg.toFixed(1)}°</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "var(--text-muted)" }}>3. mHKA (Hip-Knee-Ankle):</span>
-              <strong style={{ fontFamily: "var(--font-mono)", color: "#0284c7" }}>
-                {assessment.mHKA_deg.toFixed(1)}° {assessment.alignment_type}
-              </strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "var(--text-muted)" }}>4. MPTA (Medial Prox Tibial):</span>
-              <strong style={{ fontFamily: "var(--font-mono)" }}>{assessment.MPTA_deg.toFixed(1)}°</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "var(--text-muted)" }}>5. LDFA (Lat Distal Femoral):</span>
-              <strong style={{ fontFamily: "var(--font-mono)" }}>{assessment.LDFA_deg.toFixed(1)}°</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "var(--text-muted)" }}>6. PTS (Posterior Tibial Slope):</span>
-              <strong style={{ fontFamily: "var(--font-mono)" }}>{assessment.PTS_deg.toFixed(1)}°</strong>
-            </div>
-          </div>
+          {assessment ? (
+            <>
+              {(() => {
+                const dir = assessment.alignment_type === "VALGUS" ? "Valgus" : assessment.alignment_type === "VARUS" ? "Varus" : "";
+                const groups: { title: string; rows: { label: string; value: string }[] }[] = [
+                  {
+                    title: "FLAP",
+                    rows: [
+                      { label: "MAD", value: `${assessment.MAD_mm.toFixed(1)} mm${dir ? ` ${dir}` : ""}` },
+                      { label: "AMA", value: `${assessment.AMA_deg.toFixed(1)}°` },
+                      { label: "mHKA", value: `${assessment.mHKA_deg.toFixed(1)}°${dir ? ` ${dir}` : ""}` },
+                      { label: "MPTA", value: `${assessment.MPTA_deg.toFixed(1)}°` },
+                      { label: "LDFA", value: `${assessment.LDFA_deg.toFixed(1)}°` },
+                    ],
+                  },
+                  { title: "KLAT", rows: [{ label: "PTS", value: `${assessment.PTS_deg.toFixed(1)}°` }] },
+                ];
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", fontSize: "0.875rem" }}>
+                    {groups.map((g) => (
+                      <div key={g.title} style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                        <span style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.06em", color: "var(--text-muted)" }}>{g.title}:</span>
+                        {g.rows.map((row) => (
+                          <div key={row.label} style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ color: "var(--text-muted)" }}>• {row.label}</span>
+                            <strong style={{ fontFamily: "var(--font-mono)" }}>{row.value}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
 
-          <div style={{ marginTop: "auto", padding: "0.6rem", background: "rgba(2, 132, 199, 0.08)", borderRadius: "6px", border: "1px solid rgba(2, 132, 199, 0.2)" }}>
-            <span style={{ fontSize: "0.75rem", color: "#0369a1", fontWeight: 600 }}>
-              Clinical Classification: {assessment.mHKA_deg.toFixed(1)}° {assessment.alignment_type} Deformity
-            </span>
-          </div>
+              <div style={{ marginTop: "auto", padding: "0.6rem", background: "rgba(2, 132, 199, 0.08)", borderRadius: "6px", border: "1px solid rgba(2, 132, 199, 0.2)" }}>
+                <span style={{ fontSize: "0.75rem", color: "#0369a1", fontWeight: 600 }}>
+                  {assessment.alignment_type === "NEUTRAL"
+                    ? "Neutral alignment"
+                    : `${assessment.mHKA_deg.toFixed(1)}° ${assessment.alignment_type === "VALGUS" ? "valgus" : "varus"} deformity`}
+                  {assessment.scale_estimated ? " · MAD uses an estimated scale" : ""}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div style={{ color: "#f59e0b", fontWeight: 700, fontSize: "0.875rem" }}>
+              Not measured yet.{" "}
+              <Link href={`/plan/${plan.id}/assessment`} style={{ color: "#b45309" }}>
+                Go to the assessment
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Card 3: Component Selections & Fit */}
@@ -271,10 +276,10 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
         >
           <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.5rem" }}>
             <span style={{ fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.05em" }}>
-              Card 3 · Implants & Fit
+              Implants
             </span>
             <h3 style={{ margin: "0.25rem 0 0", fontSize: "1.125rem", fontWeight: 700 }}>
-              Tibial & Femoral Fit
+              Size and fit
             </h3>
           </div>
 
@@ -288,11 +293,11 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
                     <span style={{ color: fitStatusColor(tibial.fit_status), fontWeight: 700 }}>{tibial.fit_status}</span>
                   </div>
                   <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-                    Offsets: X: {tibial.position_2d.x_offset_mm.toFixed(1)}mm, Y: {tibial.position_2d.y_offset_mm.toFixed(1)}mm, Rot: {tibial.position_2d.rotation_deg.toFixed(1)}°
+                    Placed {tibial.position_2d.x_offset_mm.toFixed(1)} mm sideways, {tibial.position_2d.y_offset_mm.toFixed(1)} mm front/back, turned {tibial.position_2d.rotation_deg.toFixed(1)}°
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.25rem", fontSize: "0.75rem" }}>
                     <span>Coverage: <strong>{tibial.cortical_coverage_pct?.toFixed(1) ?? "--"}%</strong></span>
-                    <span>Overhang: M {tibial.medial_overhang_mm?.toFixed(1) ?? "--"}mm / L {tibial.lateral_overhang_mm?.toFixed(1) ?? "--"}mm</span>
+                    <span>Overhang: inner {tibial.medial_overhang_mm?.toFixed(1) ?? "--"} mm / outer {tibial.lateral_overhang_mm?.toFixed(1) ?? "--"} mm</span>
                   </div>
                 </>
               ) : (
@@ -309,11 +314,11 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
                     <span style={{ color: fitStatusColor(femoral.fit_status), fontWeight: 700 }}>{femoral.fit_status}</span>
                   </div>
                   <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-                    Offsets: X: {femoral.position_2d.x_offset_mm.toFixed(1)}mm, Y: {femoral.position_2d.y_offset_mm.toFixed(1)}mm, Rot: {femoral.position_2d.rotation_deg.toFixed(1)}°
+                    Placed {femoral.position_2d.x_offset_mm.toFixed(1)} mm sideways, {femoral.position_2d.y_offset_mm.toFixed(1)} mm front/back, turned {femoral.position_2d.rotation_deg.toFixed(1)}°
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.25rem", fontSize: "0.75rem" }}>
-                    <span>AP Coverage: <strong>{femoral.ap_coverage_pct?.toFixed(1) ?? "--"}%</strong></span>
-                    <span>Notching Risk: <strong>{femoral.notching_risk_mm === 0 ? "0.0 mm (Flush)" : `${femoral.notching_risk_mm} mm`}</strong></span>
+                    <span>Depth covered: <strong>{femoral.ap_coverage_pct?.toFixed(1) ?? "--"}%</strong></span>
+                    <span>Gap at the front: <strong>{femoral.notching_risk_mm === 0 ? "0.0 mm (flush)" : `${femoral.notching_risk_mm} mm`}</strong></span>
                   </div>
                 </>
               ) : (
@@ -346,7 +351,7 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
               </strong>
             </div>
             <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
-              Sealed: {plan.lockedVersion?.sealedAt ? new Date(plan.lockedVersion.sealedAt).toLocaleString() : new Date().toLocaleString()}
+              {plan.lockedVersion?.sealedAt ? `Sealed: ${plan.lockedVersion.sealedAt.slice(0, 16).replace("T", " ")} UTC` : "Sealed"}
             </span>
           </div>
 
@@ -415,21 +420,15 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
           borderTop: "1px solid var(--border)",
         }}
       >
-        <Link
-          href={`/plan/${plan.id}/femoral`}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            fontSize: "0.875rem",
-            fontWeight: 600,
-            color: "var(--text-muted)",
-            textDecoration: "none",
-          }}
-        >
-          <ArrowLeft width={16} height={16} />
-          Back to Femoral Planning
-        </Link>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.75rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--text-muted)" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+            <ArrowLeft width={16} height={16} aria-hidden="true" />
+            Back to Planning:
+          </span>
+          {/* V1: "Allows returning to Page 2 or 3 to modify component sizes" (Assessment is locked). */}
+          <Link href={`/plan/${plan.id}/tibial`} style={{ color: "inherit" }}>Tibial</Link>
+          <Link href={`/plan/${plan.id}/femoral`} style={{ color: "inherit" }}>Femoral</Link>
+        </span>
 
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           {!isLocked ? (
@@ -450,10 +449,16 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
                 alignItems: "center",
                 gap: "0.5rem",
               }}
-              title={!canSealPlan ? "Planning is incomplete or calibration is missing." : "Lock plan"}
+              title={
+                !canSealPlan
+                  ? unverifiedViews.length > 0
+                    ? `The ${unverifiedViews.map((v) => SCAN_VIEW_NAME[v]).join(" and ")} scan scale is not verified. Verify it on the Assessment page (Page 1) with the radio-opaque marker.`
+                    : "Planning is incomplete."
+                  : "Lock plan"
+              }
             >
               <Lock width={16} height={16} />
-              {canSealPlan ? "LOCK PLAN & SEND TO VR →" : "PLAN INCOMPLETE"}
+              {canSealPlan ? "Lock plan & send to VR →" : "Plan incomplete"}
             </button>
           ) : (
             <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -518,7 +523,11 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
             </div>
 
             <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
-              Once locked, parameters cannot be modified in 2D software. The plan will be formatted into the immutable VR transfer payload for intraoperative execution.
+              Once locked, parameters cannot be modified in 2D software.
+              <br />
+              <span style={{ fontSize: "0.8125rem" }}>
+                The plan is formatted into the V1 VR payload. Transfer to the VR suite is not connected yet, so locking does not send it.
+              </span>
             </p>
 
             {sealError && (

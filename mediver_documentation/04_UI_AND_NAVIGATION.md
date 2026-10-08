@@ -154,7 +154,7 @@ $$\text{MEASURE} \longrightarrow \text{SIZE} \longrightarrow \text{SEND}$$
 1. **Page 1: Assessment** (`/plan/[id]/assessment`)
    - Interactive zoom/pan X-ray viewport (FLAP and KLAT toggle with preserved landmark state).
    - Placement of shared anatomical landmarks for 6 clinical measurements: MAD (mm), AMA (°), mHKA (°), MPTA (°), LDFA (°), PTS (°).
-   - Radio-opaque 25mm spherical calibration scale (0.264 mm/px).
+   - Radio-opaque 25mm spherical calibration scale (scale measured per scan; 0.264 mm/px is only a seed placeholder).
    - Forward link: `[ Continue to Tibial Planning → ]`.
 2. **Page 2: Tibial Planning** (`/plan/[id]/tibial`)
    - 2D CAD template overlay (Sizes 1 to 6) with translation and rotation handles.

@@ -98,12 +98,18 @@ export function FitGauge({
 /** The overall verdict for a component, in the same tone vocabulary as the gauges. */
 export function FitVerdict({ status }: { status: string | undefined }) {
   const tone: Tone =
-    status === "ACCEPTABLE FIT" ? "pass" : status === "POOR FIT" ? "fail" : status?.startsWith("CAUTION") ? "warn" : "none";
+    status === "ACCEPTABLE FIT"
+      ? "pass"
+      : status === "POOR FIT"
+        ? "fail"
+        : status === "BORDERLINE FIT" || status?.startsWith("CAUTION")
+          ? "warn"
+          : "none";
   const Icon = TONE_ICON[tone];
   return (
     <div className={`${c.verdict} ${c[`verdict-${tone}`]}`} role="status">
       <Icon size={16} aria-hidden="true" />
-      {tone === "none" ? "Measure the patient's bone to evaluate fit" : status}
+      {tone === "none" ? "Mark and confirm the bone edges to evaluate fit" : status}
     </div>
   );
 }
@@ -202,8 +208,8 @@ export function KeyboardHint() {
   return (
     <p className={c.hint}>
       <span className={c.kbd}>←</span> <span className={c.kbd}>→</span> <span className={c.kbd}>↑</span>{" "}
-      <span className={c.kbd}>↓</span> nudge 0.1 mm, hold <span className={c.kbd}>Shift</span> for 1 mm.{" "}
-      <span className={c.kbd}>[</span> <span className={c.kbd}>]</span> rotate.
+      <span className={c.kbd}>↓</span> move the implant on the scan by 0.1 mm, hold <span className={c.kbd}>Shift</span> for 1 mm.{" "}
+      <span className={c.kbd}>[</span> <span className={c.kbd}>]</span> rotate. Or just drag it.
     </p>
   );
 }

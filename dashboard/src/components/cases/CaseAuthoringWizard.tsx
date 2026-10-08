@@ -1263,13 +1263,7 @@ export function CaseAuthoringWizard({
                   subtitle="Implant size and 2D coronal positioning."
                   action={
                     <Badge
-                      status={
-                        tibialFit.fitStatus === "ACCEPTABLE FIT"
-                          ? "pass"
-                          : tibialFit.fitStatus === "CAUTION: Overhang > 1.5mm"
-                            ? "warn"
-                            : "fail"
-                      }
+                      status={tibialFit.worstTone}
                     >
                       {tibialFit.fitStatus}
                     </Badge>
@@ -1339,13 +1333,7 @@ export function CaseAuthoringWizard({
                   subtitle="Implant size and 2D sagittal positioning."
                   action={
                     <Badge
-                      status={
-                        femoralFit.fitStatus === "ACCEPTABLE FIT"
-                          ? "pass"
-                          : femoralFit.fitStatus === "CAUTION: Anterior Notch Risk"
-                            ? "warn"
-                            : "fail"
-                      }
+                      status={femoralFit.worstTone}
                     >
                       {femoralFit.fitStatus}
                     </Badge>

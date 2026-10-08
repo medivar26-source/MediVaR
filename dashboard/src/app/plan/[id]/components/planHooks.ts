@@ -114,14 +114,15 @@ export function useSaveStatus<T>(
   return { status, save, retry };
 }
 
-type Axis = "x_offset_mm" | "y_offset_mm" | "rotation_deg";
+/** Keys move the implant the way it looks on screen: sideways, up and down, or turning. */
+export type NudgeAxis = "horizontal" | "vertical" | "rotation_deg";
 
 /**
  * Arrow keys nudge the implant 0.1 mm (Shift: 1 mm); `[` and `]` rotate 0.5° (Shift: 2°).
  * Ignored while typing in a field, and when a modifier is held so browser shortcuts still work.
- * Down/right are positive, matching dragging on the canvas.
+ * Right and down are positive, matching dragging on the canvas.
  */
-export function useNudgeKeys(enabled: boolean, nudge: (axis: Axis, delta: number) => void) {
+export function useNudgeKeys(enabled: boolean, nudge: (axis: NudgeAxis, delta: number) => void) {
   const nudgeRef = useRef(nudge);
   useEffect(() => {
     nudgeRef.current = nudge;
@@ -138,16 +139,16 @@ export function useNudgeKeys(enabled: boolean, nudge: (axis: Axis, delta: number
       const turn = e.shiftKey ? 2 : 0.5;
       switch (e.key) {
         case "ArrowLeft":
-          nudgeRef.current("x_offset_mm", -move);
+          nudgeRef.current("horizontal", -move);
           break;
         case "ArrowRight":
-          nudgeRef.current("x_offset_mm", move);
+          nudgeRef.current("horizontal", move);
           break;
         case "ArrowUp":
-          nudgeRef.current("y_offset_mm", -move);
+          nudgeRef.current("vertical", -move);
           break;
         case "ArrowDown":
-          nudgeRef.current("y_offset_mm", move);
+          nudgeRef.current("vertical", move);
           break;
         case "[":
         case "{":
@@ -165,4 +166,30 @@ export function useNudgeKeys(enabled: boolean, nudge: (axis: Axis, delta: number
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [enabled]);
+}
+
+/**
+ * The natural size of an image, loaded ahead of time so a measurement never depends on which scan
+ * happened to be open. DICOM files are skipped here (the viewer reports their size when shown).
+ */
+export function useImageDims(src: string | undefined): { width: number; height: number } | null {
+  // Keyed by the source, so a size that was read for a previous image is never returned for the new one.
+  const [loaded, setLoaded] = useState<{ src: string; width: number; height: number } | null>(null);
+
+  useEffect(() => {
+    if (!src || /\.(dcm|dcim)$/i.test(src.split("?")[0])) return;
+    let live = true;
+    const img = new Image();
+    img.onload = () => {
+      if (live && img.naturalWidth > 0 && img.naturalHeight > 0) {
+        setLoaded({ src, width: img.naturalWidth, height: img.naturalHeight });
+      }
+    };
+    img.src = src;
+    return () => {
+      live = false;
+    };
+  }, [src]);
+
+  return loaded && loaded.src === src ? { width: loaded.width, height: loaded.height } : null;
 }

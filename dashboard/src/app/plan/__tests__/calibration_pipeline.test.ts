@@ -211,7 +211,7 @@ describe("Preoperative Planning Calibration & Implant Pipeline", () => {
     // Introduce 2.0mm lateral shift -> overhang must exceed 1.5mm tolerance
     const shiftedFit = evaluateTibialFit(size, 2.0, 0, template.apMm, template.mlMm);
     assert.ok(shiftedFit.lateralOverhangMm > 1.5);
-    assert.equal(shiftedFit.fitStatus, "CAUTION: Overhang > 1.5mm");
+    assert.equal(shiftedFit.fitStatus, "POOR FIT");
   });
 
   it("14 & 15. View-specific calibrations: FLAP and KLAT maintain distinct pixel scales", () => {
@@ -336,28 +336,38 @@ describe("Preoperative Planning Calibration & Implant Pipeline", () => {
     assert.strictEqual(fitPos5.lateralOverhangMm, 5.0);
     assert.strictEqual(fitPos5.medialOverhangMm, 0.0);
     assert.ok(fitPos5.coveragePct < fit0.coveragePct);
-    assert.strictEqual(fitPos5.fitStatus, "CAUTION: Overhang > 1.5mm");
+    assert.strictEqual(fitPos5.fitStatus, "POOR FIT");
 
     // At X=-5mm: shifted medial by 5mm -> medial overhang exactly 5.0mm, lateral overhang 0mm
     assert.strictEqual(fitNeg5.medialOverhangMm, 5.0);
     assert.strictEqual(fitNeg5.lateralOverhangMm, 0.0);
     assert.ok(fitNeg5.coveragePct < fit0.coveragePct);
-    assert.strictEqual(fitNeg5.fitStatus, "CAUTION: Overhang > 1.5mm");
+    assert.strictEqual(fitNeg5.fitStatus, "POOR FIT");
   });
 
-  it("22. MANDATORY TEST CASE C: Rotate 0°, 2°, 5° operates on rotated polygon geometry", () => {
+  it("22. MANDATORY TEST CASE C: rotation is the IN-PLANE rotation of the AP overlay (V1: align with the MPTA line)", () => {
+    // Changed from the earlier axial-rotation meaning: the V1 PDF's rotation handle aligns the overlay with
+    // the MPTA axis line in the AP viewport, so rotation moves the AP drawing only. Axial coverage and the
+    // lateral (antero-posterior) measurements do not depend on it.
     const size = 3;
     const patientAp = 42.5;
     const patientMl = 68.2;
 
     const fit0 = evaluateTibialFit(size, 0, 0, patientAp, patientMl, 0);
-    const fit2 = evaluateTibialFit(size, 0, 0, patientAp, patientMl, 2);
     const fit5 = evaluateTibialFit(size, 0, 0, patientAp, patientMl, 5);
 
-    // Rotation alters intersection area and footprint corners
-    assert.ok(fit2.coveragePct < fit0.coveragePct, "Coverage must decrease under rotation");
-    assert.ok(fit5.coveragePct < fit2.coveragePct, "Coverage must further decrease at 5 deg");
-    assert.ok(fit5.medialOverhangMm > 0, "Rotation creates overhang at extreme corner");
+    assert.equal(fit5.coveragePct, fit0.coveragePct, "axial coverage estimate is unaffected by in-plane rotation");
+    assert.equal(fit5.anteriorOverhangMm, fit0.anteriorOverhangMm);
+    assert.equal(fit5.posteriorOverhangMm, fit0.posteriorOverhangMm);
+    // The rotated AP drawing's horizontal extent changes, so the overhang is measured on the rotated outline.
+    assert.ok(fit5.extents.minX !== fit0.extents.minX || fit5.extents.maxX !== fit0.extents.maxX);
+    assert.ok(Math.max(fit5.medialOverhangMm, fit5.lateralOverhangMm) > 0, "a turned plate reaches past the marked edge");
+
+    // A femoral component is tall in the AP view, so the same turn is clearly visible in its ML coverage.
+    const f0 = evaluateFemoralFit(4, 0, 0, 58.4, 64.1, 0);
+    const f15 = evaluateFemoralFit(4, 0, 0, 58.4, 64.1, 15);
+    assert.ok(f15.mlCoveragePct < f0.mlCoveragePct, "rotation reduces ML coverage");
+    assert.equal(f15.apCoveragePct, f0.apCoveragePct, "AP coverage is read on the lateral view and is unaffected");
   });
 
   it("23. Assessment Landmark Isolation: TibialCanvas does not leak assessment landmarks", () => {

@@ -13,7 +13,7 @@
  */
 
 import type { V1Calibration } from "@/lib/plan";
-import { DEFAULT_CALIBRATION, DEFAULT_CALIBRATION_MARKER_MM, DEFAULT_MM_PER_PX } from "./calibration";
+import { DEFAULT_CALIBRATION, DEFAULT_CALIBRATION_MARKER_MM } from "./calibration";
 
 export type Point2D = { x: number; y: number };
 
@@ -33,35 +33,66 @@ export type ViewportState = {
   };
 };
 
-/** Normalize calibration data, respecting view type and image-specific scales */
+/** Radiographs run from about 0.05 to 1.5 mm per pixel; anything outside that is a mistake. */
+export const REALISTIC_SCALE_MM_PER_PX: readonly [number, number] = [0.05, 1.5];
+
+const positive = (v: unknown): number | undefined => {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
+};
+
+/**
+ * The scale a stored calibration describes, whichever way it was written:
+ * the backend (`calculated_scale_mm_per_px`), the planning screens (`mm_per_px`), a DICOM pixel
+ * spacing (`derived_pixel_spacing_mm`), or just the marker's real and measured sizes.
+ */
+function scaleOf(cal: Record<string, unknown>): number | undefined {
+  const direct =
+    positive(cal.mm_per_px) ?? positive(cal.derived_pixel_spacing_mm) ?? positive(cal.calculated_scale_mm_per_px);
+  if (direct) return direct;
+  const physical = positive(cal.physical_marker_diameter_mm) ?? positive(cal.marker_diameter_mm);
+  const measured = positive(cal.detected_marker_pixel_diameter) ?? positive(cal.measured_pixel_diameter);
+  return physical && measured ? physical / measured : undefined;
+}
+
+/**
+ * Turn whatever calibration a scan carries into one shape, and say honestly whether it can be trusted.
+ *
+ * - A stored calibration is used as written. It counts as valid unless it says otherwise
+ *   (`is_valid` / `isValid` false) or its scale is outside the realistic range.
+ * - Normalising twice gives the same answer. An unverified fallback must never become "valid"
+ *   just by passing through this function again.
+ * - A scan with no calibration gets a placeholder scale and `isValid: false`. The placeholder is a
+ *   guess from the view's name, not a measurement, and the screens say so.
+ */
 export function normalizeCalibration(cal?: any, viewHint?: string): V1Calibration {
-  if (cal && (cal.derived_pixel_spacing_mm > 0 || cal.mm_per_px > 0)) {
-    const marker_diameter_mm = Number(
-      cal.physical_marker_diameter_mm ?? cal.marker_diameter_mm ?? DEFAULT_CALIBRATION_MARKER_MM
-    );
-    const measured_pixel_diameter = Number(
-      cal.detected_marker_pixel_diameter ?? cal.measured_pixel_diameter ?? (marker_diameter_mm / (cal.mm_per_px || cal.derived_pixel_spacing_mm))
-    );
-    const mm_per_px = Number(
-      cal.derived_pixel_spacing_mm ?? cal.mm_per_px ?? (marker_diameter_mm / measured_pixel_diameter)
-    );
+  const scale = cal && typeof cal === "object" ? scaleOf(cal) : undefined;
+
+  if (scale !== undefined) {
+    const marker_diameter_mm =
+      positive(cal.physical_marker_diameter_mm) ?? positive(cal.marker_diameter_mm) ?? DEFAULT_CALIBRATION_MARKER_MM;
+    const measured_pixel_diameter =
+      positive(cal.detected_marker_pixel_diameter) ?? positive(cal.measured_pixel_diameter) ?? marker_diameter_mm / scale;
+    const flaggedInvalid = cal.is_valid === false || cal.isValid === false;
+    const realistic = scale >= REALISTIC_SCALE_MM_PER_PX[0] && scale <= REALISTIC_SCALE_MM_PER_PX[1];
 
     return {
-      marker_type: "sphere_25mm",
+      marker_type: cal.marker_type === "manual" ? "manual" : "sphere_25mm",
       marker_diameter_mm,
       measured_pixel_diameter,
-      mm_per_px: mm_per_px > 0 ? mm_per_px : DEFAULT_MM_PER_PX,
+      mm_per_px: scale,
       calibrated_at: cal.calibrated_at || new Date().toISOString(),
-      isValid: true,
+      isValid: realistic && !flaggedInvalid,
     };
   }
 
   // Full-leg scans (FLAP / long_leg / full_leg_xray) cover the full leg (~850mm across ~1100px):
   // 10cm ruler on flap.jpg measures 130px -> 100mm / 130px = 0.7692 mm/px (25mm marker = 32.5px).
-  // Localized knee radiographs (KLAT / knee close-up) cover ~250mm across ~900px: 0.264 mm/px (25mm marker = 94.7px).
-  const isFullLeg = viewHint?.toLowerCase().includes("flap") || 
-                    viewHint?.toLowerCase().includes("long_leg") ||
-                    viewHint?.toLowerCase().includes("full_leg");
+  // Anything else (a knee close-up) gets the placeholder, which is never valid.
+  const isFullLeg =
+    viewHint?.toLowerCase().includes("flap") ||
+    viewHint?.toLowerCase().includes("long_leg") ||
+    viewHint?.toLowerCase().includes("full_leg");
 
   if (isFullLeg) {
     const mm_per_px = 25.0 / 32.5; // ~0.7692 mm/px
@@ -99,14 +130,13 @@ export function calculateCalibrationFromMarker(
 
 /** Convert physical millimeters to natural image pixels */
 export function mmToImagePx(mm: number, mmPerPx: number): number {
-  const scale = mmPerPx > 0 ? mmPerPx : DEFAULT_MM_PER_PX;
-  return mm / scale;
+  // No silent fallback scale: without a usable scale there is no honest answer.
+  return mmPerPx > 0 ? mm / mmPerPx : NaN;
 }
 
 /** Convert natural image pixels to physical millimeters */
 export function imagePxToMm(px: number, mmPerPx: number): number {
-  const scale = mmPerPx > 0 ? mmPerPx : DEFAULT_MM_PER_PX;
-  return px * scale;
+  return mmPerPx > 0 ? px * mmPerPx : NaN;
 }
 
 /** Convert a 2D point from physical millimeters to natural image pixels */

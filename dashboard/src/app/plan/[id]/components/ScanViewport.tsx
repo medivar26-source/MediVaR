@@ -26,6 +26,7 @@ interface ScanViewportProps {
 export function ScanViewport({ src, alt = "Scan Image", children }: ScanViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({
@@ -39,11 +40,21 @@ export function ScanViewport({ src, alt = "Scan Image", children }: ScanViewport
 
   const panStartRef = useRef({ pointerX: 0, pointerY: 0, panX: 0, panY: 0 });
 
-  // Reset zoom & pan when image source changes
+  // Reset zoom & pan when image source changes.
+  //
+  // The size is cleared here, but an image that is already cached has finished loading by the time
+  // this effect runs, and its load event will not fire again. Clearing it unconditionally left the
+  // stage stretched to the container and everything drawn in image pixels in the wrong place, so a
+  // finished image keeps its size.
   useEffect(() => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
-    setNaturalSize(null);
+    const img = imgRef.current;
+    if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+    } else {
+      setNaturalSize(null);
+    }
   }, [src]);
 
   // Monitor container dimensions with ResizeObserver
@@ -315,7 +326,11 @@ export function ScanViewport({ src, alt = "Scan Image", children }: ScanViewport
           height: `${fittedHeight}px`,
           transform: `translate(-50%, -50%) translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           transformOrigin: "center center",
-          willChange: "transform",
+          // Only while the scan is being dragged. A permanent `will-change: transform` makes the browser
+          // keep this layer as a bitmap at its original size and merely stretch it when zooming, so the
+          // scan, the landmark tags and every label turn soft. At rest the browser redraws the layer at
+          // the zoomed size, which keeps text and lines sharp.
+          willChange: isPanning ? "transform" : "auto",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -337,6 +352,7 @@ export function ScanViewport({ src, alt = "Scan Image", children }: ScanViewport
           />
         ) : (
           <img
+            ref={imgRef}
             src={src}
             alt={alt}
             onLoad={handleImageLoad}

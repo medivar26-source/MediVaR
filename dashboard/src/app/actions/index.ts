@@ -11,6 +11,9 @@ import {
   type ApiDifficulty,
 } from "@/lib/data/content-api";
 import { getCurrentUser, getSessionToken } from "@/lib/session";
+import { checkPlanUpdate, checkSealable } from "@/lib/data/plan_lock";
+import { resolvePatientIdentity } from "@/lib/data/planner_identity";
+import { buildV1VrPayload } from "@/lib/data/vr_payload";
 
 
 /**
@@ -331,6 +334,8 @@ export async function updatePlanPayload(
       return { success: false, error: "You can only change your own plans." };
     }
     if (plan) {
+      const allowed = checkPlanUpdate(plan, updates);
+      if (!allowed.ok) return { success: false, error: allowed.error };
       plan.payload = { ...plan.payload, ...updates };
       plan.updatedAt = new Date().toISOString();
       return { success: true };
@@ -388,57 +393,37 @@ export async function sealTkrPlan(
   if (!plan) return { error: "Plan not found." };
   if (plan.userId !== user.id) return { error: "You can only lock your own plans." };
 
-  const v1Assessment = plan.payload.v1_assessment || {
-    MAD_mm: 12.0,
-    AMA_deg: 6.0,
-    mHKA_deg: 7.0,
-    MPTA_deg: 89.0,
-    LDFA_deg: 88.0,
-    PTS_deg: 7.0,
-  };
+  const { getPlan } = await import("@/lib/data/plan");
+  const detail = await getPlan(planId);
+  if (!detail) return { error: "Plan not found." };
 
-  const v1Tibial = plan.payload.v1_tibial || {
-    implant_size: 3,
-    position_2d: { x_offset_mm: 1.2, y_offset_mm: -0.4, rotation_deg: 0.5 },
-  };
+  // Only what was actually measured and confirmed goes to the headset. Nothing is filled in.
+  const sealable = checkSealable(plan);
+  if (!sealable.ok) return { error: sealable.error };
+  const v1Assessment = plan.payload.v1_assessment!;
+  const v1Tibial = plan.payload.v1_tibial!;
+  const v1Femoral = plan.payload.v1_femoral!;
 
-  const v1Femoral = plan.payload.v1_femoral || {
-    implant_size: 4,
-    position_2d: { x_offset_mm: 0.5, y_offset_mm: 0.0, rotation_deg: 0.0 },
-  };
+  // A plan goes to the headset only on scan scales somebody verified.
+  const { resolvePlanScales, SCAN_VIEW_NAME } = await import("@/lib/data/scan_scale");
+  const scales = resolvePlanScales(detail);
+  const unverified = (["FLAP", "KLAT"] as const).filter((v) => !scales[v].calibrated);
+  if (unverified.length > 0) {
+    return {
+      error: `The ${unverified.map((v) => SCAN_VIEW_NAME[v]).join(" and ")} scan scale is not verified. Verify it on the Assessment page (Page 1) with the radio-opaque marker.`,
+    };
+  }
 
-  // Determine knee side
-  const kneeSide: "RIGHT" | "LEFT" =
-    plan.caseId.includes("VALGUS") || plan.caseId === "P-0891" ? "LEFT" : "RIGHT";
+  // The knee comes from the case itself, not from guessing at its name.
+  const kneeSide: "RIGHT" | "LEFT" = (detail.case.side || "right").toUpperCase() === "LEFT" ? "LEFT" : "RIGHT";
 
-  const vrPayload: import("@/lib/plan").V1VrPayload = {
-    patient_id: plan.caseId === "SYNTH-VARUS-001" ? "P-0247" : plan.caseId === "SYNTH-VALGUS-001" ? "P-0891" : plan.caseId,
-    knee_side: kneeSide,
-    assessment: {
-      MAD_mm: v1Assessment.MAD_mm,
-      AMA_deg: v1Assessment.AMA_deg,
-      mHKA_deg: v1Assessment.mHKA_deg,
-      MPTA_deg: v1Assessment.MPTA_deg,
-      LDFA_deg: v1Assessment.LDFA_deg,
-      PTS_deg: v1Assessment.PTS_deg,
-    },
-    tibial_component: {
-      implant_size: v1Tibial.implant_size,
-      position_2d: {
-        x_offset_mm: v1Tibial.position_2d.x_offset_mm,
-        y_offset_mm: v1Tibial.position_2d.y_offset_mm,
-        rotation_deg: v1Tibial.position_2d.rotation_deg,
-      },
-    },
-    femoral_component: {
-      implant_size: v1Femoral.implant_size,
-      position_2d: {
-        x_offset_mm: v1Femoral.position_2d.x_offset_mm,
-        y_offset_mm: v1Femoral.position_2d.y_offset_mm,
-        rotation_deg: v1Femoral.position_2d.rotation_deg,
-      },
-    },
-  };
+  const vrPayload = buildV1VrPayload({
+    patientId: resolvePatientIdentity(plan.caseId, detail.case.patient).patientId,
+    kneeSide,
+    assessment: v1Assessment,
+    tibial: v1Tibial,
+    femoral: v1Femoral,
+  });
 
   plan.payload.v1_vr_payload = vrPayload;
   plan.isReadyForVr = true;

@@ -178,7 +178,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--s-7);
+  padding: var(--s-3);
   border-radius: var(--r-xl);
   background: var(--surface);
 }
@@ -465,3 +465,102 @@
     max-width: 52ch;
   }
 }
+
+
+/* ---------- compact page bar ---------- */
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3) var(--s-5);
+  padding: var(--s-4) var(--s-5) var(--s-3);
+}
+
+.topTitle { min-width: 0; }
+
+.titleSm {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.ledeSm {
+  margin: 2px 0 0;
+  max-width: 70ch;
+  font-size: var(--t-caption);
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.chipSide,
+.chipPlain,
+.chipOk,
+.chipWarn,
+.chipLocked,
+.chipDraft,
+.chipDemo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  border: var(--bw) solid var(--border);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.chipSide { background: #0284c7; border-color: #0284c7; color: #fff; letter-spacing: 0.02em; }
+.chipPlain { background: var(--surface-sunken); color: var(--text); font-weight: 600; }
+.chipOk { background: var(--pass-surface); border-color: var(--pass-border); color: var(--pass); }
+.chipWarn { background: var(--warn-surface); border-color: var(--warn-border); color: var(--warn); }
+.chipLocked { background: #1e293b; border-color: #334155; color: #38bdf8; }
+.chipDraft { background: var(--surface-sunken); color: var(--text-muted); }
+.chipDemo { background: var(--fail-surface); border-color: var(--fail-border); color: var(--fail); }
+
+.stepBody { padding: 0 var(--s-5) var(--s-5); }
+
+/* ── V1 global patient header (persistent on all four pages) ─────────────────────────── */
+.patientBar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-5);
+  padding: var(--s-2) var(--s-5);
+  margin: 0 calc(var(--s-3) * -1);
+  background: var(--surface);
+  border-bottom: var(--bw) solid var(--border);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+.patientFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-6);
+  margin: 0;
+  padding: 0;
+}
+.patientFacts > div { display: flex; flex-direction: column; min-width: 0; }
+.patientFacts dt {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.patientFacts dd { margin: 0; font-size: 13.5px; font-weight: 700; color: var(--ink); }

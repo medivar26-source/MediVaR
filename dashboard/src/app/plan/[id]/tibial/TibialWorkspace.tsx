@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { fallbackNotice, resolveScan } from "@/lib/plan-scans";
+import { useMemo, useState } from "react";
+import { Segmented } from "@/components/ui";
 import type { PlanDetail, V1TibialComponent } from "@/lib/plan";
-import { getTibialTemplate, evaluateTibialFit } from "@/lib/data/tkr_templates";
-import { normalizeCalibration } from "@/lib/data/coordinates";
+import { evaluateTibialFit, getTibialTemplate } from "@/lib/data/tkr_templates";
+import { autoFitTibial, clearanceText, rankTibialSizes, seedMarkers, sideGaps, type MarkerKey } from "@/lib/data/fit_markers";
+import { mapShapes, type MapPosition } from "@/lib/data/fit_map";
+import { resolvePlanScales, sameScale } from "@/lib/data/scan_scale";
+import { useFitSession } from "../components/useFitSession";
+import { FitMap, type MapSide } from "../components/FitMap";
+import { FitChip } from "../components/FitPanels";
 import s from "../plan.module.css";
 import { TibialCanvas } from "./TibialCanvas";
 import { TibialControlsPanel } from "./TibialControlsPanel";
@@ -13,190 +18,197 @@ export type TibialViewMode = "FLAP" | "KLAT";
 
 const DEFAULT_TIBIAL_COMPONENT: V1TibialComponent = {
   implant_size: 3,
-  position_2d: {
-    x_offset_mm: 1.2,
-    y_offset_mm: -0.4,
-    rotation_deg: 0.5,
-  },
-  ap_dimension_mm: 42.5,
-  ml_dimension_mm: 68.2,
-  cortical_coverage_pct: 91.5,
-  medial_overhang_mm: 0.4,
-  lateral_overhang_mm: 0.6,
-  fit_status: "ACCEPTABLE FIT",
+  position_2d: { x_offset_mm: 0, y_offset_mm: 0, rotation_deg: 0 },
   is_confirmed: false,
 };
 
 export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
-  const [viewMode, setViewMode] = useState<TibialViewMode>("FLAP");
-
   const isReadOnly = plan.isReadyForVr || plan.lockedVersion !== undefined;
 
-  const patientBone = (() => {
-    const tp = plan.payload?.tibial_planning as Record<string, any> | undefined;
-    if (tp?.patient_ml_mm && tp?.patient_ap_mm) {
-      return { mlMm: Number(tp.patient_ml_mm), apMm: Number(tp.patient_ap_mm) };
-    }
-    const v1Ass = plan.payload?.v1_assessment as Record<string, any> | undefined;
-    if (v1Ass?.patient_tibial_ml_mm && v1Ass?.patient_tibial_ap_mm) {
-      return { mlMm: Number(v1Ass.patient_tibial_ml_mm), apMm: Number(v1Ass.patient_tibial_ap_mm) };
-    }
-    return undefined;
-  })();
+  const [tibialComponent, setTibialComponent] = useState<V1TibialComponent>(() => {
+    const saved =
+      isReadOnly && plan.lockedVersion?.payload.v1_tibial
+        ? { ...plan.lockedVersion.payload.v1_tibial, is_confirmed: true }
+        : plan.payload.v1_tibial
+          ? { ...plan.payload.v1_tibial, is_confirmed: isReadOnly ? true : plan.payload.v1_tibial.is_confirmed }
+          : { ...DEFAULT_TIBIAL_COMPONENT };
 
-  const initialComponent: V1TibialComponent = (() => {
-    if (isReadOnly && plan.lockedVersion?.payload.v1_tibial) {
-      return { ...plan.lockedVersion.payload.v1_tibial, is_confirmed: true };
-    }
-    if (plan.payload.v1_tibial) {
-      return { ...plan.payload.v1_tibial, is_confirmed: isReadOnly ? true : plan.payload.v1_tibial.is_confirmed };
-    }
-    const template = getTibialTemplate(DEFAULT_TIBIAL_COMPONENT.implant_size);
-    const fit = patientBone ? evaluateTibialFit(
-      DEFAULT_TIBIAL_COMPONENT.implant_size,
-      DEFAULT_TIBIAL_COMPONENT.position_2d.x_offset_mm,
-      DEFAULT_TIBIAL_COMPONENT.position_2d.y_offset_mm,
-      patientBone.apMm,
-      patientBone.mlMm,
-      DEFAULT_TIBIAL_COMPONENT.position_2d.rotation_deg
-    ) : { coveragePct: 0, medialOverhangMm: 0, lateralOverhangMm: 0, fitStatus: "incomplete" as any };
+    // Plans saved before bone-edge markers existed start from a guess taken from the assessment.
+    const markers = saved.fit_markers ?? seedMarkers("tibial", plan.payload);
+    const template = getTibialTemplate(saved.implant_size);
+    // A fit confirmed at one scale says nothing about another: if either scan's scale has changed since,
+    // the confirmation is withdrawn and the fit has to be looked at again.
+    const now = resolvePlanScales(plan);
+    const scaleChanged =
+      !isReadOnly &&
+      Boolean(saved.is_confirmed) &&
+      Boolean(saved.scales) &&
+      (!sameScale(saved.scales?.FLAP, now.FLAP.mmPerPx) || !sameScale(saved.scales?.KLAT, now.KLAT.mmPerPx));
+
     return {
-      ...DEFAULT_TIBIAL_COMPONENT,
+      ...saved,
+      is_confirmed: scaleChanged ? false : saved.is_confirmed,
+      fit_markers: markers,
       ap_dimension_mm: template.apMm,
       ml_dimension_mm: template.mlMm,
-      cortical_coverage_pct: fit.coveragePct,
-      medial_overhang_mm: fit.medialOverhangMm,
-      lateral_overhang_mm: fit.lateralOverhangMm,
-      fit_status: fit.fitStatus,
-      is_confirmed: isReadOnly,
     };
-  })();
+  });
 
-  const [tibialComponent, setTibialComponent] = useState<V1TibialComponent>(initialComponent);
+  const session = useFitSession<V1TibialComponent>({
+    kind: "tibial",
+    plan,
+    component: tibialComponent,
+    setComponent: setTibialComponent,
+    isReadOnly,
+  });
+  const { bone } = session;
 
-  const fitResult = patientBone ? evaluateTibialFit(
-    tibialComponent.implant_size,
-    tibialComponent.position_2d.x_offset_mm,
-    tibialComponent.position_2d.y_offset_mm,
-    patientBone.apMm,
-    patientBone.mlMm,
-    tibialComponent.position_2d.rotation_deg
-  ) : { coveragePct: 0, medialOverhangMm: 0, lateralOverhangMm: 0, fitStatus: "incomplete" as any };
-
-  const rawLandmarks = (plan.payload?.assessment_landmarks as Record<string, any>) || {};
-  const assessmentLandmarks = {
-    ...rawLandmarks,
-    hipCenter: rawLandmarks.hipCenter || rawLandmarks.femoral_head_center,
-    kneeCenter: rawLandmarks.kneeCenter || rawLandmarks.femoral_knee_center || rawLandmarks.tibial_knee_center,
-    ankleCenter: rawLandmarks.ankleCenter || rawLandmarks.ankle_center,
-  };
-
-  const apImage =
-    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "ap") ||
-    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "flap") ||
-    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "long_leg");
-
-  const klatImage =
-    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "klat") ||
-    plan.case?.imaging?.find((img) => img.view.toLowerCase() === "lateral");
-
-  const imageMatch = viewMode === "FLAP" ? apImage : klatImage;
-  const scan = resolveScan(imageMatch, viewMode);
-  const currentImgSrc = scan.src;
-  const activeCalibration = normalizeCalibration(
-    imageMatch?.calibration || plan.payload.calibration,
-    `${viewMode} ${currentImgSrc}`
+  const pos = tibialComponent.position_2d;
+  const fitResult = useMemo(
+    () =>
+      bone.complete
+        ? evaluateTibialFit(
+            tibialComponent.implant_size,
+            pos.x_offset_mm,
+            pos.y_offset_mm,
+            bone.apMm!,
+            bone.mlMm!,
+            pos.rotation_deg,
+            undefined,
+            undefined,
+            bone.orientation,
+          )
+        : undefined,
+    [bone, tibialComponent.implant_size, pos.x_offset_mm, pos.y_offset_mm, pos.rotation_deg],
   );
 
-  const handlePositionChange = (newPos: { x_offset_mm: number; y_offset_mm: number; rotation_deg: number }) => {
-    if (isReadOnly) return;
-    
-    const fit = patientBone ? evaluateTibialFit(
-      tibialComponent.implant_size,
-      newPos.x_offset_mm,
-      newPos.y_offset_mm,
-      patientBone.apMm,
-      patientBone.mlMm,
-      newPos.rotation_deg
-    ) : { coveragePct: 0, medialOverhangMm: 0, lateralOverhangMm: 0, fitStatus: "incomplete" as any };
+  const ranking = useMemo(() => rankTibialSizes(bone, pos.rotation_deg), [bone, pos.rotation_deg]);
 
+  // Any move, from the scan, the map or the keys, goes through here and asks for a new confirmation.
+  const handleMove = (next: Partial<MapPosition> & { level_offset_mm?: number }) => {
+    if (isReadOnly) return;
+    const { level_offset_mm, ...position } = next;
     setTibialComponent((prev) => ({
       ...prev,
-      position_2d: newPos,
-      cortical_coverage_pct: fit.coveragePct,
-      medial_overhang_mm: fit.medialOverhangMm,
-      lateral_overhang_mm: fit.lateralOverhangMm,
-      fit_status: fit.fitStatus,
-      // Moving the implant invalidates an earlier confirmation.
+      position_2d: { ...prev.position_2d, ...position },
+      ...(level_offset_mm !== undefined ? { level_offset_mm } : {}),
       is_confirmed: false,
     }));
   };
 
+  const shapes = useMemo(
+    () => mapShapes("tibial", tibialComponent.implant_size, bone, pos),
+    [bone, tibialComponent.implant_size, pos],
+  );
+
+  const gaps = fitResult ? sideGaps(fitResult.extents, bone) : undefined;
+  const mapSides: Record<MarkerKey, MapSide> | undefined =
+    fitResult && gaps
+      ? {
+          medial: { text: clearanceText(fitResult.medialOverhangMm, gaps.medial), tone: fitResult.medialTone },
+          lateral: { text: clearanceText(fitResult.lateralOverhangMm, gaps.lateral), tone: fitResult.lateralTone },
+          anterior: { text: clearanceText(fitResult.anteriorOverhangMm, gaps.anterior), tone: fitResult.anteriorTone },
+          posterior: { text: clearanceText(fitResult.posteriorOverhangMm, gaps.posterior), tone: fitResult.posteriorTone },
+        }
+      : undefined;
+
+  const bestPosition = () => {
+    const best = autoFitTibial(tibialComponent.implant_size, bone, pos.rotation_deg);
+    handleMove({ x_offset_mm: best.x, y_offset_mm: best.y });
+  };
+
+  const maxOverhang = fitResult
+    ? Math.max(fitResult.medialOverhangMm, fitResult.lateralOverhangMm, fitResult.anteriorOverhangMm, fitResult.posteriorOverhangMm)
+    : 0;
+
+  const currentScan = session.scanOf(session.viewMode);
+
   return (
     <div className={s.body}>
       <div className={s.card}>
-        <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
-          <button
-            onClick={() => setViewMode("FLAP")}
-            style={{
-              padding: "0.5rem 1rem",
-              background: viewMode === "FLAP" ? "var(--brand)" : "var(--surface)",
-              color: viewMode === "FLAP" ? "var(--on-brand)" : "var(--ink)",
-              border: "1px solid var(--border)",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            AP View (Coronal Sizing)
-          </button>
-          <button
-            onClick={() => setViewMode("KLAT")}
-            style={{
-              padding: "0.5rem 1rem",
-              background: viewMode === "KLAT" ? "var(--brand)" : "var(--surface)",
-              color: viewMode === "KLAT" ? "var(--on-brand)" : "var(--ink)",
-              border: "1px solid var(--border)",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            KLAT View (Localized Lateral)
-          </button>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-3)", alignItems: "center", marginBottom: "var(--s-4)" }}>
+          <Segmented
+            label="Scan view"
+            value={session.viewMode}
+            onChange={session.setViewMode}
+            options={[
+              { value: "FLAP", label: "FLAP · AP view (width)" },
+              { value: "KLAT", label: "KLAT · Lateral view (depth)" },
+            ]}
+          />
         </div>
 
-        <div style={{ display: "flex", gap: "2rem", height: "700px" }}>
-          {/* Main Imaging/Planning Workspace */}
-          <div style={{ flex: "2", border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden", position: "relative" }}>
-            {scan.isFallback && (
+        <div style={{ display: "flex", gap: "2rem", height: "min(900px, max(720px, calc(100vh - 150px)))" }}>
+          <div style={{ flex: "2", order: 2, border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden", position: "relative" }}>
+            {currentScan.isFallback && (
               <div
                 role="status"
-                style={{ position: "absolute", top: 10, right: 10, zIndex: 100, backgroundColor: "rgba(154,98,18,0.95)", color: "white", padding: "6px 12px", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 600, maxWidth: "60%" }}
+                style={{ position: "absolute", top: 10, left: 10, maxWidth: "calc(100% - 210px)", zIndex: 100, backgroundColor: "rgba(154,98,18,0.95)", color: "white", padding: "6px 12px", borderRadius: "var(--r-xs)", fontSize: "0.8125rem", fontWeight: 600 }}
               >
-                {fallbackNotice(viewMode)}
+                {currentScan.notice}
               </div>
             )}
+            <FitChip
+              status={fitResult?.fitStatus}
+              tone={fitResult?.worstTone}
+              lines={
+                fitResult
+                  ? [
+                      `Coverage ${fitResult.coveragePct.toFixed(0)}% (aim ≥ 90%)`,
+                      maxOverhang > 0 ? `Largest overhang ${maxOverhang.toFixed(1)} mm (aim ≤ 1.0)` : "No overhang",
+                      ...fitResult.cautionTags,
+                    ]
+                  : []
+              }
+            />
             <TibialCanvas
-              viewMode={viewMode}
+              viewMode={session.viewMode}
               tibialComponent={tibialComponent}
-              onPositionChange={handlePositionChange}
-              assessmentLandmarks={assessmentLandmarks}
+              onMove={handleMove}
+              onRotate={(deg) => handleMove({ rotation_deg: deg })}
+              bone={bone}
+              markers={session.markers}
+              fit={fitResult}
+              placing={session.placing}
+              onMoveMarker={session.setMarker}
+              onPlaceMarker={session.placeMarker}
+              onCancelPlace={() => session.setPlacing(null)}
+              onDimsLoaded={session.reportDims}
               isReadOnly={isReadOnly}
-              src={currentImgSrc}
-              calibration={activeCalibration}
-              patientBone={patientBone}
+              src={currentScan.src}
+              mmPerPx={currentScan.mmPerPx}
+              scale={{
+                calibrated: currentScan.calibrated,
+                calibrating: session.calibration.calibrating,
+                knownMm: session.calibration.knownMm,
+                onMeasured: session.calibration.completeCalibration,
+                onCancel: session.calibration.cancelCalibrating,
+                candidate: session.calibration.detection?.status === "found" ? { view: session.calibration.detection.view, ...session.calibration.detection.candidate } : undefined,
+              }}
             />
           </div>
 
-          {/* Controls Panel */}
-          <div style={{ flex: "1", display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div style={{ flex: "1", order: 1, display: "flex", flexDirection: "column", gap: "1rem", minWidth: 0, minHeight: 0 }}>
+            <FitMap
+              kind="tibial"
+              shapes={shapes}
+              position={pos}
+              orientation={bone.orientation}
+              sides={mapSides}
+              headline={fitResult ? { value: `${fitResult.coveragePct.toFixed(0)}%`, caption: "of the bone covered" } : undefined}
+              tone={fitResult?.worstTone}
+              readOnly={isReadOnly}
+              onChange={handleMove}
+              onCentre={() => handleMove({ x_offset_mm: 0, y_offset_mm: 0, rotation_deg: 0, level_offset_mm: 0 })}
+              onBest={bestPosition}
+            />
             <TibialControlsPanel
               tibialComponent={tibialComponent}
               setTibialComponent={setTibialComponent}
               fitResult={fitResult}
+              ranking={ranking}
+              session={session}
               plan={plan}
-              patientBone={patientBone}
             />
           </div>
         </div>

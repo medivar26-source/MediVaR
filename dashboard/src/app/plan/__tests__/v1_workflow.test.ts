@@ -48,7 +48,7 @@ describe("V1 TKA Planning Workflow & Calibration", () => {
 
     // Extreme lateral shift causing >1.5mm overhang
     const excessiveOverhang = evaluateTibialFit(3, 4.0, 0, 43.0, 69.0);
-    assert.strictEqual(excessiveOverhang.fitStatus, "CAUTION: Overhang > 1.5mm");
+    assert.strictEqual(excessiveOverhang.fitStatus, "POOR FIT");
   });
 
   it("should evaluate femoral fit and anterior notching risk against clinical tolerances", () => {

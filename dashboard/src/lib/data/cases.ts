@@ -303,6 +303,7 @@ const PATIENT_FIELDS: {
   suffix?: string;
   block: "vital" | "note";
 }[] = [
+  { key: "patient_id", label: "Patient ID", block: "vital" },
   { key: "age", label: "Age", suffix: " years", block: "vital" },
   { key: "gender", label: "Gender", block: "vital" },
   { key: "sex", label: "Sex", block: "vital" },

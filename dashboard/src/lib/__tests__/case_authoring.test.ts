@@ -53,7 +53,7 @@ test("Case Authoring & Clinical Planning Tests", async (t) => {
 
     // Overhang trigger
     const cautionFit = evaluateTibialFit(6, 0.0, 0.0, 40.0, 62.0);
-    assert.equal(cautionFit.fitStatus, "CAUTION: Overhang > 1.5mm");
+    assert.equal(cautionFit.fitStatus, "POOR FIT");
     assert.ok(cautionFit.medialOverhangMm > 1.5 || cautionFit.lateralOverhangMm > 1.5);
   });
 

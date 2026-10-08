@@ -367,8 +367,7 @@ function stepProgress(
       v1_femoral?: { is_confirmed?: boolean };
     };
     const done = [
-      Boolean(p.v1_assessment) ||
-        Object.keys(p.assessment_landmarks ?? {}).length > 0,
+      Boolean(p.v1_assessment),
       Boolean(p.v1_tibial?.is_confirmed),
       Boolean(p.v1_femoral?.is_confirmed),
       plan.isReadyForVr,

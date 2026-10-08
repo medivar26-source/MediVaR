@@ -3,7 +3,10 @@
 import { useState } from "react";
 import type { LandmarkState, Point2D, ViewMode } from "./AssessmentWorkspace";
 import { ScanViewport } from "../components/ScanViewport";
+import { Loupe } from "../components/Loupe";
+import { CalibrationLayer, ScaleBar, type ScaleTools } from "../components/FitMarkerLayer";
 import React, { useEffect } from "react";
+import { LANDMARK_INFO, LANDMARK_ORDER } from "@/lib/data/landmark_guide";
 
 const Reporter = ({ naturalWidth, naturalHeight, viewMode, onDimsLoaded }: any) => {
   useEffect(() => {
@@ -14,36 +17,26 @@ const Reporter = ({ naturalWidth, naturalHeight, viewMode, onDimsLoaded }: any) 
   return null;
 };
 
+type Key = keyof LandmarkState;
+
 interface XRayCanvasProps {
   viewMode: ViewMode;
   landmarks: LandmarkState;
   isAccepted: boolean;
+  /** The point being placed: a click anywhere on the scan puts it there. */
+  placing: Key | null;
+  onPlace: (key: Key, pos: Point2D) => void;
+  onCancelPlace: () => void;
   onLandmarkMove: (key: keyof LandmarkState, pos: Point2D) => void;
-  onDimsLoaded?: (viewMode: string, dims: { width: number; height: number }) => void;
+  onDimsLoaded?: (viewMode: ViewMode, dims: { width: number; height: number }) => void;
   src?: string;
+  mmPerPx: number;
+  scale: ScaleTools;
 }
 
-const LANDMARK_COLORS: Record<string, string> = {
-  // FLAP
-  hipCenter: "#ef4444", 
-  kneeCenter: "#3b82f6", 
-  ankleCenter: "#10b981", 
-  femurDistalLateral: "#f59e0b", 
-  femurDistalMedial: "#f59e0b",
-  tibiaProximalLateral: "#8b5cf6", 
-  tibiaProximalMedial: "#8b5cf6",
-  femurCanalProximal: "#ec4899",
-  femurCanalDistal: "#ec4899",
-  
-  // KLAT
-  tibiaPlateauAnterior: "#06b6d4",
-  tibiaPlateauPosterior: "#06b6d4",
-  tibiaShaftProximal: "#8b5cf6",
-  tibiaShaftDistal: "#8b5cf6"
-};
-
-export function XRayCanvas({ viewMode, landmarks, isAccepted, onLandmarkMove, onDimsLoaded, src }: XRayCanvasProps) {
+export function XRayCanvas({ viewMode, landmarks, isAccepted, placing, onPlace, onCancelPlace, onLandmarkMove, onDimsLoaded, src, mmPerPx, scale }: XRayCanvasProps) {
   const [draggingKey, setDraggingKey] = useState<keyof LandmarkState | null>(null);
+  const [hoveredKey, setHoveredKey] = useState<keyof LandmarkState | null>(null);
 
   const defaultImgSrc = viewMode === "FLAP" ? "/flap.jpg" : "/klat.jpg";
   const imgSrc = src || defaultImgSrc;
@@ -128,20 +121,13 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, onLandmarkMove, on
     );
   };
 
-  const currentLandmarks = viewMode === "FLAP" ? [
-    "hipCenter", "kneeCenter", "ankleCenter", 
-    "femurDistalLateral", "femurDistalMedial", 
-    "tibiaProximalLateral", "tibiaProximalMedial",
-    "femurCanalProximal", "femurCanalDistal"
-  ] : [
-    "tibiaPlateauAnterior", "tibiaPlateauPosterior", 
-    "tibiaShaftProximal", "tibiaShaftDistal",
-    "femurAnteriorBoundary", "femurPosteriorBoundary"
-  ];
+  const currentLandmarks = (LANDMARK_ORDER as Key[]).filter((k) => LANDMARK_INFO[k].view === viewMode);
+  const placingHere = placing && LANDMARK_INFO[placing].view === viewMode && !isAccepted ? placing : null;
+  const placedCount = (LANDMARK_ORDER as Key[]).filter((k) => landmarks[k]).length;
 
   return (
     <ScanViewport src={imgSrc} alt={`${viewMode} Scan`}>
-      {({ zoom, stageRef, naturalWidth, naturalHeight }) => {
+      {({ zoom, stageRef, naturalWidth, naturalHeight, fitScale }) => {
         return (
         <>
           <Reporter 
@@ -151,21 +137,116 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, onLandmarkMove, on
             onDimsLoaded={onDimsLoaded} 
           />
           {viewMode === "FLAP" ? renderFlapLines() : renderKlatLines()}
+          <Loupe
+            active={Boolean(placingHere) || draggingKey !== null}
+            stageRef={stageRef}
+            src={imgSrc}
+            naturalWidth={naturalWidth}
+            naturalHeight={naturalHeight}
+            fitScale={fitScale}
+            zoom={zoom}
+          />
+
+          <svg
+            viewBox={`0 0 ${naturalWidth} ${naturalHeight}`}
+            preserveAspectRatio="none"
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", overflow: "visible" }}
+          >
+            <ScaleBar
+              widthPx={naturalWidth}
+              heightPx={naturalHeight}
+              mmPerPx={mmPerPx}
+              calibrated={scale.calibrated}
+              fontPx={13 / (fitScale * zoom)}
+            />
+          </svg>
+
+          <CalibrationLayer
+            active={scale.calibrating === viewMode}
+            view={viewMode}
+            zoom={zoom}
+            stageRef={stageRef}
+            widthPx={naturalWidth}
+            heightPx={naturalHeight}
+            knownMm={scale.knownMm}
+            onMeasured={scale.onMeasured}
+            onCancel={scale.onCancel}
+            candidate={scale.candidate}
+          />
+
+          {placingHere && (
+            <>
+              <div
+                data-landmark="placing"
+                onClick={(e) => {
+                  const rect = stageRef.current?.getBoundingClientRect();
+                  if (!rect || rect.width <= 0 || rect.height <= 0) return;
+                  onPlace(placingHere, {
+                    x: Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)),
+                    y: Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100)),
+                  });
+                }}
+                style={{ position: "absolute", inset: 0, zIndex: 5, cursor: "crosshair" }}
+              />
+              <div
+                role="status"
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  top: 10,
+                  transform: `translateX(-50%) scale(${1 / zoom})`,
+                  transformOrigin: "top center",
+                  zIndex: 70,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "6px 12px",
+                  borderRadius: 8,
+                  background: "rgba(15,23,42,0.92)",
+                  border: `1px solid ${LANDMARK_INFO[placingHere].color}`,
+                  color: "#fff",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  width: "max-content",
+                  maxWidth: 420,
+                }}
+              >
+                <span>
+                  Point {placedCount + (landmarks[placingHere] ? 0 : 1)} of {LANDMARK_ORDER.length}: click the {LANDMARK_INFO[placingHere].name.toLowerCase()}.
+                </span>
+                <button
+                  type="button"
+                  onClick={onCancelPlace}
+                  style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.3)", background: "transparent", color: "#e2e8f0", fontSize: 12, cursor: "pointer" }}
+                >
+                  Stop
+                </button>
+              </div>
+            </>
+          )}
 
           {currentLandmarks.map((key) => {
             const pos = landmarks[key as keyof LandmarkState];
             if (!pos) return null;
-            const color = LANDMARK_COLORS[key] || "#fff";
+            const info = LANDMARK_INFO[key];
+            const color = info?.color ?? "#e2e8f0";
             const isBeingDragged = draggingKey === key;
+            // Names are shown for the point under the pointer, so neighbouring points never cover each other.
+            const showTag = isBeingDragged || hoveredKey === key;
 
             return (
               <div
                 key={key}
                 data-landmark={key}
+                role="slider"
+                aria-label={info?.name ?? key}
+                aria-valuetext={`${Math.round(pos.x)}% across, ${Math.round(pos.y)}% down`}
                 onPointerDown={(e) => handlePointerDown(key as keyof LandmarkState, e)}
                 onPointerMove={(e) => handlePointerMove(key as keyof LandmarkState, stageRef.current, e)}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
+                onPointerEnter={() => setHoveredKey(key)}
+                onPointerLeave={() => setHoveredKey((k) => (k === key ? null : k))}
                 style={{
                   position: "absolute",
                   left: `${pos.x}%`,
@@ -180,11 +261,34 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, onLandmarkMove, on
                   boxShadow: isBeingDragged
                     ? "0 0 0 4px rgba(255, 255, 255, 0.4), 0 0 8px rgba(0, 0, 0, 0.8)"
                     : "0 0 4px rgba(0,0,0,0.7)",
-                  zIndex: isBeingDragged ? 30 : 10,
+                  zIndex: isBeingDragged ? 30 : showTag ? 20 : 10,
                   touchAction: "none",
+                  // While a point is being placed, a click always places it, even on top of another dot.
+                  pointerEvents: placingHere ? "none" : "auto",
                 }}
-                title={`${key} (${Math.round(pos.x)}%, ${Math.round(pos.y)}%)`}
-              />
+                title={info ? `${info.name}. ${info.where}` : key}
+              >
+                {info && showTag && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      left: "50%",
+                      top: 20,
+                      transform: "translateX(-50%)",
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: "rgba(15,23,42,0.85)",
+                      color,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      whiteSpace: "nowrap",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    {info.tag}
+                  </span>
+                )}
+              </div>
             );
           })}
         </>
