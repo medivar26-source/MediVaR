@@ -18,7 +18,10 @@ import {
   DemoDataNote,
 } from "@/components/ui";
 import { BarChart, StatCard, StatRow } from "@/components/viz";
+import { LearnerAnalytics } from "@/components/dashboard/LearnerAnalytics";
+import { getLearnerDashboard } from "@/lib/data/dashboard";
 import { getPerformanceOverview } from "@/lib/data/performance";
+import { WEEK_OPTIONS, windowFromParam } from "@/lib/window";
 import { clock, longDuration, shortDate, titleCase } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { PASS_MARK } from "@/lib/types";
@@ -30,6 +33,7 @@ export const metadata: Metadata = { title: "Performance" };
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "skills", label: "By skill" },
+  { id: "trends", label: "Trends" },
   { id: "history", label: "History" },
 ] as const;
 
@@ -38,7 +42,7 @@ type TabId = (typeof TABS)[number]["id"];
 export default async function PerformancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; weeks?: string }>;
 }) {
   const params = await searchParams;
   const user = await getCurrentUser();
@@ -47,6 +51,10 @@ export default async function PerformancePage({
   const tab: TabId = TABS.some((t) => t.id === params.tab)
     ? (params.tab as TabId)
     : "overview";
+
+  // Trends (mark loss, weekly cadence, score dynamic) used to sit on the home page.
+  const weeks = windowFromParam(params.weeks, WEEK_OPTIONS);
+  const trends = tab === "trends" ? await getLearnerDashboard(user.id, weeks) : undefined;
 
   const lede = user.level
     ? `${user.displayName} · ${user.level}`
@@ -91,6 +99,7 @@ export default async function PerformancePage({
         <>
           {tab === "overview" && <Overview view={view} />}
           {tab === "skills" && <Skills view={view} />}
+          {trends && <LearnerAnalytics data={trends} weeks={weeks} />}
           {tab === "history" && <History view={view} />}
         </>
       )}

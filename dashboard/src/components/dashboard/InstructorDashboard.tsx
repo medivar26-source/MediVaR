@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Users } from "lucide-react";
+import { CalendarPlus, ChevronRight, FilePlus, UserPlus, Users } from "lucide-react";
 import { PageHeader, SectionHeader } from "@/components/shell";
 import { Badge, Banner, Button, DemoDataNote } from "@/components/ui";
 import {
@@ -32,7 +32,6 @@ const BAND_COLOUR = [
 ];
 
 export function InstructorDashboard({
-  user,
   data,
   weeks,
   cohorts = [],
@@ -48,6 +47,21 @@ export function InstructorDashboard({
   const cohortName = data.cohort?.name ?? "No cohort assigned";
   const urgent = data.needsAttention.filter((n) => n.severity === "fail");
 
+  // Everything is taught inside a cohort, so a job starts at the cohort. With exactly one
+  // cohort there is nothing to choose, and the link goes straight to the right tab.
+  const onlyCohort = cohorts.length === 1 ? cohorts[0] : undefined;
+  const cohortTab = (tab: string) =>
+    onlyCohort
+      ? `/programs/${onlyCohort.program_id}/cohorts/${onlyCohort.id}?tab=${tab}`
+      : "/programs?tab=cohorts";
+  const pickFirst = onlyCohort ? onlyCohort.name : "Choose a cohort first";
+  const quickActions = [
+    { label: "Schedule a session", hint: pickFirst, href: cohortTab("sessions"), icon: CalendarPlus },
+    { label: "Assign cases", hint: pickFirst, href: cohortTab("cases"), icon: FilePlus },
+    { label: "Add learners", hint: pickFirst, href: cohortTab("enrollment"), icon: UserPlus },
+    { label: "New case", hint: "Open the case wizard", href: "/cases/new", icon: FilePlus },
+  ];
+
   return (
     <>
       <PageHeader
@@ -55,21 +69,32 @@ export function InstructorDashboard({
         title="Who needs you"
         lede={`${stats.learners} learners · cohort mean ${stats.meanScore}% · pass mark ${passMark}`}
         actions={
-          <Button variant="primary" icon={Users} href="/programs?tab=cohorts">
+          <Button variant="secondary" icon={Users} href="/programs?tab=cohorts">
             All cohorts
           </Button>
         }
       />
       <DemoDataNote />
 
+      <nav className={s.quickGrid} aria-label="Common jobs">
+        {quickActions.map((a) => (
+          <Link key={a.label} href={a.href} className={s.quickTile}>
+            <a.icon className={s.quickIcon} strokeWidth={1.75} aria-hidden="true" />
+            <span className={s.quickText}>
+              <span className={s.quickLabel}>{a.label}</span>
+              <span className={s.quickHint}>{a.hint}</span>
+            </span>
+          </Link>
+        ))}
+      </nav>
 
       {urgent.length > 0 && (
         <Banner
           tone="fail"
           title={`${urgent.length} learner${urgent.length === 1 ? " is" : "s are"} below the pass mark`}
           action={
-            <Button size="sm" href="/programs">
-              Open programs
+            <Button size="sm" href="/programs?tab=cohorts">
+              Open cohorts
             </Button>
           }
         >
@@ -321,10 +346,6 @@ export function InstructorDashboard({
             </div>
           </div>
 
-          <div className={s.note}>
-            Instructor visibility is scoped to learners
-            whose <code>cohort_id</code> belongs to a cohort you own Signed in as {user.displayName}.
-          </div>
         </div>
       </div>
     </>

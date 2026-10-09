@@ -1,25 +1,27 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Activity,
   BookOpen,
-  CircleHelp,
+  Building2,
+  ChartColumn,
+  ClipboardCheck,
   ClipboardList,
   Compass,
+  FilePlus,
+  FileText,
   FolderOpen,
   GraduationCap,
-  Settings,
   ShieldCheck,
+  UserCog,
+  CalendarDays,
 } from "lucide-react";
 import type { BadgeKey, NavData } from "./data/nav";
 import type { Persona } from "./roles";
 
 /**
- * Two-tier navigation.
- *
- * Tier 1 — a rail of circular icons. Each is a SECTION of the product.
- * Tier 2 — a contextual panel listing that section's destinations.
- *
- * Clicking a rail icon swaps the panel; it does not navigate. Navigation
- * happens from the panel, so the rail never loses the user's place.
+ * One labeled sidebar. Each SECTION is a heading and lists its destinations
+ * beneath it. The section icon and each item's icon are what remain when the
+ * sidebar is collapsed. Help and Settings live in the account menu.
  */
 
 export type SectionId =
@@ -33,6 +35,8 @@ export type SectionId =
 export type PanelItem = {
   label: string;
   href: string;
+  /** Shown when the sidebar is collapsed to icons, so every top-level item needs one. */
+  icon?: LucideIcon;
   /** Resolved against `NavData.counts`. Absent count → no badge. */
   badgeKey?: BadgeKey;
   /** Set only by `sectionsForPersona`, after resolving `badgeKey`. */
@@ -83,36 +87,16 @@ const SKILL_ITEMS: PanelItem[] = [
 export const SECTIONS: NavSection[] = [
   {
     id: "assigned-activities",
-    label: "Assigned Activities",
+    label: "Training",
     href: "/programs",
     icon: ClipboardList,
     personas: ["learner"],
     groups: [
       {
         items: [
-          { label: "Your Programs", href: "/programs" },
-          { label: "Sessions", href: "/sessions" },
+          { label: "Your Programs", href: "/programs", icon: GraduationCap },
+          { label: "Sessions", href: "/sessions", icon: CalendarDays },
         ],
-      },
-    ],
-  },
-  {
-    id: "overview",
-    label: "Performance",
-    href: "/performance",
-    icon: Compass,
-    personas: ["instructor"],
-    groups: [
-      {
-        items: [
-          { label: "Activity", href: "/activity" },
-          { label: "Performance", href: "/performance" },
-          { label: "Reports", href: "/reports" },
-        ],
-      },
-      {
-        label: "By skill",
-        items: SKILL_ITEMS,
       },
     ],
   },
@@ -128,22 +112,18 @@ export const SECTIONS: NavSection[] = [
           {
             label: "All Programs",
             href: "/programs",
+            icon: GraduationCap,
             personas: ["instructor", "admin"],
+            // Cohorts sit inside programs, so the menu shows them nested.
+            children: [
+              {
+                label: "Cohorts",
+                href: "/programs?tab=cohorts",
+                personas: ["instructor", "admin"],
+              },
+            ],
           },
-          {
-            label: "Cohorts",
-            href: "/programs?tab=cohorts",
-            personas: ["instructor", "admin"],
-          },
-        ],
-      },
-      {
-        label: "Sessions",
-        items: [
-          {
-            label: "Sessions",
-            href: "/sessions",
-          },
+          { label: "Sessions", href: "/sessions", icon: CalendarDays },
         ],
       },
     ],
@@ -157,27 +137,47 @@ export const SECTIONS: NavSection[] = [
     groups: [
       {
         items: [
-          { label: "Procedures", href: "/content?tab=procedures" },
-          { label: "Case Library", href: "/cases" },
+          { label: "Procedures", href: "/content?tab=procedures", icon: BookOpen },
+          { label: "Case Library", href: "/cases", icon: FileText },
           // Learners can plan the same case more than once; their plans live here.
-          { label: "Planning", href: "/plans", personas: ["learner"] },
-          { label: "My Cases", href: "/personal-cases", personas: ["learner"] },
+          { label: "Pre-op plans", href: "/plans", icon: ClipboardCheck, personas: ["learner"] },
+          { label: "My Cases", href: "/personal-cases", icon: FilePlus, personas: ["learner"] },
         ],
       },
     ],
   },
   {
+    id: "overview",
+    label: "Insights",
+    href: "/performance",
+    icon: Compass,
+    personas: ["instructor"],
+    groups: [
+      {
+        items: [
+          { label: "Activity", href: "/activity", icon: Activity },
+          { label: "Performance", href: "/performance", icon: ChartColumn },
+          { label: "Reports", href: "/reports", icon: FileText },
+        ],
+      },
+      {
+        label: "By skill",
+        items: SKILL_ITEMS,
+      },
+    ],
+  },
+  {
     id: "performance",
-    label: "Performance",
+    label: "Progress",
     href: "/performance",
     icon: BookOpen,
     personas: ["learner"],
     groups: [
       {
         items: [
-          { label: "Activity", href: "/activity" },
-          { label: "Performance", href: "/performance" },
-          { label: "Reports", href: "/reports" },
+          { label: "Activity", href: "/activity", icon: Activity },
+          { label: "Overview", href: "/performance", icon: ChartColumn },
+          { label: "Reports", href: "/reports", icon: FileText },
         ],
       },
       {
@@ -188,27 +188,20 @@ export const SECTIONS: NavSection[] = [
   },
   {
     id: "admin",
-    label: "Admin",
+    label: "Administration",
     href: "/admin/instructors",
     icon: ShieldCheck,
     personas: ["admin"],
     groups: [
       {
         items: [
-          { label: "Instructor accounts", href: "/admin/instructors" },
-          { label: "Institutions", href: "/admin/institutions" },
+          { label: "Instructor accounts", href: "/admin/instructors", icon: UserCog },
+          { label: "Institutions", href: "/admin/institutions", icon: Building2 },
         ],
       },
     ],
   },
 ];
-
-/** Pinned to the bottom of the rail, below the divider. */
-export const RAIL_FOOTER: { id: string; label: string; icon: LucideIcon; href: string }[] =
-  [
-    { id: "help", label: "Help", icon: CircleHelp, href: "/help" },
-    { id: "settings", label: "Settings", icon: Settings, href: "/settings" },
-  ];
 
 /**
  * The panels this persona may see, with every `badgeKey` resolved against real

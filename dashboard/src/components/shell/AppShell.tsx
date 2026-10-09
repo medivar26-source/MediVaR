@@ -45,6 +45,7 @@ export async function AppShell({
           persona={persona}
           searchHint={searchHint}
           notifications={nav.notifications}
+          primaryAction={nav.primaryAction}
         />
 
         <main id="main" className={s.surface}>

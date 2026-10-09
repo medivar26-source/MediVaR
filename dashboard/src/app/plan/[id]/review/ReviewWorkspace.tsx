@@ -432,34 +432,24 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
 
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           {!isLocked ? (
-            <button
-              onClick={() => canSealPlan && setShowModal(true)}
-              disabled={!canSealPlan}
-              style={{
-                padding: "0.75rem 1.5rem",
-                borderRadius: "6px",
-                background: canSealPlan ? "#0f172a" : "#cbd5e1",
-                color: canSealPlan ? "white" : "#64748b",
-                fontWeight: 700,
-                fontSize: "0.9375rem",
-                border: "none",
-                cursor: canSealPlan ? "pointer" : "not-allowed",
-                boxShadow: canSealPlan ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-              title={
-                !canSealPlan
-                  ? unverifiedViews.length > 0
-                    ? `The ${unverifiedViews.map((v) => SCAN_VIEW_NAME[v]).join(" and ")} scan scale is not verified. Verify it on the Assessment page (Page 1) with the radio-opaque marker.`
-                    : "Planning is incomplete."
-                  : "Lock plan"
-              }
-            >
-              <Lock width={16} height={16} />
-              {canSealPlan ? "Lock plan & send to VR →" : "Plan incomplete"}
-            </button>
+            <>
+              {/* A disabled button always says what is missing, in plain sight. */}
+              {!canSealPlan && (
+                <span style={{ fontSize: "var(--t-label)", color: "var(--text-muted)", maxWidth: "46ch", textAlign: "right" }}>
+                  {unverifiedViews.length > 0
+                    ? `The ${unverifiedViews.map((v) => SCAN_VIEW_NAME[v]).join(" and ")} scan scale is not verified. Verify it on the Assessment page with the radio-opaque marker.`
+                    : "Finish the checks above to lock the plan."}
+                </span>
+              )}
+              <Button
+                variant="primary"
+                icon={Lock}
+                onClick={() => setShowModal(true)}
+                disabled={!canSealPlan}
+              >
+                Lock plan
+              </Button>
+            </>
           ) : (
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <Button variant="secondary" href={plan.case.isPersonalCase ? `/personal-cases/${plan.caseId}` : `/cases/${plan.caseId}`}>
@@ -538,13 +528,8 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
               <Button variant="secondary" onClick={() => { setSealError(null); setShowModal(false); }} disabled={isPending}>
                 Cancel
               </Button>
-              <Button
-                variant="primary"
-                onClick={handleConfirmLock}
-                disabled={isPending}
-                style={{ background: "#0f172a", color: "white", fontWeight: 700 }}
-              >
-                {isPending ? "Locking..." : "Confirm & Lock"}
+              <Button variant="primary" onClick={handleConfirmLock} disabled={isPending}>
+                {isPending ? "Locking..." : "Confirm & lock"}
               </Button>
             </div>
           </div>

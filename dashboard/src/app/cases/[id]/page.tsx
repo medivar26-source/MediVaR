@@ -11,6 +11,8 @@ import {
   CardHeader,
   Chip,
   EmptyState,
+  JourneyStrip,
+  journeyStage,
   Table,
   TBody,
   Td,
@@ -88,6 +90,19 @@ export default async function CaseDetailPage({
   const passMark = PASS_MARK[detail.difficulty];
   const attempts = detail.attempts.length;
 
+  // Where this learner is on the case, for the journey strip and the secondary buttons.
+  const lockedPlan = myPlans.find((row) => row.state !== "draft");
+  const scoredAttempt = detail.attempts.find(
+    (a) => a.status === "completed" && a.totalScore !== undefined,
+  );
+  const stage = journeyStage({
+    hasPlan: myPlans.length > 0,
+    readyToLock: draftPlan ? draftPlan.stepsAnswered >= draftPlan.stepsTotal - 1 : false,
+    planLocked: Boolean(lockedPlan),
+    hasSession: attempts > 0,
+    hasScoredReport: Boolean(scoredAttempt),
+  });
+
   /**
    * Bars are scaled against the largest category, not against a total. The six
    * maxima sum to 95 while every score in the product is presented out of 100
@@ -111,6 +126,16 @@ export default async function CaseDetailPage({
         lede={detail.summary}
         actions={
           <div style={{ display: "flex", gap: "0.5rem" }}>
+            {scoredAttempt && (
+              <Button variant="secondary" href={`/sessions/${scoredAttempt.id}/report`}>
+                View report
+              </Button>
+            )}
+            {lockedPlan && !draftPlan && (
+              <Button variant="secondary" href={`/plan/${lockedPlan.id}/review`}>
+                View locked plan
+              </Button>
+            )}
             <StartPlanning
               caseId={detail.id}
               config={config}
@@ -118,6 +143,15 @@ export default async function CaseDetailPage({
               hasPlans={myPlans.length > 0}
             />
           </div>
+        }
+      />
+
+      <JourneyStrip
+        current={stage}
+        detail={
+          stage === "plan" && draftPlan
+            ? `Step ${Math.min(draftPlan.stepsAnswered + 1, draftPlan.stepsTotal)} of ${draftPlan.stepsTotal}`
+            : undefined
         }
       />
 

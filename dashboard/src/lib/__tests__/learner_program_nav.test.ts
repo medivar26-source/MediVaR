@@ -4,15 +4,15 @@ import { sectionsForPersona, sectionForPath } from "../nav";
 import type { ProgramSummary } from "../data/programs";
 
 test("Navigation persona separation & approved hierarchy", async (t) => {
-  await t.test("learner persona sees exactly Assigned Activities, Content Library, Performance", () => {
+  await t.test("learner persona sees exactly Training, Content Library, Progress", () => {
     const learnerSections = sectionsForPersona("learner");
 
     assert.deepEqual(
       learnerSections.map((s) => [s.id, s.label]),
       [
-        ["assigned-activities", "Assigned Activities"],
+        ["assigned-activities", "Training"],
         ["content-library", "Content Library"],
-        ["performance", "Performance"],
+        ["performance", "Progress"],
       ],
     );
     assert.equal(
@@ -53,7 +53,8 @@ test("Navigation persona separation & approved hierarchy", async (t) => {
     assert.ok(programsSection, "Instructor must have 'programs' section as primary academic structure");
     assert.equal(programsSection.label, "Programs");
 
-    const programItems = programsSection.groups.flatMap((g) => g.items);
+    // Cohorts are nested under All Programs, because they sit inside programs.
+    const programItems = programsSection.groups.flatMap((g) => g.items.flatMap((i) => [i, ...(i.children ?? [])]));
     assert.ok(
       programItems.some((i) => i.href === "/programs" && i.label === "All Programs"),
       "Instructor must have All Programs at /programs",
@@ -111,6 +112,26 @@ test("Navigation persona separation & approved hierarchy", async (t) => {
         `Instructor must have ${label} at ${href}`,
       );
     }
+  });
+
+  await t.test("every top-level item has an icon so the collapsed sidebar stays usable", () => {
+    for (const persona of ["learner", "instructor", "admin"] as const) {
+      for (const section of sectionsForPersona(persona)) {
+        for (const group of section.groups) {
+          // Skill links are a sub-list that is hidden when collapsed.
+          if (group.label === "By skill") continue;
+          for (const item of group.items) {
+            assert.ok(item.icon, `${persona} · ${section.label} · ${item.label} needs an icon`);
+          }
+        }
+      }
+    }
+  });
+
+  await t.test("Cohorts sit under All Programs for instructors", () => {
+    const programs = sectionsForPersona("instructor").find((s) => s.id === "programs")!;
+    const allPrograms = programs.groups[0].items.find((i) => i.label === "All Programs")!;
+    assert.deepEqual(allPrograms.children?.map((c) => c.href), ["/programs?tab=cohorts"]);
   });
 
   await t.test("sectionForPath resolves correctly by persona", () => {

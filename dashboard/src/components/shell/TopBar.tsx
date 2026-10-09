@@ -2,15 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Bell,
-  CircleHelp,
-  LogOut,
-  Search,
-  Settings,
-  SlidersHorizontal,
-  UserRound,
-} from "lucide-react";
+import { Bell, CircleHelp, LogOut, Search, Settings } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import {
   Popover,
   PopoverDivider,
@@ -22,7 +15,7 @@ import { ROLE_LABEL } from "@/lib/roles";
 import type { Persona } from "@/lib/roles";
 import { initialsOf } from "@/lib/format";
 import { signOut } from "@/app/actions";
-import type { NavNotification } from "@/lib/data/nav";
+import type { NavAction, NavNotification } from "@/lib/data/nav";
 import type { Profile } from "@/lib/types";
 import { SearchDialog } from "./SearchDialog";
 import s from "./AppShell.module.css";
@@ -34,11 +27,14 @@ export function TopBar({
   persona,
   searchHint,
   notifications,
+  primaryAction,
 }: {
   user: Profile;
   persona: Persona;
   searchHint: string;
   notifications: Notification[];
+  /** The one thing this role most often comes here to do. */
+  primaryAction?: NavAction;
 }) {
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -69,34 +65,11 @@ export function TopBar({
         </button>
 
         <div className={s.topRight}>
-          <Popover
-            label="Display options"
-            trigger={
-              <span className={s.iconBtn}>
-                <SlidersHorizontal width={18} height={18} strokeWidth={1.75} />
-              </span>
-            }
-          >
-            {(close) => (
-              <>
-                <PopoverHeading>Display</PopoverHeading>
-                <PopoverItem
-                  onClick={close}
-                  meta="Light theme is the only build"
-                  selected
-                >
-                  Light
-                </PopoverItem>
-                <PopoverItem onClick={close} meta="Coming soon">
-                  Dark
-                </PopoverItem>
-                <PopoverDivider />
-                <PopoverItem icon={Settings} onClick={() => router.push("/settings")}>
-                  All settings
-                </PopoverItem>
-              </>
-            )}
-          </Popover>
+          {primaryAction && (
+            <Button variant="primary" size="sm" href={primaryAction.href}>
+              {primaryAction.label}
+            </Button>
+          )}
 
           <Popover
             label={
@@ -151,13 +124,13 @@ export function TopBar({
                   {user.displayName} · {ROLE_LABEL[user.role]}
                 </PopoverHeading>
                 <PopoverItem
-                  icon={UserRound}
+                  icon={Settings}
                   onClick={() => {
                     close();
                     router.push("/settings");
                   }}
                 >
-                  Account
+                  Account &amp; settings
                 </PopoverItem>
                 <PopoverItem
                   icon={CircleHelp}

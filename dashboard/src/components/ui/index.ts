@@ -46,3 +46,6 @@ export type { StepperProps, Step, StepState } from "./Stepper";
 
 export { EmptyState, Skeleton } from "./States";
 export type { EmptyStateProps, SkeletonProps } from "./States";
+
+export { JourneyStrip, journeyStage } from "./JourneyStrip";
+export type { JourneyStage } from "./JourneyStrip";
