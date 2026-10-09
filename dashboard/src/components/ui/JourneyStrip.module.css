@@ -1,0 +1,94 @@
+.strip {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s-2);
+  margin: 0 0 var(--s-5);
+  padding: var(--s-3);
+  list-style: none;
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  overflow-x: auto;
+}
+
+.stage {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 140px;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+}
+
+/* A hairline joins each stage to the next. */
+.stage:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: calc(var(--s-1) * -1);
+  width: var(--s-2);
+  height: var(--bw);
+  background: var(--border-strong);
+}
+
+.dot {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: var(--bw-emphasis) solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.tick {
+  width: 14px;
+  height: 14px;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.label {
+  font-size: var(--t-label);
+  font-weight: var(--fw-bold);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.state {
+  font-size: var(--t-caption);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.done .dot {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.now {
+  background: var(--brand-surface);
+}
+
+.now .dot {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.now .label,
+.now .state {
+  color: var(--brand-hover);
+}

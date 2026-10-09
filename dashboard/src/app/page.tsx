@@ -51,7 +51,7 @@ export default async function DashboardPage({
   }
 
   const [learnerData, programs, plansResult, casesResult] = await Promise.all([
-    getLearnerDashboard(user.id, weeks),
+    getLearnerDashboard(user.id),
     getPrograms(),
     getPlans(undefined, user.id),
     listCases(user.id, { attempted: "all" }),
@@ -65,7 +65,6 @@ export default async function DashboardPage({
         programs={programs}
         plans={plansResult.plans}
         cases={casesResult.cases}
-        weeks={weeks}
       />
     </AppShell>
   );

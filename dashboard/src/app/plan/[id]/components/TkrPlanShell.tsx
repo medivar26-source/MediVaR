@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Lock, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Check, Lock } from "lucide-react";
 import { cx } from "@/lib/cx";
 import {
   V1_TKR_STEPS,
@@ -66,100 +66,97 @@ export function TkrPlanShell({
     " mm/px" +
     (anyEstimated ? " (estimated)" : "");
 
+  const stepIndex = V1_TKR_STEPS.findIndex((entry) => entry.id === currentStepId) + 1;
+  const caseHref = plan.case.isPersonalCase ? `/personal-cases/${plan.caseId}` : `/cases/${plan.caseId}`;
+
   return (
     <div className={s.page}>
-      {/* Stepper Rail */}
-      <nav className={s.rail} aria-label="TKA Planning steps">
-        <Link href={plan.case.isPersonalCase ? `/personal-cases/${plan.caseId}` : `/cases/${plan.caseId}`} className={s.back}>
+      {/* Slim header: where to go back to, what is being planned, and its state. */}
+      <header className={s.planHeader}>
+        <Link href={caseHref} className={s.back}>
           <ArrowLeft width={15} height={15} strokeWidth={2.25} aria-hidden="true" />
           Back to case
         </Link>
-
-        <div className={s.railCase}>
-          <p className={s.railEyebrow}>Pre-operative TKA Planning</p>
+        <span className={s.headerRule} aria-hidden="true" />
+        <div className={s.headerTitle}>
+          <p className={s.railEyebrow}>Pre-op plan · step {stepIndex} of {V1_TKR_STEPS.length}</p>
           <p className={s.railTitle}>{plan.case.title}</p>
-          <p className={s.railMeta}>
-            MEASURE → SIZE → SEND
-          </p>
         </div>
+        {isLocked ? (
+          <span className={s.chipLocked}>
+            <Lock width={12} height={12} aria-hidden="true" />
+            Locked
+          </span>
+        ) : (
+          <span className={s.chipDraft}>Draft</span>
+        )}
+      </header>
 
-        <div className={s.steps}>
-          {V1_TKR_STEPS.map((entry) => {
-            const status = stepStatus[entry.id];
-            const current = entry.id === currentStepId;
-            const accessible = status.accessible;
-            const isDone = status.completed;
+      {/* The four steps across the top. A locked step says what unlocks it. */}
+      <nav className={s.steps} aria-label="TKA Planning steps">
+        {V1_TKR_STEPS.map((entry) => {
+          const status = stepStatus[entry.id];
+          const current = entry.id === currentStepId;
+          const accessible = status.accessible;
+          const isDone = status.completed;
+          const prerequisite = V1_TKR_STEPS[entry.step - 2];
 
-            const inner = (
-              <>
-                <span className={s.stepDot} aria-hidden="true">
-                  {isDone ? (
-                    <Check className={s.stepGlyph} strokeWidth={3} />
-                  ) : !accessible ? (
-                    <Lock className={s.stepGlyph} strokeWidth={2.25} />
-                  ) : (
-                    entry.step
-                  )}
+          const inner = (
+            <>
+              <span className={s.stepDot} aria-hidden="true">
+                {isDone ? (
+                  <Check className={s.stepGlyph} strokeWidth={3} />
+                ) : !accessible ? (
+                  <Lock className={s.stepGlyph} strokeWidth={2.25} />
+                ) : (
+                  entry.step
+                )}
+              </span>
+              <span className={s.stepBody}>
+                <span className={s.stepTitle}>{entry.title}</span>
+                <span className={s.stepMeta}>
+                  {isDone
+                    ? "Complete"
+                    : current
+                      ? "In progress"
+                      : !accessible
+                        ? prerequisite
+                          ? `Finish ${prerequisite.title} first`
+                          : "Finish the previous step first"
+                        : "Ready"}
                 </span>
-                <span className={s.stepBody}>
-                  <span className={s.stepTitle}>{entry.title}</span>
-                  <span className={s.stepMeta}>
-                    {isDone
-                      ? "Complete"
-                      : current
-                        ? "In progress"
-                        : !accessible
-                          ? "Finish the previous step first"
-                          : "Ready"}
-                  </span>
-                </span>
-              </>
-            );
+              </span>
+            </>
+          );
 
-            const classes = cx(
-              s.step,
-              isDone && s.stepDone,
-              current && s.stepOn,
-              !accessible && s.stepLocked
-            );
+          const classes = cx(
+            s.step,
+            isDone && s.stepDone,
+            current && s.stepOn,
+            !accessible && s.stepLocked
+          );
 
-            if (!accessible) {
-              return (
-                <div
-                  key={entry.id}
-                  className={classes}
-                  title="Complete previous steps to unlock"
-                >
-                  {inner}
-                </div>
-              );
-            }
-
+          if (!accessible) {
             return (
-              <Link
-                key={entry.id}
-                href={`/plan/${plan.id}/${entry.path}`}
-                className={classes}
-                aria-current={current ? "step" : undefined}
-              >
+              <div key={entry.id} className={classes} title="Complete previous steps to unlock">
                 {inner}
-              </Link>
+              </div>
             );
-          })}
-        </div>
+          }
 
-        <div className={s.railFoot}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-            <ShieldCheck width={16} height={16} color="var(--brand)" />
-            <strong style={{ fontSize: "0.8125rem" }}>MediVeR-XR V1</strong>
-          </div>
-          <p style={{ margin: 0, fontSize: "0.75rem", lineHeight: 1.4 }}>
-            All intraoperative cuts, resections, and gap adjustments are deferred to VR.
-          </p>
-        </div>
+          return (
+            <Link
+              key={entry.id}
+              href={`/plan/${plan.id}/${entry.path}`}
+              className={classes}
+              aria-current={current ? "step" : undefined}
+            >
+              {inner}
+            </Link>
+          );
+        })}
       </nav>
 
-      {/* Main Surface */}
       <main className={s.main}>
         <div className={s.surface}>
           {/* V1 global header: persistent patient banner on all four pages. */}
@@ -185,24 +182,13 @@ export function TkrPlanShell({
                 <dt>Procedure</dt>
                 <dd>Primary TKA</dd>
               </div>
-              <div>
-                <dt>Plan state</dt>
-                <dd>
-                  {isLocked ? (
-                    <span className={s.chipLocked}>
-                      <Lock width={12} height={12} aria-hidden="true" />
-                      Locked
-                    </span>
-                  ) : (
-                    <span className={s.chipDraft}>Draft</span>
-                  )}
-                </dd>
-              </div>
             </dl>
             <div className={s.chips}>
-              <span className={anyEstimated ? s.chipWarn : s.chipOk} title={calibrationText}>
+              <span className={anyEstimated ? s.chipWarn : s.chipOk}>
                 {anyEstimated ? "Scale estimated" : "Scale verified"}
               </span>
+              {/* Said in words, not left in a hover tooltip: it changes every measurement. */}
+              <span className={s.scaleText}>{calibrationText}</span>
               {identity.patientIdSource === "synthetic fixture" && (
                 <span className={s.chipDemo} title="Synthetic demo case. Not for clinical use.">
                   Demo data
@@ -222,6 +208,10 @@ export function TkrPlanShell({
           <div className={s.stepBody}>
             {children}
           </div>
+
+          <p className={s.vrNote}>
+            All intraoperative cuts, resections, and gap adjustments are deferred to VR.
+          </p>
         </div>
       </main>
     </div>

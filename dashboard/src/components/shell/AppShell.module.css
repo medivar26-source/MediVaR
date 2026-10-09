@@ -1,4 +1,4 @@
-/* Two-tier navigation on a warm light ground, with the content floating as a
+/* One labeled sidebar on a warm light ground, with the content floating as a
    white rounded panel. Green / black / white only. */
 
 .app {
@@ -7,36 +7,248 @@
   background: var(--rail);
 }
 
-/* ---------- tier 1: the rail ---------- */
+/* ---------- the sidebar ---------- */
 
-.rail {
+.sidebar {
   position: sticky;
   top: 0;
-  flex: 0 0 var(--rail-w);
-  width: var(--rail-w);
+  flex: 0 0 var(--side-w);
+  width: var(--side-w);
   height: 100dvh;
   display: flex;
   flex-direction: column;
+  padding: var(--s-5) var(--s-3) var(--s-5) var(--s-4);
+  background: var(--rail);
+  overflow: hidden;
+  transition: width var(--m-base) var(--ease-out), flex-basis var(--m-base) var(--ease-out);
+}
+
+.brand {
+  display: flex;
   align-items: center;
   gap: var(--s-3);
-  padding: var(--s-5) 0 var(--s-5);
-  background: var(--rail);
+  padding: 0 var(--s-1) var(--s-5);
 }
 
 .logo {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  margin-bottom: var(--s-5);
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--dark);
   color: #fff;
 }
 
 .logoGlyph {
-  width: 21px;
-  height: 21px;
+  width: 20px;
+  height: 20px;
+}
+
+.brandName {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.collapseBtn {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--r-xs);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.collapseBtn:hover {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+.sidebarScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.groupLabel {
+  padding: 0 var(--s-3) var(--s-2);
+  font-size: var(--t-overline);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.subGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.subGroupLabel {
+  margin-top: var(--s-3);
+  padding: 0 var(--s-3) var(--s-1);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 38px;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-size: var(--t-label);
+  font-weight: var(--fw-semibold);
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out);
+}
+
+.item:hover {
+  background: var(--surface-sunken);
+}
+
+.itemOn,
+.itemOn:hover {
+  color: var(--brand-hover);
+  background: var(--brand-surface);
+  font-weight: var(--fw-bold);
+}
+
+.itemIcon {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+}
+
+.itemLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Nested children hang off a hairline. */
+.children {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-left: calc(var(--s-3) + 9px);
+  padding-left: var(--s-3);
+  border-left: var(--bw) solid var(--border-strong);
+}
+
+.child {
+  min-height: 34px;
+  font-weight: var(--fw-regular);
+  color: var(--text-muted);
+}
+
+.child.itemOn {
+  color: var(--brand-hover);
+  font-weight: var(--fw-bold);
+}
+
+/* Counts are notifications — green, so they read as "something for you"
+   rather than as the neutral black used for focal data. */
+.badge {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 10.5px;
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- collapsed: icons only ---------- */
+
+.sidebarCollapsed {
+  flex-basis: var(--side-w-collapsed);
+  width: var(--side-w-collapsed);
+  padding-left: var(--s-3);
+  align-items: center;
+}
+
+.sidebarCollapsed .brand {
+  flex-direction: column;
+  padding-bottom: var(--s-4);
+}
+
+.sidebarCollapsed .brandName,
+.sidebarCollapsed .itemLabel,
+.sidebarCollapsed .subGroupLabel,
+.sidebarCollapsed .noIcon,
+.sidebarCollapsed .children,
+.sidebarCollapsed .badge {
+  display: none;
+}
+
+.sidebarCollapsed .groupLabel {
+  height: var(--bw);
+  margin: 0 var(--s-3) var(--s-2);
+  padding: 0;
+  background: var(--border-strong);
+  font-size: 0;
+}
+
+.sidebarCollapsed .item {
+  justify-content: center;
+  padding: var(--s-2);
+}
+
+/* ---------- two-layer menu (instructors) ---------- */
+
+.tiers {
+  position: sticky;
+  top: 0;
+  flex: 0 0 auto;
+  display: flex;
+  height: 100dvh;
+  background: var(--rail);
+}
+
+.rail {
+  flex: 0 0 var(--rail-w);
+  width: var(--rail-w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-5) 0;
+}
+
+.railLogo {
+  margin-bottom: var(--s-4);
 }
 
 .railBtn {
@@ -45,6 +257,7 @@
   place-items: center;
   width: 46px;
   height: 46px;
+  padding: 0;
   border: var(--bw) solid transparent;
   border-radius: 50%;
   background: var(--surface);
@@ -57,15 +270,22 @@
 }
 
 .railBtn:hover {
-  border-color: var(--border);
+  border-color: var(--border-strong);
   color: var(--ink);
 }
 
+/* The section whose panel is showing. */
 .railBtnOn,
 .railBtnOn:hover {
   background: var(--brand);
   border-color: var(--brand);
   color: var(--on-brand);
+}
+
+/* The section the current page belongs to, when its panel is not the one showing. */
+.railBtnHere {
+  border-color: var(--brand);
+  color: var(--brand-hover);
 }
 
 .railIcon {
@@ -96,29 +316,49 @@
   gap: var(--s-3);
 }
 
-/* ---------- tier 2: the contextual panel ---------- */
+/* The panel slides open and shut. Its content keeps a fixed width so text does not reflow. */
+.panelWrap {
+  flex: 0 0 auto;
+  width: var(--panel-w);
+  overflow: hidden;
+  transition:
+    width var(--m-base) var(--ease-out),
+    visibility 0s linear 0s;
+}
 
-.panel {
-  position: sticky;
-  top: 0;
-  flex: 0 0 var(--panel-w);
+.panelWrapClosed {
+  width: 0;
+  visibility: hidden;
+  transition:
+    width var(--m-base) var(--ease-out),
+    visibility 0s linear var(--m-base);
+}
+
+.panelInner {
   width: var(--panel-w);
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding: var(--s-5) var(--s-4) var(--s-5) 0;
-  background: var(--rail);
-  overflow: hidden;
+  padding: var(--s-5) var(--s-3) var(--s-5) 0;
+  box-sizing: border-box;
+}
+
+/* The icons live on the rail; the panel is text only. */
+.panelWrap .itemIcon {
+  display: none;
 }
 
 .panelHead {
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  padding: 0 var(--s-3) var(--s-6);
+  min-height: 40px;
+  padding: 0 var(--s-1) var(--s-4) var(--s-3);
 }
 
 .panelTitle {
+  flex: 1;
+  min-width: 0;
   font-family: var(--font-display);
   font-size: var(--t-h3);
   font-weight: var(--fw-bold);
@@ -126,112 +366,11 @@
   letter-spacing: -0.01em;
 }
 
-.panelCaret {
-  width: 15px;
-  height: 15px;
-  color: var(--text-muted);
-}
-
-.panelScroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-6);
-}
-
-.group {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.groupLabel {
-  padding: 0 var(--s-3) var(--s-2);
-  font-size: var(--t-overline);
-  font-weight: var(--fw-bold);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-disabled);
-}
-
-.item {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  min-height: 34px;
-  padding: var(--s-2) var(--s-3);
-  border-radius: var(--r-sm);
-  color: var(--text);
-  font-size: var(--t-label);
-  font-weight: var(--fw-semibold);
-  transition:
-    background-color var(--m-fast) var(--ease-out),
-    color var(--m-fast) var(--ease-out);
-}
-
-.item:hover {
-  background: var(--surface-sunken);
-}
-
-.itemOn,
-.itemOn:hover {
-  color: var(--brand);
-  background: transparent;
-  font-weight: var(--fw-bold);
-}
-
-.itemLabel {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Nested children hang off a hairline, as in the reference. */
-.children {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  margin-left: var(--s-5);
-  padding-left: var(--s-3);
-  border-left: var(--bw) solid var(--border);
-}
-
-.child {
-  font-weight: var(--fw-regular);
-  color: var(--text-muted);
-}
-
-.child.itemOn {
-  color: var(--brand);
-  font-weight: var(--fw-bold);
-}
-
-/* Counts are notifications — green, so they read as "something for you"
-   rather than as the neutral black used for focal data. */
-.badge {
-  margin-left: auto;
-  display: grid;
-  place-items: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: var(--r-pill);
-  background: var(--brand);
-  color: var(--on-brand);
-  font-size: 10.5px;
-  font-weight: var(--fw-bold);
-  font-variant-numeric: tabular-nums;
-}
-
-.panelFoot {
-  flex: 0 0 auto;
-  padding: var(--s-4) var(--s-3) 0;
-  border-top: var(--bw) solid var(--border);
-  font-size: var(--t-caption);
-  color: var(--text-muted);
+@media (prefers-reduced-motion: reduce) {
+  .panelWrap,
+  .panelWrapClosed {
+    transition: none;
+  }
 }
 
 /* ---------- main: the floating white surface ---------- */
@@ -372,6 +511,13 @@
   background: var(--surface);
 }
 
+/* A banner sitting directly in the page keeps one even gap from whatever follows it,
+   the same gap the cards below it use. Banners inside forms and cards are spaced by
+   their container. */
+.surface > [data-banner] {
+  margin-bottom: var(--s-4);
+}
+
 /* ---------- page header ---------- */
 
 .pageHead {
@@ -442,14 +588,59 @@
 
 /* ---------- responsive ---------- */
 
+/* On narrower screens the single sidebar always shows icons only, so the page keeps its width.
+   The two-layer menu instead lets its panel float over the page. */
 @media (max-width: 1279px) {
-  .panel {
+  .sidebar {
+    flex-basis: var(--side-w-collapsed);
+    width: var(--side-w-collapsed);
+    padding-left: var(--s-3);
+    align-items: center;
+  }
+  .sidebar .brand {
+    flex-direction: column;
+    padding-bottom: var(--s-4);
+  }
+  .sidebar .brandName,
+  .sidebar .itemLabel,
+  .sidebar .subGroupLabel,
+  .sidebar .noIcon,
+  .sidebar .children,
+  .sidebar .badge,
+  .sidebar .collapseBtn {
     display: none;
+  }
+  .sidebar .groupLabel {
+    height: var(--bw);
+    margin: 0 var(--s-3) var(--s-2);
+    padding: 0;
+    background: var(--border-strong);
+    font-size: 0;
+  }
+  .sidebar .item {
+    justify-content: center;
+    padding: var(--s-2);
+  }
+
+  .panelWrap {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: var(--rail-w);
+    z-index: var(--z-nav);
+    box-shadow: var(--e-3);
+  }
+  .panelWrap .panelInner {
+    background: var(--rail);
+  }
+  .panelWrapClosed {
+    box-shadow: none;
   }
 }
 
 @media (max-width: 767px) {
-  .rail {
+  .sidebar,
+  .tiers {
     display: none;
   }
   .main {

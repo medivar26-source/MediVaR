@@ -50,6 +50,7 @@ export function Banner({
   return (
     <div
       className={cx(s.banner, s[tone], className)}
+      data-banner=""
       role={urgent ? "alert" : "status"}
       aria-live={urgent ? "assertive" : "polite"}
     >

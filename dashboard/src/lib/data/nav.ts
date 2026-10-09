@@ -28,7 +28,12 @@ export type NavNotification = {
   href: string;
 };
 
+/** The one action the top bar offers for this role. */
+export type NavAction = { label: string; href: string };
+
 export type NavData = {
+  /** Absent for roles with no single "main job" (administrators). */
+  primaryAction?: NavAction;
   counts: Partial<Record<BadgeKey, number>>;
   /** Real destinations for this user, or empty — never a placeholder. */
   pinned: NavPin[];
@@ -36,6 +41,24 @@ export type NavData = {
 };
 
 const EMPTY: NavData = { counts: {}, pinned: [], notifications: [] };
+
+/**
+ * Learner: pick the plan back up, or find a case. Instructor: scheduling starts
+ * from a cohort (cohort → Sessions tab), so the action opens the cohort list.
+ */
+function primaryActionFor(user: Profile): NavAction | undefined {
+  const persona = personaFor(user.role);
+  if (persona === "instructor") {
+    return { label: "Schedule session", href: "/programs?tab=cohorts" };
+  }
+  if (persona !== "learner") return undefined;
+  const open = PLANS.filter(
+    (plan) => plan.userId === user.id && !plan.isReadyForVr && !plan.lockedVersion,
+  ).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  return open
+    ? { label: "Resume planning", href: `/plan/${open.id}` }
+    : { label: "Browse cases", href: "/cases" };
+}
 
 /**
  * An instructor's own sessions are not what needs their attention — their
@@ -56,6 +79,11 @@ async function cohortNotifications(user: Profile): Promise<NavNotification[]> {
 }
 
 export async function getNavData(user: Profile): Promise<NavData> {
+  const data = await buildNavData(user);
+  return { ...data, primaryAction: primaryActionFor(user) };
+}
+
+async function buildNavData(user: Profile): Promise<NavData> {
   const cohortNotes = await cohortNotifications(user);
   const mine = sessionsFor(user.id).slice(0, 20);
   const readyCount = PLANS.filter(

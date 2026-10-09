@@ -1,16 +1,8 @@
-import { ArrowRight, ChevronRight, Play } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/shell";
 import { Badge, type BadgeStatus, Button, DemoDataNote } from "@/components/ui";
-import {
-  BarChart,
-  DistributionBar,
-  HeroMetric,
-  RankedList,
-  StatCard,
-  StatRow,
-  TrendChart,
-} from "@/components/viz";
+import { HeroMetric, StatCard, StatRow } from "@/components/viz";
 import { clock, longDuration, shortDate, titleCase } from "@/lib/format";
 import type { LearnerDashboard as Data } from "@/lib/data/dashboard";
 import type { ProgramSummary } from "@/lib/data/programs";
@@ -22,20 +14,9 @@ import {
 } from "@/lib/data/learner-action";
 import type { Profile } from "@/lib/types";
 import { PASS_MARK } from "@/lib/types";
-import { Panel } from "./ContextRow";
 import { LiveDial } from "./LiveDial";
-import { TabbedPanel } from "./TabbedPanel";
-import { Toolbar } from "./Toolbar";
-import { WEEK_OPTIONS } from "@/lib/window";
 import ls from "./learner-dashboard.module.css";
 import s from "./dashboard.module.css";
-
-const CATEGORY_COLOUR = [
-  "var(--brand)",
-  "var(--pass)",
-  "var(--dark)",
-  "var(--warn)",
-];
 
 function mapBadgeTone(tone: string): BadgeStatus {
   if (tone === "brand") return "active";
@@ -51,21 +32,17 @@ export function LearnerDashboard({
   programs = [],
   plans = [],
   cases = [],
-  weeks,
 }: {
   user: Profile;
   data: Data;
   programs?: ProgramSummary[];
   plans?: PlanRow[];
   cases?: CaseCard[];
-  weeks: number;
 }) {
   const { stats, activeSession, latestReport } = data;
   const passMark = PASS_MARK[user.defaultDifficulty];
-  const bandTotal = data.categories.reduce((a, c) => a + c.pct, 0);
-  const best = Math.max(...data.categories.map((c) => c.pct));
 
-  // 1. Resolve primary next action and enriched case statuses from real persisted data
+  // The next action, and each case's status, come from the learner's real plans and sessions.
   const nextAction = resolveNextAction({
     activeSession,
     plans,
@@ -76,10 +53,13 @@ export function LearnerDashboard({
   const completedCasesCount = enrichedCases.filter(
     (c) => c.status === "completed",
   ).length;
+  // A session is only worth turning up to with a sealed plan for its case.
+  const planReady = new Map(
+    enrichedCases.map((c) => [c.id, c.status === "ready_for_vr" || c.status === "completed"]),
+  );
 
   return (
     <>
-      {/* SECTION A: Welcome & Context (PageHeader) */}
       <PageHeader
         eyebrow={
           programs.length > 0
@@ -89,425 +69,59 @@ export function LearnerDashboard({
         title={`Welcome back, ${user.displayName}`}
         lede={`${user.level ?? "Learner"} · Pass mark ${passMark} · ${stats.sessionsCompleted} completed sessions · ${completedCasesCount} of ${cases.length} cases completed`}
         actions={
-          <>
-            {activeSession && (
-              <LiveDial
-                state={activeSession.state}
-                initialElapsedS={activeSession.elapsedS}
-                progress={activeSession.progress}
-                href={`/sessions/${activeSession.session.id}`}
-                label={`${activeSession.session.caseTitle}, scene ${activeSession.session.currentScene}`}
-              />
-            )}
-            <Button variant="secondary" href="/cases">
-              Browse cases
-            </Button>
-            <Button variant="primary" icon={Play} href={nextAction.href}>
-              {nextAction.type === "continue_plan"
-                ? "Continue plan"
-                : nextAction.type === "ready_vr"
-                  ? "VR transfer"
-                  : nextAction.type === "live_session" ||
-                      nextAction.type === "interrupted_session"
-                    ? "Resume session"
-                    : "Start next case"}
-            </Button>
-          </>
+          activeSession ? (
+            <LiveDial
+              state={activeSession.state}
+              initialElapsedS={activeSession.elapsedS}
+              progress={activeSession.progress}
+              href={`/sessions/${activeSession.session.id}`}
+              label={`${activeSession.session.caseTitle}, scene ${activeSession.session.currentScene}`}
+            />
+          ) : undefined
         }
       />
       <DemoDataNote />
 
-
       <div className={ls.container}>
-        {/* SECTION B: Next Action Hero Banner */}
+        {/* 1. The one thing to do next */}
         <div className={ls.nextActionHero}>
           <div className={ls.nextActionContent}>
             <div className={ls.nextActionEyebrow}>
               <Badge status={mapBadgeTone(nextAction.badgeTone)}>
                 {nextAction.badge}
               </Badge>
-              <span>Next Recommended Action</span>
+              <span>Next up</span>
             </div>
             <h2 className={ls.nextActionTitle}>{nextAction.title}</h2>
             <p className={ls.nextActionSubtitle}>{nextAction.subtitle}</p>
           </div>
           <div className={ls.nextActionCta}>
-            <Button variant="primary" icon={ArrowRight} href={nextAction.href}>
+            <Button variant="primary" size="lg" icon={ArrowRight} href={nextAction.href}>
               {nextAction.actionLabel}
             </Button>
           </div>
         </div>
 
-        {/* SECTION C.5: Scheduled Sessions */}
-        {data.upcomingSessions && data.upcomingSessions.length > 0 && (
-          <div>
-            <div className={ls.sectionHeader}>
-              <div>
-                <h3 className={ls.sectionTitle}>Upcoming Sessions</h3>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "var(--t-caption)",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  Training and assessment sessions organized by your instructor
-                </p>
-              </div>
-            </div>
-            <div className={ls.casesGrid}>
-              {data.upcomingSessions.map((s) => (
-                <div key={s.id} className={ls.caseCard}>
-                  <div className={ls.caseCardHead}>
-                    <h4 className={ls.caseTitle}>{s.name}</h4>
-                    <Badge status={s.status === "in_progress" ? "active" : "warn"}>
-                      {s.status === "in_progress" ? "In progress" : "Upcoming"}
-                    </Badge>
-                  </div>
-                  <div className={ls.caseChips}>
-                    <span className={ls.cohortMeta}>{s.caseName ?? "No case"}</span>
-                    <span className={ls.cohortMeta}>· {titleCase(s.mode)}</span>
-                    <span className={ls.cohortMeta}>· {s.duration} mins</span>
-                  </div>
-                  {s.description && <p className={ls.caseSummary}>{s.description}</p>}
-                  <div className={ls.caseFoot}>
-                    <span>{new Date(s.scheduledAt).toLocaleString()}</span>
-                    {s.status !== "completed" && s.caseId ? (
-                      <Link href={`/cases/${s.caseId}`} className={ls.caseAction}>
-                        Prepare & Start →
-                      </Link>
-                    ) : s.status === "completed" ? (
-                      <span className={ls.caseAction} style={{ color: "var(--pass)" }}>Completed</span>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* SECTION D: Assigned Cases with Lifecycle Statuses */}
-        {enrichedCases.length > 0 && (
-          <div>
-            <div className={ls.sectionHeader}>
-              <div>
-                <h3 className={ls.sectionTitle}>Assigned Cases</h3>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "var(--t-caption)",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  Clinical training scenarios in your active program curriculum
-                </p>
-              </div>
-              <Link href="/cases" className={ls.sectionLink}>
-                All cases ({cases.length}) →
-              </Link>
-            </div>
-            <div className={ls.casesGrid}>
-              {enrichedCases.slice(0, 6).map((c) => {
-                const badgeStatus: BadgeStatus =
-                  c.status === "completed"
-                    ? "pass"
-                    : c.status === "ready_for_vr"
-                      ? "pass"
-                      : c.status === "in_planning"
-                        ? "active"
-                        : c.status === "needs_retry"
-                          ? "warn"
-                          : "neutral";
-
-                let actionHref = `/cases/${c.id}`;
-                let actionText = "Start case →";
-                if (c.status === "in_planning" && c.associatedPlanId) {
-                  actionHref = `/plan/${c.associatedPlanId}`;
-                  actionText = "Continue plan →";
-                } else if (c.status === "ready_for_vr" && c.associatedPlanId) {
-                  actionHref = `/plan/${c.associatedPlanId}/review`;
-                  actionText = "Review & pair →";
-                } else if (
-                  c.status === "completed" ||
-                  c.status === "needs_retry"
-                ) {
-                  actionHref = `/cases/${c.id}`;
-                  actionText = "Review history →";
-                }
-
-                return (
-                  <Link key={c.id} href={actionHref} className={ls.caseCard}>
-                    <div className={ls.caseCardHead}>
-                      <h4 className={ls.caseTitle}>{c.title}</h4>
-                      <Badge status={badgeStatus}>{c.statusLabel}</Badge>
-                    </div>
-                    <div className={ls.caseChips}>
-                      <span className={ls.cohortMeta}>{c.pathologyLabel}</span>
-                      <span className={ls.cohortMeta}>
-                        · {titleCase(c.side)}
-                      </span>
-                      <span className={ls.cohortMeta}>
-                        · {titleCase(c.difficulty)}
-                      </span>
-                    </div>
-                    {c.summary && <p className={ls.caseSummary}>{c.summary}</p>}
-                    <div className={ls.caseFoot}>
-                      <span>
-                        {c.bestScore !== undefined
-                          ? `Best: ${c.bestScore}/100`
-                          : c.attempts > 0
-                            ? `${c.attempts} attempt${c.attempts > 1 ? "s" : ""}`
-                            : "No attempts yet"}
-                      </span>
-                      <span className={ls.caseAction}>{actionText}</span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* SECTION C: Enrolled Programs */}
+        {/* 2. Programs: one line, because the curriculum lives under Programs */}
         {programs.length > 0 && (
-          <div>
-            <div className={ls.sectionHeader}>
-              <h3 className={ls.sectionTitle}>Your Programs</h3>
-              <Link href="/programs" className={ls.sectionLink}>
-                View all programs ({programs.length}) →
+          <div className={ls.programsRow}>
+            <span className={ls.programsRowLabel}>Your programs</span>
+            {programs.map((prog) => (
+              <Link key={prog.id} href={`/programs/${prog.id}`} className={ls.programChip}>
+                {prog.name}
+                {prog.cohort_name ? ` · ${prog.cohort_name}` : ""}
+                <ArrowRight size={14} aria-hidden="true" />
               </Link>
-            </div>
-            <div className={ls.programsGrid}>
-              {programs.map((prog) => {
-                const pct =
-                  cases.length > 0
-                    ? Math.round((completedCasesCount / cases.length) * 100)
-                    : 0;
-                return (
-                  <Link
-                    key={prog.id}
-                    href={`/programs/${prog.id}`}
-                    className={ls.programCard}
-                  >
-                    <div className={ls.programCardHead}>
-                      <div>
-                        <h4 className={ls.programName}>{prog.name}</h4>
-                        {prog.cohort_name && (
-                          <div className={ls.cohortMeta}>
-                            <span>
-                              Cohort:{" "}
-                              <strong style={{ color: "var(--ink)" }}>
-                                {prog.cohort_name}
-                              </strong>
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <Badge
-                        status={
-                          pct >= 100 ? "pass" : pct > 0 ? "warn" : "neutral"
-                        }
-                      >
-                        {pct}% complete
-                      </Badge>
-                    </div>
-                    {prog.description && (
-                      <p className={ls.programDesc}>{prog.description}</p>
-                    )}
-                    <div className={ls.programFoot}>
-                      <span>
-                        {completedCasesCount} of {cases.length} cases completed
-                      </span>
-                      <span className={ls.programOpen}>
-                        Open curriculum <ChevronRight size={14} />
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+            ))}
           </div>
         )}
 
-        {/* SECTION E: Active Simulation & Latest Assessment */}
-        <div className={ls.splitGrid}>
-          {/* Panel 1: Simulation State */}
-          <div className={ls.cardPanel}>
-            <div>
-              <h3 className={ls.cardPanelTitle}>Current Session</h3>
-              <p className={ls.cardPanelSub}>
-                Real-time status of your headset connection
-              </p>
-              {activeSession ? (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "var(--s-3)",
-                    marginTop: "var(--s-3)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <span style={{ fontWeight: "var(--fw-semibold)" }}>
-                      {activeSession.session.caseTitle}
-                    </span>
-                    <Badge
-                      status={
-                        activeSession.state === "live" ? "pass" : "warn"
-                      }
-                    >
-                      {activeSession.state === "live"
-                        ? "Active Now"
-                        : "Interrupted"}
-                    </Badge>
-                  </div>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: "var(--t-caption)",
-                      color: "var(--text-muted)",
-                    }}
-                  >
-                    Scene {activeSession.session.currentScene} · Elapsed{" "}
-                    {clock(activeSession.elapsedS)}
-                  </p>
-                </div>
-              ) : (
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "var(--t-body)",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  No simulation is currently active. Launch a headset session by
-                  entering your PIN or selecting an approved pre-operative plan.
-                </p>
-              )}
-            </div>
-            <div
-              style={{
-                marginTop: "var(--s-4)",
-                display: "flex",
-                gap: "var(--s-2)",
-              }}
-            >
-              {activeSession ? (
-                <Button
-                  variant="primary"
-                  icon={Play}
-                  href={`/sessions/${activeSession.session.id}`}
-                >
-                  {activeSession.state === "live"
-                    ? "Join live dial"
-                    : "Resume session"}
-                </Button>
-              ) : (
-                <Button variant="secondary" href="/plans">
-                  View paired plans
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Panel 2: Latest Assessment Report */}
-          <div className={ls.cardPanel}>
-            <div>
-              <h3 className={ls.cardPanelTitle}>Latest Assessment</h3>
-              <p className={ls.cardPanelSub}>
-                Results from your most recent completed simulation
-              </p>
-              {latestReport ? (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "var(--s-2)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "baseline",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontWeight: "var(--fw-semibold)",
-                        fontSize: "var(--t-body)",
-                      }}
-                    >
-                      {latestReport.session.caseTitle}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: "var(--t-h3)",
-                        fontWeight: "var(--fw-bold)",
-                        color:
-                          latestReport.report.totalScore >= passMark
-                            ? "var(--pass)"
-                            : "var(--warn)",
-                      }}
-                    >
-                      {latestReport.report.totalScore} / 100
-                    </span>
-                  </div>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: "var(--t-caption)",
-                      color: "var(--text-muted)",
-                    }}
-                  >
-                    Completed {shortDate(latestReport.session.endedAt)} · Duration{" "}
-                    {clock(latestReport.session.durationS)} ·{" "}
-                    {latestReport.session.criticalErrors} critical error
-                    {latestReport.session.criticalErrors === 1 ? "" : "s"}
-                  </p>
-                </div>
-              ) : (
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "var(--t-body)",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  No completed assessments yet. Complete a case simulation in
-                  headset to view detailed scoring and breakdown.
-                </p>
-              )}
-            </div>
-            <div style={{ marginTop: "var(--s-4)" }}>
-              {latestReport ? (
-                <Button
-                  variant="secondary"
-                  href={`/sessions/${latestReport.session.id}/report`}
-                >
-                  View evaluation report →
-                </Button>
-              ) : (
-                <Button variant="secondary" href="/cases">
-                  Start a case
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* SECTION F: Personal Progress Metrics */}
+        {/* 3. Progress as one strip; the detail is under Progress */}
         <div>
           <div className={ls.sectionHeader}>
-            <h3 className={ls.sectionTitle}>Personal Progress</h3>
+            <h3 className={ls.sectionTitle}>Your progress</h3>
             <Link href="/performance" className={ls.sectionLink}>
-              Performance details →
+              Full progress →
             </Link>
           </div>
           <div className={s.heroBand}>
@@ -556,6 +170,134 @@ export function LearnerDashboard({
                 sub="−5 pts each"
               />
             </StatRow>
+          </div>
+        </div>
+
+        {/* 4. Assigned cases, each with its own button, beside the sessions coming up */}
+        <div className={ls.twoCol}>
+          <div>
+            <div className={ls.sectionHeader}>
+              <h3 className={ls.sectionTitle}>Assigned cases</h3>
+              <Link href="/cases" className={ls.sectionLink}>
+                All cases ({cases.length}) →
+              </Link>
+            </div>
+            {enrichedCases.length === 0 ? (
+              <div className={ls.emptyBox}>
+                <p>No cases are assigned to you yet.</p>
+                <Button variant="secondary" size="sm" href="/cases">
+                  Browse the case library
+                </Button>
+              </div>
+            ) : (
+              <div className={ls.casesGrid}>
+              {enrichedCases.slice(0, 6).map((c) => {
+                const badgeStatus: BadgeStatus =
+                  c.status === "completed"
+                    ? "pass"
+                    : c.status === "ready_for_vr"
+                      ? "pass"
+                      : c.status === "in_planning"
+                        ? "active"
+                        : c.status === "needs_retry"
+                          ? "warn"
+                          : "neutral";
+
+                let actionHref = `/cases/${c.id}`;
+                let actionText = "Start planning";
+                if (c.status === "in_planning" && c.associatedPlanId) {
+                  actionHref = `/plan/${c.associatedPlanId}`;
+                  actionText = "Resume planning";
+                } else if (c.status === "ready_for_vr" && c.associatedPlanId) {
+                  actionHref = `/plan/${c.associatedPlanId}/review`;
+                  actionText = "View plan";
+                } else if (
+                  c.status === "completed" ||
+                  c.status === "needs_retry"
+                ) {
+                  actionHref = `/cases/${c.id}`;
+                  actionText = "View history";
+                }
+
+                return (
+                  <Link key={c.id} href={actionHref} className={ls.caseCard}>
+                    <div className={ls.caseCardHead}>
+                      <h4 className={ls.caseTitle}>{c.title}</h4>
+                      <Badge status={badgeStatus}>{c.statusLabel}</Badge>
+                    </div>
+                    <div className={ls.caseChips}>
+                      <span className={ls.cohortMeta}>{c.pathologyLabel}</span>
+                      <span className={ls.cohortMeta}>
+                        · {titleCase(c.side)}
+                      </span>
+                      <span className={ls.cohortMeta}>
+                        · {titleCase(c.difficulty)}
+                      </span>
+                    </div>
+                    {c.summary && <p className={ls.caseSummary}>{c.summary}</p>}
+                    <div className={ls.caseFoot}>
+                      <span>
+                        {c.bestScore !== undefined
+                          ? `Best: ${c.bestScore}/100`
+                          : c.attempts > 0
+                            ? `${c.attempts} attempt${c.attempts > 1 ? "s" : ""}`
+                            : "No attempts yet"}
+                      </span>
+                      <span className={ls.caseAction}>{actionText}</span>
+                    </div>
+                  </Link>
+                );
+              })}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <div className={ls.sectionHeader}>
+              <h3 className={ls.sectionTitle}>Upcoming sessions</h3>
+              <Link href="/sessions" className={ls.sectionLink}>
+                All sessions →
+              </Link>
+            </div>
+            {data.upcomingSessions && data.upcomingSessions.length > 0 ? (
+              <div className={ls.casesGrid}>
+                {data.upcomingSessions.map((sess) => {
+                  const ready = sess.caseId ? planReady.get(sess.caseId) : undefined;
+                  return (
+                    <div key={sess.id} className={ls.caseCard}>
+                      <div className={ls.caseCardHead}>
+                        <h4 className={ls.caseTitle}>{sess.name}</h4>
+                        <Badge status={sess.status === "in_progress" ? "active" : "warn"}>
+                          {sess.status === "in_progress" ? "In progress" : "Upcoming"}
+                        </Badge>
+                      </div>
+                      <div className={ls.caseChips}>
+                        <span className={ls.cohortMeta}>{sess.caseName ?? "No case"}</span>
+                        <span className={ls.cohortMeta}>· {titleCase(sess.mode)}</span>
+                        <span className={ls.cohortMeta}>· {sess.duration} mins</span>
+                      </div>
+                      <div className={ls.caseFoot}>
+                        <span>{new Date(sess.scheduledAt).toLocaleString()}</span>
+                        {ready !== undefined && (
+                          <Badge status={ready ? "pass" : "warn"}>
+                            {ready ? "Plan ready" : "Plan not sealed"}
+                          </Badge>
+                        )}
+                      </div>
+                      {sess.caseId && (
+                        <Link href={`/cases/${sess.caseId}`} className={ls.caseAction}>
+                          {ready ? "Open case" : "Prepare plan"}
+                        </Link>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className={ls.emptyBox}>
+                <p>No sessions are scheduled. Your instructor schedules them from your cohort.</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -729,198 +471,6 @@ export function LearnerDashboard({
           )}
         </div>
 
-        {/* SECTION I: Detailed Analytics (Drawer / Lower section) */}
-        {/* Collapsed by default: the page answers "what next?" first. */}
-        <details className={ls.analyticsSection}>
-          <summary
-            style={{
-              cursor: "pointer",
-              fontWeight: "var(--fw-semibold)",
-              color: "var(--ink)",
-              padding: "var(--s-3) 0",
-            }}
-          >
-            Show detailed analytics
-          </summary>
-          <div className={ls.sectionHeader}>
-            <div>
-              <h3 className={ls.sectionTitle}>Detailed Analytics</h3>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "var(--t-caption)",
-                  color: "var(--text-muted)",
-                }}
-              >
-                Historical performance breakdown, mark loss trends, and weekly
-                cadence
-              </p>
-            </div>
-          </div>
-
-          <Toolbar
-            exportName="mediver-readiness"
-            window={{
-              param: "weeks",
-              value: weeks,
-              fallback: 7,
-              options: WEEK_OPTIONS,
-            }}
-            action={{ label: "Session history", href: "/sessions" }}
-            exportRows={[
-              ["Session", "Case", "Score", "Duration", "Critical", "Mode"],
-              ...data.details.map((d) => [
-                d.session.id,
-                d.session.caseTitle,
-                d.session.totalScore ?? "",
-                clock(d.session.durationS),
-                d.session.criticalErrors ?? 0,
-                d.session.mode,
-              ]),
-            ]}
-          />
-
-          <div style={{ marginTop: "var(--s-4)" }}>
-            <DistributionBar
-              segments={data.categories.slice(0, 4).map((c, i) => ({
-                label: c.label,
-                value: c.pct,
-                pct: Math.round((c.pct / bandTotal) * 100),
-                colour: CATEGORY_COLOUR[i],
-              }))}
-            />
-          </div>
-
-          <div className={ls.analyticsGrid}>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "var(--s-4)",
-              }}
-            >
-              <TabbedPanel
-                title="Where you lose marks"
-                sub="Points lost, and time spent, ranked across every completed session"
-                tabs={[
-                  {
-                    label: "Points",
-                    content: (
-                      <RankedList
-                        items={data.marksLost.map((m) => ({
-                          tag: m.scene,
-                          label: m.label,
-                          value: `−${m.points}`,
-                          pct: m.pct,
-                        }))}
-                      />
-                    ),
-                  },
-                  {
-                    label: "Time",
-                    content: (
-                      <RankedList
-                        items={data.timeLost.map((m) => ({
-                          tag: m.scene,
-                          label: m.label,
-                          value: clock(m.seconds),
-                          pct: m.pct,
-                        }))}
-                      />
-                    ),
-                  },
-                ]}
-              />
-
-              <Panel
-                title="Sessions per week"
-                sub={`Last ${weeks} weeks`}
-                action={
-                  <Badge status="pass">
-                    {data.weekly[data.weekly.length - 1]?.sessions ?? 0} this
-                    week
-                  </Badge>
-                }
-              >
-                <BarChart
-                  data={data.weekly.map((w) => ({
-                    label: w.label,
-                    value: w.sessions,
-                  }))}
-                  height={180}
-                />
-              </Panel>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "var(--s-4)",
-              }}
-            >
-              <Panel
-                title="Score dynamic"
-                sub="Your weekly mean against the cohort mean"
-              >
-                <TrendChart
-                  values={data.dynamic.values}
-                  compare={data.dynamic.compare}
-                  labels={data.dynamic.labels}
-                  markers={[
-                    {
-                      at: data.dynamic.values.length - 1,
-                      label: "latest",
-                      tone: "pass",
-                    },
-                  ]}
-                  caption={data.dynamic.caption}
-                />
-              </Panel>
-
-              <div className={s.splitPanel}>
-                <div className={s.splitDark}>
-                  <span className={s.splitLabel}>Category spread</span>
-                  <div className={s.splitStat}>
-                    <span className={s.splitStatLabel}>Strongest</span>
-                    <span className={s.splitStatValue}>{best}%</span>
-                  </div>
-                  <div className={s.splitStat}>
-                    <span className={s.splitStatLabel}>Weakest</span>
-                    <span className={s.splitStatValue}>
-                      {data.weakest?.pct}%
-                    </span>
-                  </div>
-                  <div className={s.splitStat}>
-                    <span className={s.splitStatLabel}>Spread</span>
-                    <span className={s.splitStatValue}>
-                      {best - (data.weakest?.pct ?? 0)} pts
-                    </span>
-                  </div>
-                </div>
-                <div className={s.splitChart}>
-                  <div className={s.panelHead}>
-                    <div>
-                      <p className={s.panelTitle}>By category</p>
-                      <p className={s.panelSub}>
-                        Percentage of available marks
-                      </p>
-                    </div>
-                  </div>
-                  <BarChart
-                    data={data.categories.map((c) => ({
-                      label: c.short,
-                      value: c.pct,
-                    }))}
-                    max={100}
-                    height={180}
-                    formatTag={(v) => `${v}%`}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </details>
       </div>
     </>
   );

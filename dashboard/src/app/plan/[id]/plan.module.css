@@ -4,42 +4,46 @@
 
 .page {
   display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
   min-height: 100dvh;
+  padding: var(--s-4);
   background: var(--rail);
 }
 
-/* ---------- rail ---------- */
+/* ---------- header and steps ---------- */
 
-.rail {
-  position: sticky;
-  top: 0;
-  flex: 0 0 288px;
-  height: 100dvh;
+.planHeader {
   display: flex;
-  flex-direction: column;
-  gap: var(--s-5);
-  padding: var(--s-5) var(--s-4) var(--s-5) var(--s-5);
-  overflow-y: auto;
+  align-items: center;
+  gap: var(--s-4);
+  padding: 0 var(--s-2);
+}
+
+.headerRule {
+  width: var(--bw);
+  height: 28px;
+  background: var(--border-strong);
+}
+
+.headerTitle {
+  flex: 1;
+  min-width: 0;
 }
 
 .back {
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
-  min-height: 34px;
-  font-size: var(--t-caption);
+  min-height: 44px;
+  font-size: var(--t-label);
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--brand-hover);
+  white-space: nowrap;
 }
 
 .back:hover {
   color: var(--ink);
-}
-
-.railCase {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-1);
 }
 
 .railEyebrow {
@@ -58,48 +62,51 @@
   color: var(--ink);
 }
 
-.railMeta {
-  font-size: var(--t-caption);
-  color: var(--text-muted);
-}
-
 .steps {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-2);
 }
 
 .step {
   display: grid;
-  grid-template-columns: 26px minmax(0, 1fr);
-  align-items: start;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
   gap: var(--s-3);
-  padding: var(--s-3);
-  border-radius: var(--r-sm);
+  padding: var(--s-3) var(--s-4);
+  border: var(--bw) solid transparent;
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.55);
   color: var(--text);
   transition: background-color var(--m-fast) var(--ease-out);
 }
 
 .step:hover {
-  background: rgba(14, 21, 18, 0.045);
+  background: var(--surface);
 }
 
 .stepOn,
 .stepOn:hover {
   background: var(--surface);
+  border-color: var(--brand);
+  border-width: var(--bw-emphasis);
 }
 
-/* A step you cannot reach yet is not a link — it states why in its title. */
+/* A step you cannot reach yet is not a link — it states why in its text. */
 .stepLocked {
-  color: var(--text-disabled);
+  color: var(--text-muted);
   cursor: not-allowed;
+}
+
+.stepLocked:hover {
+  background: rgba(255, 255, 255, 0.55);
 }
 
 .stepDot {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border: var(--bw) solid var(--border-strong);
   border-radius: 50%;
   background: var(--surface);
@@ -122,7 +129,6 @@
 
 .stepLocked .stepDot {
   border-style: dashed;
-  color: var(--text-disabled);
 }
 
 .stepGlyph {
@@ -135,7 +141,6 @@
   flex-direction: column;
   gap: 1px;
   min-width: 0;
-  padding-top: 3px;
 }
 
 .stepTitle {
@@ -154,12 +159,15 @@
   color: var(--text-muted);
 }
 
-.railFoot {
-  margin-top: auto;
-  padding-top: var(--s-4);
-  border-top: var(--bw) solid var(--border);
+.scaleText {
   font-size: var(--t-caption);
-  line-height: 1.5;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.vrNote {
+  margin: var(--s-5) var(--s-5) var(--s-3);
+  font-size: var(--t-caption);
   color: var(--text-muted);
 }
 
@@ -170,7 +178,6 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--s-4) var(--s-4) var(--s-4) 0;
 }
 
 .surface {
@@ -452,7 +459,8 @@
 }
 
 @media (max-width: 1023px) {
-  .rail,
+  .planHeader,
+  .steps,
   .surface > *:not(.tooSmall) {
     display: none;
   }
@@ -521,11 +529,11 @@
   white-space: nowrap;
 }
 
-.chipSide { background: #0284c7; border-color: #0284c7; color: #fff; letter-spacing: 0.02em; }
+.chipSide { background: var(--info); border-color: var(--info); color: #fff; letter-spacing: 0.02em; }
 .chipPlain { background: var(--surface-sunken); color: var(--text); font-weight: 600; }
 .chipOk { background: var(--pass-surface); border-color: var(--pass-border); color: var(--pass); }
 .chipWarn { background: var(--warn-surface); border-color: var(--warn-border); color: var(--warn); }
-.chipLocked { background: #1e293b; border-color: #334155; color: #38bdf8; }
+.chipLocked { background: var(--dark); border-color: var(--dark-3); color: #fff; }
 .chipDraft { background: var(--surface-sunken); color: var(--text-muted); }
 .chipDemo { background: var(--fail-surface); border-color: var(--fail-border); color: var(--fail); }
 
