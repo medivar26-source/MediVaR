@@ -16,14 +16,18 @@
 import type { Point2D } from "../coordinates";
 import { FEMORAL_SIZE_DIMENSIONS } from "./dimensions";
 import { arc, extentsOf, smoothCurve, superEllipse } from "./geometry_util";
-import type { ImplantTemplate, TemplateLayer, ViewShape } from "./types";
+import type { ImplantTemplate, ResectionCut, TemplateLayer, ViewShape } from "./types";
 
-export const FEMORAL_GEOMETRY_VERSION = "1.0.0";
+export const FEMORAL_GEOMETRY_VERSION = "1.1.0";
 
-const shape = (layers: TemplateLayer[], silhouette: Point2D[]): ViewShape => ({
+/** Component thickness at the distal cut, as a share of the AP dimension. */
+const DISTAL_THICKNESS = 0.15;
+
+const shape = (layers: TemplateLayer[], silhouette: Point2D[], extra: Pick<ViewShape, "pivot" | "cuts"> = {}): ViewShape => ({
   layers,
   silhouette,
   extents: extentsOf(silhouette),
+  ...extra,
 });
 
 const shift = (pts: Point2D[], dy: number): Point2D[] => pts.map((p) => ({ x: p.x, y: p.y + dy }));
@@ -33,6 +37,10 @@ function reanchor(view: ViewShape, dy: number): ViewShape {
   return shape(
     view.layers.map((l) => ({ ...l, path: shift(l.path, dy) })),
     shift(view.silhouette, dy),
+    {
+      pivot: view.pivot && { x: view.pivot.x, y: view.pivot.y + dy },
+      cuts: view.cuts?.map((c) => ({ ...c, a: { x: c.a.x, y: c.a.y + dy }, b: { x: c.b.x, y: c.b.y + dy } })),
+    },
   );
 }
 
@@ -95,7 +103,17 @@ function apView(ml: number, ap: number): ViewShape {
     { role: "detail", open: true, fill: 0, path: groove },
     { role: "box", open: true, fill: 0, path: [{ x: -nh, y: boxTop }, { x: nh, y: boxTop }] },
   ];
-  return shape(layers, silhouette);
+
+  // The distal cut seen end-on: a straight line across both condyles, one component thickness above the
+  // distal-most surface (the same thickness the lateral drawing uses). It is the line the surgeon's saw
+  // follows, and the point the AP view turns about.
+  const bottom = Math.max(...silhouette.map((p) => p.y));
+  const thickness = ap * DISTAL_THICKNESS;
+  const cutY = bottom - thickness;
+  const cuts: ResectionCut[] = [
+    { id: "distal", label: "Distal cut", sequence: 1, a: { x: -hw, y: cutY }, b: { x: hw, y: cutY }, thicknessMm: thickness },
+  ];
+  return shape(layers, silhouette, { pivot: { x: 0, y: cutY }, cuts });
 }
 
 /**
@@ -106,7 +124,7 @@ function apView(ml: number, ap: number): ViewShape {
 function lateralView(ml: number, ap: number): ViewShape {
   const half = ap / 2;
   const tA = ap * 0.11; // anterior flange thickness
-  const tD = ap * 0.15; // distal thickness
+  const tD = ap * DISTAL_THICKNESS; // distal thickness
   const tP = ap * 0.15; // posterior condyle thickness
   const rp = ap * 0.36; // posterior condyle radius
   const flangeLen = ap * 0.6; // how far the flange runs proximally from the distal surface
@@ -161,7 +179,55 @@ function lateralView(ml: number, ap: number): ViewShape {
     // The bone-facing cut lines, drawn as a detail so the notching verification has a visible reference.
     { role: "box", open: true, fill: 0, path: inner },
   ];
-  return shape(layers, silhouette);
+
+  // The five bone-facing cuts, one segment each, in the order a surgeon normally makes them.
+  const cuts: ResectionCut[] = [
+    { id: "distal", label: "Distal cut", sequence: 1, a: inner[3], b: inner[2], thicknessMm: tD },
+    { id: "anterior", label: "Anterior cut", sequence: 2, a: inner[5], b: inner[4], thicknessMm: tA },
+    { id: "posterior", label: "Posterior cut", sequence: 3, a: inner[0], b: inner[1], thicknessMm: tP },
+    { id: "anterior_chamfer", label: "Anterior chamfer", sequence: 4, a: inner[4], b: inner[3] },
+    { id: "posterior_chamfer", label: "Posterior chamfer", sequence: 5, a: inner[1], b: inner[2] },
+  ];
+  // Flexion turns the component about the centre of the posterior condyle: the knee's flexion axis.
+  return shape(layers, silhouette, { pivot: { x: xp, y: -rp }, cuts });
+}
+
+/**
+ * The bone at the level of the distal cut, seen from above: wide across the condyles, narrower and
+ * flatter at the front over the trochlea, with the intercondylar notch opening backwards. Scaled to the
+ * surgeon's marked width and depth. A drawing aid only: radiographs do not show the true outline.
+ * x = medio-lateral, y = antero-posterior (anterior −, posterior +), centred on the marked box.
+ */
+export function estimatedFemoralCutOutline(ml: number, ap: number): Point2D[] {
+  const a = ml / 2;
+  const b = ap / 2;
+  const notchHalf = ml * 0.15;
+  const notchFloor = b * 0.05;
+  // Right half, front to back: flat trochlea, rounded shoulder, full-width condyle, rounded back.
+  const half: Point2D[] = smoothCurve(
+    [
+      { x: 0, y: -b },
+      { x: a * 0.5, y: -b * 0.97 },
+      { x: a * 0.86, y: -b * 0.72 },
+      { x: a, y: -b * 0.3 },
+      { x: a * 0.99, y: b * 0.25 },
+      { x: a * 0.88, y: b * 0.78 },
+      { x: a * 0.62, y: b * 0.99 },
+      { x: a * 0.38, y: b },
+    ],
+    6,
+  );
+  const widest = Math.max(...half.map((p) => p.x));
+  const right = half.map((p) => ({ x: p.x * (a / widest), y: p.y }));
+  const left = right.map((p) => ({ x: -p.x, y: p.y })).reverse();
+  return [
+    ...right,
+    { x: notchHalf, y: b * 0.55 },
+    { x: notchHalf, y: notchFloor },
+    { x: -notchHalf, y: notchFloor },
+    { x: -notchHalf, y: b * 0.55 },
+    ...left,
+  ];
 }
 
 /** Axial distal footprint: two lobes with the intercondylar notch opening posteriorly. */

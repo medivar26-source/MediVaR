@@ -861,23 +861,23 @@ export const CASES: CaseRow[] = [
       {
         view: "flap",
         label: "FLAP",
-        src: "/synth_varus_flap.jpg",
+        src: "/scans/varus_flap.jpg",
         calibration: {
           marker_type: "sphere_25mm",
           marker_diameter_mm: 25.0,
-          measured_pixel_diameter: 32.5,
-          mm_per_px: 25.0 / 32.5, // 0.7692 mm/px
+          measured_pixel_diameter: 29.84,
+          mm_per_px: 25.0 / 29.84, // 0.838 mm/px, measured on this scan
         },
       },
       {
         view: "klat",
         label: "KLAT",
-        src: "/synth_varus_klat.jpg",
+        src: "/scans/varus_klat.jpg",
         calibration: {
           marker_type: "sphere_25mm",
           marker_diameter_mm: 25.0,
-          measured_pixel_diameter: 94.7,
-          mm_per_px: 25.0 / 94.7, // 0.264 mm/px
+          measured_pixel_diameter: 86.11,
+          mm_per_px: 25.0 / 86.11, // 0.290 mm/px, measured on this scan
         },
       },
     ],
@@ -909,23 +909,23 @@ export const CASES: CaseRow[] = [
       {
         view: "flap",
         label: "FLAP",
-        src: "/synth_valgus_flap.jpg",
+        src: "/scans/valgus_flap.jpg",
         calibration: {
           marker_type: "sphere_25mm",
           marker_diameter_mm: 25.0,
-          measured_pixel_diameter: 32.5,
-          mm_per_px: 25.0 / 32.5, // 0.7692 mm/px
+          measured_pixel_diameter: 29.85,
+          mm_per_px: 25.0 / 29.85, // 0.838 mm/px, measured on this scan
         },
       },
       {
         view: "klat",
         label: "KLAT",
-        src: "/synth_valgus_klat.jpg",
+        src: "/scans/valgus_klat.jpg",
         calibration: {
           marker_type: "sphere_25mm",
           marker_diameter_mm: 25.0,
-          measured_pixel_diameter: 94.7,
-          mm_per_px: 25.0 / 94.7, // 0.264 mm/px
+          measured_pixel_diameter: 96.09,
+          mm_per_px: 25.0 / 96.09, // 0.260 mm/px, measured on this scan
         },
       },
     ],

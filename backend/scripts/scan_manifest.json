@@ -1,0 +1,98 @@
+{
+  "varus_flap": {
+    "file": "scans/varus_flap.jpg",
+    "width_px": 1024,
+    "height_px": 1024,
+    "marker_type": "sphere_25mm",
+    "marker_mm": 25.0,
+    "marker_px": 29.84,
+    "marker_centre_px": [
+      596,
+      800
+    ],
+    "mm_per_px": 0.83786,
+    "basis": "Hip centre to ankle centre is about 915 px; for a 68-year-old man (about 770 mm) that is 0.84 mm/px.",
+    "embedded_marker": true,
+    "mirrored": false
+  },
+  "varus_klat": {
+    "file": "scans/varus_klat.jpg",
+    "width_px": 1024,
+    "height_px": 1024,
+    "marker_type": "sphere_25mm",
+    "marker_mm": 25.0,
+    "marker_px": 86.11,
+    "marker_centre_px": [
+      900,
+      760
+    ],
+    "mm_per_px": 0.29033,
+    "basis": "Distal femoral condyle depth is about 200 px; a size-4 femoral component spans 58.4 mm, so 0.29 mm/px.",
+    "embedded_marker": true,
+    "mirrored": false
+  },
+  "valgus_flap": {
+    "file": "scans/valgus_flap.jpg",
+    "width_px": 1024,
+    "height_px": 1024,
+    "marker_type": "sphere_25mm",
+    "marker_mm": 25.0,
+    "marker_px": 29.85,
+    "marker_centre_px": [
+      900,
+      800
+    ],
+    "mm_per_px": 0.83751,
+    "basis": "Hip centre to ankle centre is about 870 px for an adult leg of about 730 mm, so 0.84 mm/px.",
+    "embedded_marker": true,
+    "mirrored": false
+  },
+  "valgus_klat": {
+    "file": "scans/valgus_klat.jpg",
+    "width_px": 1024,
+    "height_px": 1024,
+    "marker_type": "sphere_25mm",
+    "marker_mm": 25.0,
+    "marker_px": 96.09,
+    "marker_centre_px": [
+      900,
+      800
+    ],
+    "mm_per_px": 0.26016,
+    "basis": "Distal femoral condyle depth is about 220 px; a size-3 femoral component spans 56.2 mm, so 0.26 mm/px.",
+    "embedded_marker": true,
+    "mirrored": false
+  },
+  "mild_klat": {
+    "file": "scans/mild_klat.jpg",
+    "width_px": 1024,
+    "height_px": 1024,
+    "marker_type": "sphere_25mm",
+    "marker_mm": 25.0,
+    "marker_px": 96.11,
+    "marker_centre_px": [
+      110,
+      820
+    ],
+    "mm_per_px": 0.26013,
+    "basis": "As valgus_klat (mirrored plate): condyle depth about 220 px for a 56-58 mm femur, so 0.26 mm/px.",
+    "embedded_marker": true,
+    "mirrored": true
+  },
+  "mild_flap": {
+    "file": "scans/mild_flap.jpg",
+    "width_px": 896,
+    "height_px": 1200,
+    "marker_type": "ruler_100mm",
+    "marker_mm": 100.0,
+    "marker_px": 125.0,
+    "marker_centre_px": [
+      588,
+      1030
+    ],
+    "mm_per_px": 0.8,
+    "basis": "Printed 10 cm ruler on the film measures 125 px (y 968 to 1093): 100 mm / 125 px = 0.800 mm/px.",
+    "embedded_marker": true,
+    "mirrored": false
+  }
+}

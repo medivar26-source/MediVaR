@@ -13,7 +13,8 @@ import type { ImplantSystem, ImplantTemplate } from "./types";
 export * from "./types";
 export * from "./dimensions";
 export { estimatedTibialPlateauOutline } from "./tibial";
-export { area, extentsOf, placePolygon } from "./geometry_util";
+export { estimatedFemoralCutOutline } from "./femoral";
+export { area, extentsOf, placePolygon, rotateAbout } from "./geometry_util";
 
 export const IMPLANT_SYSTEM_NOTICE =
   "Generic template shapes drawn for planning only. They are not a manufacturer's implant and are not clinically validated.";

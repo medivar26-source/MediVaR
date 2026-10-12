@@ -1,0 +1,1348 @@
+{
+  "cases": [
+    {
+      "id": "c1111111-1111-4111-a111-111111111111",
+      "program_id": null,
+      "procedure_id": "59b513f0-1e25-406e-865d-b00e4f24619c",
+      "name": "Severe Varus Knee Osteoarthritis (Right)",
+      "difficulty": "intermediate",
+      "description": "68yo male with severe right medial compartment pain, fixed flexion contracture 5 deg, Ahlback grade IV.",
+      "learning_objective": "Execute mechanical alignment total knee replacement, restore joint line within 2mm, achieve symmetric flexion/extension gaps.",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-23 05:42:10.598140+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "institution_id": "6a7e219b-8a03-4905-8af2-1560069433d7",
+      "draft_version_id": null,
+      "published_version_id": "ba111111-1111-4111-a111-111111111111"
+    },
+    {
+      "id": "c2222222-2222-4222-a222-222222222222",
+      "program_id": null,
+      "procedure_id": "59b513f0-1e25-406e-865d-b00e4f24619c",
+      "name": "Moderate Valgus Knee Osteoarthritis (Left)",
+      "difficulty": "expert",
+      "description": "62yo female with progressive left knee lateral pain, Ahlback grade III, lateral compartment collapse.",
+      "learning_objective": "Plan precise distal femoral resection, avoid lateral joint line elevation, select Size 3 femur and Size 2 tibia.",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-23 05:42:10.598140+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "institution_id": "6a7e219b-8a03-4905-8af2-1560069433d7",
+      "draft_version_id": null,
+      "published_version_id": "ba222222-2222-4222-a222-222222222222"
+    },
+    {
+      "id": "afb27315-5150-4ce2-8291-8361d026c41f",
+      "program_id": null,
+      "procedure_id": "59b513f0-1e25-406e-865d-b00e4f24619c",
+      "name": "TKA Calibration & Implant Scaling Validation \u2013 Right Knee",
+      "difficulty": "intermediate",
+      "description": "Synthetic training case created for validating MediVeR-XR calibrated preoperative TKA planning. The case is designed to test FLAP and KLAT image calibration, physical-scale implant overlay rendering, tibial and femoral component sizing, 2D component positioning, and case-specific assessment reporting. Radiographs and patient information are synthetic and intended only for software validation and educational demonstration.",
+      "learning_objective": "Validate calibrated TKA preoperative planning by accurately measuring the radiographic anatomy and positioning physically scaled tibial and femoral implant overlays.",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-28 06:44:37.025331+00:00",
+      "updated_at": "2026-09-28 06:44:39.925548+00:00",
+      "institution_id": "6a7e219b-8a03-4905-8af2-1560069433d7",
+      "draft_version_id": null,
+      "published_version_id": "7e1eff5b-24e5-4c7b-befe-f9ac070d1905"
+    },
+    {
+      "id": "e7c9f1d4-91ae-463d-9861-8e4a764f3769",
+      "program_id": null,
+      "procedure_id": "59b513f0-1e25-406e-865d-b00e4f24619c",
+      "name": "dfghjklkjhgf",
+      "difficulty": "intermediate",
+      "description": "gfdsgdhjkhgfd",
+      "learning_objective": "dfghfds",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-10-01 09:15:55.823865+00:00",
+      "updated_at": "2026-10-01 09:15:58.077013+00:00",
+      "institution_id": "6a7e219b-8a03-4905-8af2-1560069433d7",
+      "draft_version_id": null,
+      "published_version_id": "c2d97d4f-b0d6-4935-9161-f61fb9739be6"
+    },
+    {
+      "id": "10d0862f-f398-411e-b539-586465207281",
+      "program_id": null,
+      "procedure_id": "59b513f0-1e25-406e-865d-b00e4f24619c",
+      "name": "bnmvnn,bmcvxz",
+      "difficulty": "intermediate",
+      "description": "xzvcbxvcnmb,cvxz",
+      "learning_objective": "cvbnmcbxvx",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-10-05 04:31:39.075880+00:00",
+      "updated_at": "2026-10-05 04:31:43.067923+00:00",
+      "institution_id": "6a7e219b-8a03-4905-8af2-1560069433d7",
+      "draft_version_id": null,
+      "published_version_id": "d1b1efeb-99d8-48c4-8e30-2ae486c09f22"
+    }
+  ],
+  "case_versions": [
+    {
+      "id": "ba111111-1111-4111-a111-111111111111",
+      "case_id": "c1111111-1111-4111-a111-111111111111",
+      "version_number": 1,
+      "title": "Severe Varus Knee Osteoarthritis (Right)",
+      "pathology": "osteoarthritis",
+      "pathology_label": "Tricompartmental Osteoarthritis with Severe Varus Deformity",
+      "side": "right",
+      "difficulty": "intermediate",
+      "description": "68yo male with severe right medial compartment pain, Ahlb\u00e4ck Grade IV.",
+      "patient": {
+        "age": 68,
+        "bmi": 29.4,
+        "gender": "Male",
+        "history": "Right knee pain progressive over 6 years. Failed conservative therapy.",
+        "clinical_notes": "Tricompartmental osteoarthritis with severe varus deformity. Ahlb\u00e4ck Grade IV. Medial joint space collapse, large medial osteophytes."
+      },
+      "objectives": [
+        "Accurately calculate Mechanical Axis Deviation (MAD) and mHKA from full-leg radiograph.",
+        "Select optimal tibial baseplate (Size 3) avoiding medial/lateral overhang > 1.0 mm.",
+        "Select optimal femoral component (Size 4) ensuring flush anterior resection without anterior cortical notching.",
+        "Establish balanced flexion and extension gaps in VR execution."
+      ],
+      "status": "published",
+      "is_immutable": true,
+      "created_by": "96e4983f-0375-453d-baf3-da18e3038714",
+      "created_at": "2026-09-23 05:42:10.598140+00:00",
+      "published_at": "2026-09-23 05:42:10.598140+00:00"
+    },
+    {
+      "id": "ba222222-2222-4222-a222-222222222222",
+      "case_id": "c2222222-2222-4222-a222-222222222222",
+      "version_number": 1,
+      "title": "Moderate Valgus Knee Osteoarthritis (Left)",
+      "pathology": "osteoarthritis",
+      "pathology_label": "Lateral Compartment Osteoarthritis with Valgus Deformity",
+      "side": "left",
+      "difficulty": "expert",
+      "description": "62yo female with progressive left knee lateral pain, Ahlb\u00e4ck Grade III.",
+      "patient": {
+        "age": 62,
+        "bmi": 27.8,
+        "gender": "Female",
+        "history": "Left knee lateral pain on weight-bearing, progressive over 4 years.",
+        "clinical_notes": "Lateral compartment osteoarthritis with moderate valgus deformity. Ahlb\u00e4ck Grade III. Lateral femoral condyle hypoplasia."
+      },
+      "objectives": [
+        "Identify valgus deformity alignment parameters (mHKA 185.5\u00b0, MAD 8.5 mm valgus).",
+        "Select correct tibial baseplate (Size 2) with balanced mediolateral fit.",
+        "Select femoral component (Size 3) preserving posterior condylar offset and anterior flush.",
+        "Execute lateral release and gap balancing in VR simulation."
+      ],
+      "status": "published",
+      "is_immutable": true,
+      "created_by": "96e4983f-0375-453d-baf3-da18e3038714",
+      "created_at": "2026-09-23 05:42:10.598140+00:00",
+      "published_at": "2026-09-23 05:42:10.598140+00:00"
+    },
+    {
+      "id": "7e1eff5b-24e5-4c7b-befe-f9ac070d1905",
+      "case_id": "afb27315-5150-4ce2-8291-8361d026c41f",
+      "version_number": 1,
+      "title": "TKA Calibration & Implant Scaling Validation \u2013 Right Knee",
+      "pathology": "osteoarthritis",
+      "pathology_label": "Primary Osteoarthritis with Mild Correctable Varus Alignment",
+      "side": "right",
+      "difficulty": "intermediate",
+      "description": "Synthetic training case created for validating MediVeR-XR calibrated preoperative TKA planning. The case is designed to test FLAP and KLAT image calibration, physical-scale implant overlay rendering, tibial and femoral component sizing, 2D component positioning, and case-specific assessment reporting. Radiographs and patient information are synthetic and intended only for software validation and educational demonstration.",
+      "patient": {
+        "age": 61,
+        "bmi": 27.6,
+        "gender": "Male",
+        "history": "Progressive right knee discomfort and activity-related pain for approximately 18 months, predominantly during prolonged walking, stair climbing, and repeated standing. Symptoms have persisted despite activity modification, physiotherapy, oral analgesia, and one intra-articular injection.",
+        "deformity": "3\u00b0 varus, correctable",
+        "occupation": "Accountant",
+        "patient_id": "CAL-TKA-001",
+        "activity_level": "Lightly Active",
+        "clinical_notes": "Mild correctable varus alignment with a 2\u00b0 fixed flexion limitation. Range of motion is approximately 2\u00b0\u2013120\u00b0. No gross instability is described for this synthetic training case. The case is intended primarily for calibrated radiographic measurement and implant-overlay validation.",
+        "range_of_motion": "2\u00b0\u2013120\u00b0",
+        "fixed_flexion_deg": 2,
+        "walking_distance_m": 750
+      },
+      "objectives": [
+        "Identify the required FLAP and KLAT radiographic views and verify their calibration before planning.",
+        "Accurately determine the six structural preoperative assessment measurements from calibrated radiographs.",
+        "Accurately determine the six structural preoperative assessment measurements from calibrated radiographs.",
+        "Measure femoral AP and ML dimensions and select an appropriately scaled femoral component.",
+        "Position the implant overlays using physical millimetre scale rather than screen-pixel size.",
+        "Complete and submit the preoperative plan while preserving the calibrated physical dimensions of the selected components."
+      ],
+      "status": "published",
+      "is_immutable": true,
+      "created_by": "96e4983f-0375-453d-baf3-da18e3038714",
+      "created_at": "2026-09-28 06:44:37.025331+00:00",
+      "published_at": "2026-09-28 06:44:38.181000+00:00"
+    },
+    {
+      "id": "c2d97d4f-b0d6-4935-9161-f61fb9739be6",
+      "case_id": "e7c9f1d4-91ae-463d-9861-8e4a764f3769",
+      "version_number": 1,
+      "title": "dfghjklkjhgf",
+      "pathology": "osteoarthritis",
+      "pathology_label": "Tricompartmental Osteoarthritis with Severe Varus Deformity",
+      "side": "right",
+      "difficulty": "intermediate",
+      "description": "gfdsgdhjkhgfd",
+      "patient": {
+        "age": 68,
+        "bmi": 29.4,
+        "gender": "Male",
+        "history": "Progressive right knee pain over 6 years. Failed conservative therapy.",
+        "deformity": "15 varus",
+        "occupation": "Retired Teacher",
+        "patient_id": "PT-10293",
+        "activity_level": "Sedentary",
+        "clinical_notes": "Severe medial compartment pain, fixed flexion contracture 5\u00b0.",
+        "range_of_motion": "5-100",
+        "fixed_flexion_deg": 5,
+        "walking_distance_m": 500
+      },
+      "objectives": [
+        "Accurately calculate Mechanical Axis Deviation (MAD) and mHKA from full-leg radiograph.",
+        "Select optimal tibial baseplate avoiding medial/lateral overhang > 1.0 mm.",
+        "Select optimal femoral component ensuring flush anterior resection without anterior cortical notching."
+      ],
+      "status": "published",
+      "is_immutable": true,
+      "created_by": "96e4983f-0375-453d-baf3-da18e3038714",
+      "created_at": "2026-10-01 09:15:55.823865+00:00",
+      "published_at": "2026-10-01 09:15:56.652471+00:00"
+    },
+    {
+      "id": "d1b1efeb-99d8-48c4-8e30-2ae486c09f22",
+      "case_id": "10d0862f-f398-411e-b539-586465207281",
+      "version_number": 1,
+      "title": "bnmvnn,bmcvxz",
+      "pathology": "osteoarthritis",
+      "pathology_label": "Tricompartmental Osteoarthritis with Severe Varus Deformity",
+      "side": "right",
+      "difficulty": "intermediate",
+      "description": "xzvcbxvcnmb,cvxz",
+      "patient": {
+        "age": 68,
+        "bmi": 29.4,
+        "gender": "Male",
+        "history": "Progressive right knee pain over 6 years. Failed conservative therapy.",
+        "deformity": "15 varus",
+        "occupation": "Retired Teacher",
+        "patient_id": "PT-10293",
+        "activity_level": "Sedentary",
+        "clinical_notes": "Severe medial compartment pain, fixed flexion contracture 5\u00b0.",
+        "range_of_motion": "5-100",
+        "fixed_flexion_deg": 5,
+        "walking_distance_m": 500
+      },
+      "objectives": [
+        "Accurately calculate Mechanical Axis Deviation (MAD) and mHKA from full-leg radiograph.",
+        "Select optimal tibial baseplate avoiding medial/lateral overhang > 1.0 mm.",
+        "Select optimal femoral component ensuring flush anterior resection without anterior cortical notching."
+      ],
+      "status": "published",
+      "is_immutable": true,
+      "created_by": "96e4983f-0375-453d-baf3-da18e3038714",
+      "created_at": "2026-10-05 04:31:39.075880+00:00",
+      "published_at": "2026-10-05 04:31:44.695942+00:00"
+    }
+  ],
+  "case_imaging": [
+    {
+      "id": "f70ba75c-e767-469d-9261-8443a528a485",
+      "case_version_id": "ba111111-1111-4111-a111-111111111111",
+      "view_type": "FLAP",
+      "label": "Full Leg Anteroposterior (FLAP)",
+      "storage_path": "cases/c1111111-1111-4111-a111-111111111111/flap.jpg",
+      "filename": "synth_varus_flap.jpg",
+      "mimetype": "image/jpeg",
+      "file_size": null,
+      "width": null,
+      "height": null,
+      "laterality": "right",
+      "calibration": {
+        "unit": "mm/px",
+        "method": "radio_opaque_marker",
+        "version": "1.0.0",
+        "is_valid": true,
+        "marker_type": "sphere_25mm",
+        "validation_error": null,
+        "calculated_scale_mm_per_px": 0.26399,
+        "physical_marker_diameter_mm": 25.0,
+        "detected_marker_pixel_diameter": 94.7
+      },
+      "created_at": "2026-09-23 05:42:11.768557+00:00"
+    },
+    {
+      "id": "db4bd4e9-80d9-43a7-93eb-309886e39951",
+      "case_version_id": "ba111111-1111-4111-a111-111111111111",
+      "view_type": "KLAT",
+      "label": "Knee Lateral (KLAT)",
+      "storage_path": "cases/c1111111-1111-4111-a111-111111111111/klat.jpg",
+      "filename": "synth_varus_klat.jpg",
+      "mimetype": "image/jpeg",
+      "file_size": null,
+      "width": null,
+      "height": null,
+      "laterality": "right",
+      "calibration": {
+        "unit": "mm/px",
+        "method": "radio_opaque_marker",
+        "version": "1.0.0",
+        "is_valid": true,
+        "marker_type": "sphere_25mm",
+        "validation_error": null,
+        "calculated_scale_mm_per_px": 0.26399,
+        "physical_marker_diameter_mm": 25.0,
+        "detected_marker_pixel_diameter": 94.7
+      },
+      "created_at": "2026-09-23 05:42:11.768557+00:00"
+    },
+    {
+      "id": "24acc375-2afe-4d57-9906-b06c00fe09dc",
+      "case_version_id": "ba222222-2222-4222-a222-222222222222",
+      "view_type": "FLAP",
+      "label": "Full Leg Anteroposterior (FLAP)",
+      "storage_path": "cases/c2222222-2222-4222-a222-222222222222/flap.jpg",
+      "filename": "synth_valgus_flap.jpg",
+      "mimetype": "image/jpeg",
+      "file_size": null,
+      "width": null,
+      "height": null,
+      "laterality": "left",
+      "calibration": {
+        "unit": "mm/px",
+        "method": "radio_opaque_marker",
+        "version": "1.0.0",
+        "is_valid": true,
+        "marker_type": "sphere_25mm",
+        "validation_error": null,
+        "calculated_scale_mm_per_px": 0.26399,
+        "physical_marker_diameter_mm": 25.0,
+        "detected_marker_pixel_diameter": 94.7
+      },
+      "created_at": "2026-09-23 05:42:11.768557+00:00"
+    },
+    {
+      "id": "2a40675c-79a5-4caa-9b38-38bb09b3a9ed",
+      "case_version_id": "ba222222-2222-4222-a222-222222222222",
+      "view_type": "KLAT",
+      "label": "Knee Lateral (KLAT)",
+      "storage_path": "cases/c2222222-2222-4222-a222-222222222222/klat.jpg",
+      "filename": "synth_valgus_klat.jpg",
+      "mimetype": "image/jpeg",
+      "file_size": null,
+      "width": null,
+      "height": null,
+      "laterality": "left",
+      "calibration": {
+        "unit": "mm/px",
+        "method": "radio_opaque_marker",
+        "version": "1.0.0",
+        "is_valid": true,
+        "marker_type": "sphere_25mm",
+        "validation_error": null,
+        "calculated_scale_mm_per_px": 0.26399,
+        "physical_marker_diameter_mm": 25.0,
+        "detected_marker_pixel_diameter": 94.7
+      },
+      "created_at": "2026-09-23 05:42:11.768557+00:00"
+    },
+    {
+      "id": "563ca830-3664-4aab-892b-a4a2d6d2118d",
+      "case_version_id": "7e1eff5b-24e5-4c7b-befe-f9ac070d1905",
+      "view_type": "FLAP",
+      "label": "FLAP \u2013 Right Lower Limb Standing AP",
+      "storage_path": "cases/assets/04a3f5f9_Gemini_Generated_Image_gcvunygcvunygcvu.png",
+      "filename": null,
+      "mimetype": "image/jpeg",
+      "file_size": null,
+      "width": null,
+      "height": null,
+      "laterality": "right",
+      "calibration": {
+        "unit": "mm/px",
+        "is_valid": true,
+        "is_required": true,
+        "marker_type": "sphere_25mm",
+        "calculated_scale_mm_per_px": 0.3956,
+        "physical_marker_diameter_mm": 25,
+        "detected_marker_pixel_diameter": 63.2
+      },
+      "created_at": "2026-09-28 06:44:37.025331+00:00"
+    },
+    {
+      "id": "89921136-074c-42c5-9c1e-0f57297c67e9",
+      "case_version_id": "7e1eff5b-24e5-4c7b-befe-f9ac070d1905",
+      "view_type": "KLAT",
+      "label": "KLAT \u2013 Right Knee Lateral",
+      "storage_path": "cases/assets/a162f46d_Gemini_Generated_Image_21ugf921ugf921ug.png",
+      "filename": null,
+      "mimetype": "image/jpeg",
+      "file_size": null,
+      "width": null,
+      "height": null,
+      "laterality": "right",
+      "calibration": {
+        "unit": "mm/px",
+        "is_valid": true,
+        "is_required": true,
+        "marker_type": "sphere_25mm",
+        "calculated_scale_mm_per_px": 0.1524,
+        "physical_marker_diameter_mm": 25,
+        "detected_marker_pixel_diameter": 164
+      },
+      "created_at": "2026-09-28 06:44:37.025331+00:00"
+    },
+    {
+      "id": "3110b9a2-2b86-486a-adc2-770bf8d2a110",
+      "case_version_id": "c2d97d4f-b0d6-4935-9161-f61fb9739be6",
+      "view_type": "FLAP",
+      "label": "Full Leg Anteroposterior (FLAP)",
+      "storage_path": "cases/assets/99d21910_Image1.dcm",
+      "filename": null,
+      "mimetype": "image/jpeg",
+      "file_size": null,
+      "width": null,
+      "height": null,
+      "laterality": "right",
+      "calibration": {
+        "unit": "mm/px",
+        "is_valid": true,
+        "is_required": true,
+        "marker_type": "sphere_25mm",
+        "calculated_scale_mm_per_px": 0.264,
+        "physical_marker_diameter_mm": 25,
+        "detected_marker_pixel_diameter": 94.7
+      },
+      "created_at": "2026-10-01 09:15:55.823865+00:00"
+    },
+    {
+      "id": "ff5b0f80-ec2f-4e5c-b436-e4bb9d97d682",
+      "case_version_id": "c2d97d4f-b0d6-4935-9161-f61fb9739be6",
+      "view_type": "KLAT",
+      "label": "Knee Lateral (KLAT)",
+      "storage_path": "cases/assets/85e14c8d_Image2.dcm",
+      "filename": null,
+      "mimetype": "image/jpeg",
+      "file_size": null,
+      "width": null,
+      "height": null,
+      "laterality": "right",
+      "calibration": {
+        "unit": "mm/px",
+        "is_valid": true,
+        "is_required": true,
+        "marker_type": "sphere_25mm",
+        "calculated_scale_mm_per_px": 0.5,
+        "physical_marker_diameter_mm": 25,
+        "detected_marker_pixel_diameter": 50
+      },
+      "created_at": "2026-10-01 09:15:55.823865+00:00"
+    },
+    {
+      "id": "c10516d3-e5f4-4318-ba16-26be96fbe39d",
+      "case_version_id": "d1b1efeb-99d8-48c4-8e30-2ae486c09f22",
+      "view_type": "FLAP",
+      "label": "Full Leg Anteroposterior (FLAP)",
+      "storage_path": "cases/assets/b5ed5fd8_Image3.dcm",
+      "filename": null,
+      "mimetype": "image/jpeg",
+      "file_size": null,
+      "width": null,
+      "height": null,
+      "laterality": "right",
+      "calibration": {
+        "unit": "mm/px",
+        "is_valid": true,
+        "is_required": true,
+        "marker_type": "sphere_25mm",
+        "calculated_scale_mm_per_px": 0.5,
+        "physical_marker_diameter_mm": 25,
+        "detected_marker_pixel_diameter": 50
+      },
+      "created_at": "2026-10-05 04:31:39.075880+00:00"
+    },
+    {
+      "id": "55cd258a-71e5-4a47-aded-00845f03f83a",
+      "case_version_id": "d1b1efeb-99d8-48c4-8e30-2ae486c09f22",
+      "view_type": "KLAT",
+      "label": "Knee Lateral (KLAT)",
+      "storage_path": "cases/assets/1012b6c3_Image5.dcm",
+      "filename": null,
+      "mimetype": "image/jpeg",
+      "file_size": null,
+      "width": null,
+      "height": null,
+      "laterality": "right",
+      "calibration": {
+        "unit": "mm/px",
+        "is_valid": true,
+        "is_required": true,
+        "marker_type": "sphere_25mm",
+        "calculated_scale_mm_per_px": 0.5,
+        "physical_marker_diameter_mm": 25,
+        "detected_marker_pixel_diameter": 50
+      },
+      "created_at": "2026-10-05 04:31:39.075880+00:00"
+    }
+  ],
+  "case_version_reference_plan": [
+    {
+      "id": "573e96d3-1672-447b-bf09-032177018df0",
+      "case_version_id": "ba111111-1111-4111-a111-111111111111",
+      "assessment": {
+        "MAD_mm": 12.0,
+        "AMA_deg": 5.8,
+        "PTS_deg": 7.0,
+        "LDFA_deg": 87.0,
+        "MPTA_deg": 85.5,
+        "mHKA_deg": 174.0,
+        "alignment_type": "VARUS"
+      },
+      "tibial_component": {
+        "fit_status": "ACCEPTABLE FIT",
+        "position_2d": {
+          "x_offset_mm": 1.2,
+          "y_offset_mm": -0.4,
+          "rotation_deg": 0.5
+        },
+        "implant_size": 3,
+        "is_confirmed": true,
+        "ap_dimension_mm": 42.5,
+        "ml_dimension_mm": 68.2,
+        "medial_overhang_mm": 0.4,
+        "lateral_overhang_mm": 0.6,
+        "cortical_coverage_pct": 91.5
+      },
+      "femoral_component": {
+        "fit_status": "ACCEPTABLE FIT",
+        "position_2d": {
+          "x_offset_mm": 0.0,
+          "y_offset_mm": 0.0,
+          "rotation_deg": 3.0
+        },
+        "implant_size": 4,
+        "is_confirmed": true,
+        "ap_coverage_pct": 92.0,
+        "ap_dimension_mm": 58.4,
+        "ml_coverage_pct": 91.2,
+        "ml_dimension_mm": 64.1,
+        "notching_risk_mm": 0.0
+      },
+      "scoring_criteria": [],
+      "instructor_notes": "Target neutral mechanical axis 180\u00b0 \u00b1 2\u00b0. Resect proximal tibia perpendicular to mechanical axis.",
+      "calculation_metadata": {
+        "method": "radio_opaque_marker",
+        "version": "1.0.0",
+        "calibrated_scale": 0.264
+      },
+      "created_at": "2026-09-23 05:42:11.768557+00:00"
+    },
+    {
+      "id": "67865fc2-ab0a-4f55-8765-08db478e28f2",
+      "case_version_id": "ba222222-2222-4222-a222-222222222222",
+      "assessment": {
+        "MAD_mm": 8.5,
+        "AMA_deg": 6.2,
+        "PTS_deg": 8.0,
+        "LDFA_deg": 83.5,
+        "MPTA_deg": 89.0,
+        "mHKA_deg": 185.5,
+        "alignment_type": "VALGUS"
+      },
+      "tibial_component": {
+        "fit_status": "ACCEPTABLE FIT",
+        "position_2d": {
+          "x_offset_mm": 0.5,
+          "y_offset_mm": 0.0,
+          "rotation_deg": 0.0
+        },
+        "implant_size": 2,
+        "is_confirmed": true,
+        "ap_dimension_mm": 40.0,
+        "ml_dimension_mm": 64.5,
+        "medial_overhang_mm": 0.2,
+        "lateral_overhang_mm": 0.5,
+        "cortical_coverage_pct": 90.8
+      },
+      "femoral_component": {
+        "fit_status": "ACCEPTABLE FIT",
+        "position_2d": {
+          "x_offset_mm": -0.5,
+          "y_offset_mm": 0.0,
+          "rotation_deg": 3.0
+        },
+        "implant_size": 3,
+        "is_confirmed": true,
+        "ap_coverage_pct": 91.5,
+        "ap_dimension_mm": 56.2,
+        "ml_coverage_pct": 90.5,
+        "ml_dimension_mm": 62.0,
+        "notching_risk_mm": 0.0
+      },
+      "scoring_criteria": [],
+      "instructor_notes": "Avoid over-resecting distal lateral femur. Verify flexion gap symmetry.",
+      "calculation_metadata": {
+        "method": "radio_opaque_marker",
+        "version": "1.0.0",
+        "calibrated_scale": 0.264
+      },
+      "created_at": "2026-09-23 05:42:11.768557+00:00"
+    },
+    {
+      "id": "a67dc5f0-8535-49d4-b12c-a8ce204d3ece",
+      "case_version_id": "7e1eff5b-24e5-4c7b-befe-f9ac070d1905",
+      "assessment": {
+        "MAD_mm": 3.0,
+        "AMA_deg": 6.0,
+        "PTS_deg": 7.0,
+        "LDFA_deg": 88.0,
+        "MPTA_deg": 89.0,
+        "mHKA_deg": 177.0,
+        "alignment_type": "VARUS"
+      },
+      "tibial_component": {
+        "fit_status": "ACCEPTABLE FIT",
+        "position_2d": {
+          "x_offset_mm": 0.0,
+          "y_offset_mm": 0.0,
+          "rotation_deg": 0.0
+        },
+        "implant_size": 3,
+        "is_confirmed": true,
+        "ap_dimension_mm": null,
+        "ml_dimension_mm": null,
+        "medial_overhang_mm": null,
+        "lateral_overhang_mm": null,
+        "cortical_coverage_pct": null
+      },
+      "femoral_component": {
+        "fit_status": "ACCEPTABLE FIT",
+        "position_2d": {
+          "x_offset_mm": 0.0,
+          "y_offset_mm": 0.0,
+          "rotation_deg": 0.0
+        },
+        "implant_size": 4,
+        "is_confirmed": true,
+        "ap_coverage_pct": null,
+        "ap_dimension_mm": null,
+        "ml_coverage_pct": null,
+        "ml_dimension_mm": null,
+        "notching_risk_mm": null
+      },
+      "scoring_criteria": {},
+      "instructor_notes": "Synthetic calibration-validation case for MediVeR-XR. The FLAP and KLAT images were generated for software testing and are not clinical patient radiographs. The case is intended to validate image-specific physical calibration, implant overlay scaling, component sizing, 2D positioning, fit calculations, assessment reporting, and instructor review workflows. Reference measurements and component values are synthetic test fixtures and must not be interpreted as clinical recommendations.",
+      "calculation_metadata": {
+        "version": "1.0.0"
+      },
+      "created_at": "2026-09-28 06:44:37.025331+00:00"
+    },
+    {
+      "id": "70510a33-6500-41be-b61b-0bc3eab2c2ed",
+      "case_version_id": "c2d97d4f-b0d6-4935-9161-f61fb9739be6",
+      "assessment": {
+        "MAD_mm": 12.0,
+        "AMA_deg": 5.8,
+        "PTS_deg": 7.0,
+        "LDFA_deg": 87.0,
+        "MPTA_deg": 85.5,
+        "mHKA_deg": 174.0,
+        "alignment_type": "VARUS"
+      },
+      "tibial_component": {
+        "fit_status": "ACCEPTABLE FIT",
+        "position_2d": {
+          "x_offset_mm": 1.2,
+          "y_offset_mm": -0.4,
+          "rotation_deg": 0.5
+        },
+        "implant_size": 5,
+        "is_confirmed": true,
+        "ap_dimension_mm": null,
+        "ml_dimension_mm": null,
+        "medial_overhang_mm": null,
+        "lateral_overhang_mm": null,
+        "cortical_coverage_pct": null
+      },
+      "femoral_component": {
+        "fit_status": "ACCEPTABLE FIT",
+        "position_2d": {
+          "x_offset_mm": 0.0,
+          "y_offset_mm": 0.0,
+          "rotation_deg": 3.0
+        },
+        "implant_size": 4,
+        "is_confirmed": true,
+        "ap_coverage_pct": null,
+        "ap_dimension_mm": null,
+        "ml_coverage_pct": null,
+        "ml_dimension_mm": null,
+        "notching_risk_mm": null
+      },
+      "scoring_criteria": {},
+      "instructor_notes": "Target neutral mechanical axis 180\u00b0 \u00b1 2\u00b0. Resect proximal tibia perpendicular to mechanical axis.",
+      "calculation_metadata": {
+        "version": "1.0.0"
+      },
+      "created_at": "2026-10-01 09:15:55.823865+00:00"
+    },
+    {
+      "id": "ee925b17-5a62-4360-af9e-261fdbd4bf68",
+      "case_version_id": "d1b1efeb-99d8-48c4-8e30-2ae486c09f22",
+      "assessment": {
+        "MAD_mm": 12.0,
+        "AMA_deg": 5.8,
+        "PTS_deg": 7.0,
+        "LDFA_deg": 87.0,
+        "MPTA_deg": 85.5,
+        "mHKA_deg": 174.0,
+        "alignment_type": "VARUS"
+      },
+      "tibial_component": {
+        "fit_status": "ACCEPTABLE FIT",
+        "position_2d": {
+          "x_offset_mm": 1.2,
+          "y_offset_mm": -0.4,
+          "rotation_deg": 0.5
+        },
+        "implant_size": 6,
+        "is_confirmed": true,
+        "ap_dimension_mm": null,
+        "ml_dimension_mm": null,
+        "medial_overhang_mm": null,
+        "lateral_overhang_mm": null,
+        "cortical_coverage_pct": null
+      },
+      "femoral_component": {
+        "fit_status": "ACCEPTABLE FIT",
+        "position_2d": {
+          "x_offset_mm": 0.0,
+          "y_offset_mm": 0.0,
+          "rotation_deg": 3.0
+        },
+        "implant_size": 4,
+        "is_confirmed": true,
+        "ap_coverage_pct": null,
+        "ap_dimension_mm": null,
+        "ml_coverage_pct": null,
+        "ml_dimension_mm": null,
+        "notching_risk_mm": null
+      },
+      "scoring_criteria": {},
+      "instructor_notes": "Target neutral mechanical axis 180\u00b0 \u00b1 2\u00b0. Resect proximal tibia perpendicular to mechanical axis.",
+      "calculation_metadata": {
+        "version": "1.0.0"
+      },
+      "created_at": "2026-10-05 04:31:39.075880+00:00"
+    }
+  ],
+  "assessment_criteria": [
+    {
+      "id": "573eda40-b1b5-4651-a1a5-0cb20ecb8a5f",
+      "case_id": "c1111111-1111-4111-a111-111111111111",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Mechanical Axis Deviation (MAD)",
+      "parameter": "MAD_mm",
+      "target_value": "12.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "mm",
+      "severity_rule": {
+        "major": 4.0,
+        "minor": 2.0,
+        "critical": 6.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba111111-1111-4111-a111-111111111111"
+    },
+    {
+      "id": "d5f8819d-3ae6-4f74-b8be-9411552e16df",
+      "case_id": "c1111111-1111-4111-a111-111111111111",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Mechanical HKA Angle",
+      "parameter": "mHKA_deg",
+      "target_value": "174.0",
+      "tolerance_min": "1.5",
+      "tolerance_max": "1.5",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.0,
+        "minor": 1.5,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba111111-1111-4111-a111-111111111111"
+    },
+    {
+      "id": "21bcea55-fc9a-46a2-be63-7b49c8c93af5",
+      "case_id": "c1111111-1111-4111-a111-111111111111",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Medial Proximal Tibial Angle",
+      "parameter": "MPTA_deg",
+      "target_value": "85.5",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.5,
+        "minor": 2.0,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba111111-1111-4111-a111-111111111111"
+    },
+    {
+      "id": "f3c2bec6-388c-4c84-8781-158f3a8a8b00",
+      "case_id": "c1111111-1111-4111-a111-111111111111",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Lateral Distal Femoral Angle",
+      "parameter": "LDFA_deg",
+      "target_value": "87.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.5,
+        "minor": 2.0,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba111111-1111-4111-a111-111111111111"
+    },
+    {
+      "id": "6670a94a-98cf-4a5d-9470-a3b801f648e2",
+      "case_id": "c1111111-1111-4111-a111-111111111111",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Posterior Tibial Slope",
+      "parameter": "PTS_deg",
+      "target_value": "7.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.5,
+        "minor": 2.0,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba111111-1111-4111-a111-111111111111"
+    },
+    {
+      "id": "38448995-76db-4d14-ad0b-d1d9461f40a2",
+      "case_id": "c1111111-1111-4111-a111-111111111111",
+      "skill_id": "2932685b-c3b5-4553-acaf-336718077723",
+      "name": "Tibial Component Sizing",
+      "parameter": "tibial_size",
+      "target_value": "3.0",
+      "tolerance_min": "0.0",
+      "tolerance_max": "0.0",
+      "unit": "size",
+      "severity_rule": {
+        "major": 2.0,
+        "minor": 1.0,
+        "critical": 3.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba111111-1111-4111-a111-111111111111"
+    },
+    {
+      "id": "cf4164d3-0fc6-49d8-8f20-f906183f1eee",
+      "case_id": "c1111111-1111-4111-a111-111111111111",
+      "skill_id": "2932685b-c3b5-4553-acaf-336718077723",
+      "name": "Femoral Component Sizing",
+      "parameter": "femoral_size",
+      "target_value": "4.0",
+      "tolerance_min": "0.0",
+      "tolerance_max": "0.0",
+      "unit": "size",
+      "severity_rule": {
+        "major": 2.0,
+        "minor": 1.0,
+        "critical": 3.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba111111-1111-4111-a111-111111111111"
+    },
+    {
+      "id": "65faea96-35bd-4b52-b29f-7896dbd9f6c8",
+      "case_id": "c2222222-2222-4222-a222-222222222222",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Mechanical Axis Deviation (MAD)",
+      "parameter": "MAD_mm",
+      "target_value": "8.5",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "mm",
+      "severity_rule": {
+        "major": 4.0,
+        "minor": 2.0,
+        "critical": 6.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba222222-2222-4222-a222-222222222222"
+    },
+    {
+      "id": "d88859b0-775e-4424-8fd9-21672fdcb800",
+      "case_id": "c2222222-2222-4222-a222-222222222222",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Mechanical HKA Angle",
+      "parameter": "mHKA_deg",
+      "target_value": "185.5",
+      "tolerance_min": "1.5",
+      "tolerance_max": "1.5",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.0,
+        "minor": 1.5,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba222222-2222-4222-a222-222222222222"
+    },
+    {
+      "id": "41fcec07-2328-4c63-af31-5d30a0e20137",
+      "case_id": "c2222222-2222-4222-a222-222222222222",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Medial Proximal Tibial Angle",
+      "parameter": "MPTA_deg",
+      "target_value": "89.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.5,
+        "minor": 2.0,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba222222-2222-4222-a222-222222222222"
+    },
+    {
+      "id": "82befeb8-5850-4daf-9392-760b94b07dd1",
+      "case_id": "c2222222-2222-4222-a222-222222222222",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Lateral Distal Femoral Angle",
+      "parameter": "LDFA_deg",
+      "target_value": "83.5",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.5,
+        "minor": 2.0,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba222222-2222-4222-a222-222222222222"
+    },
+    {
+      "id": "5c3dc212-33b3-4308-94b5-f7bd4041d8a4",
+      "case_id": "c2222222-2222-4222-a222-222222222222",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Posterior Tibial Slope",
+      "parameter": "PTS_deg",
+      "target_value": "8.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.5,
+        "minor": 2.0,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba222222-2222-4222-a222-222222222222"
+    },
+    {
+      "id": "8411afcd-20de-461c-85da-738ebfad28ab",
+      "case_id": "c2222222-2222-4222-a222-222222222222",
+      "skill_id": "2932685b-c3b5-4553-acaf-336718077723",
+      "name": "Tibial Component Sizing",
+      "parameter": "tibial_size",
+      "target_value": "2.0",
+      "tolerance_min": "0.0",
+      "tolerance_max": "0.0",
+      "unit": "size",
+      "severity_rule": {
+        "major": 2.0,
+        "minor": 1.0,
+        "critical": 3.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba222222-2222-4222-a222-222222222222"
+    },
+    {
+      "id": "9f0bab6e-6bf7-4542-bf1c-e3f92c5789bc",
+      "case_id": "c2222222-2222-4222-a222-222222222222",
+      "skill_id": "2932685b-c3b5-4553-acaf-336718077723",
+      "name": "Femoral Component Sizing",
+      "parameter": "femoral_size",
+      "target_value": "3.0",
+      "tolerance_min": "0.0",
+      "tolerance_max": "0.0",
+      "unit": "size",
+      "severity_rule": {
+        "major": 2.0,
+        "minor": 1.0,
+        "critical": 3.0
+      },
+      "version": 1,
+      "created_at": "2026-09-23 05:42:11.768557+00:00",
+      "updated_at": "2026-09-23 05:42:11.768557+00:00",
+      "case_version_id": "ba222222-2222-4222-a222-222222222222"
+    },
+    {
+      "id": "dced8520-6fc5-4564-a6fb-1421acdd5b65",
+      "case_id": "afb27315-5150-4ce2-8291-8361d026c41f",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Mechanical Axis Deviation (MAD)",
+      "parameter": "MAD_mm",
+      "target_value": "3.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "mm",
+      "severity_rule": {
+        "major": 4.0,
+        "minor": 2.0,
+        "critical": 6.0
+      },
+      "version": 1,
+      "created_at": "2026-09-28 06:44:37.025331+00:00",
+      "updated_at": "2026-09-28 06:44:37.025331+00:00",
+      "case_version_id": "7e1eff5b-24e5-4c7b-befe-f9ac070d1905"
+    },
+    {
+      "id": "e33f9a94-fa0c-4fe4-a900-73b0f810a53c",
+      "case_id": "afb27315-5150-4ce2-8291-8361d026c41f",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Mechanical Hip-Knee-Ankle Angle",
+      "parameter": "mHKA_deg",
+      "target_value": "177.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 4.0,
+        "minor": 2.0,
+        "critical": 6.0
+      },
+      "version": 1,
+      "created_at": "2026-09-28 06:44:37.025331+00:00",
+      "updated_at": "2026-09-28 06:44:37.025331+00:00",
+      "case_version_id": "7e1eff5b-24e5-4c7b-befe-f9ac070d1905"
+    },
+    {
+      "id": "ab5173ce-bf31-44f3-ae1b-fe18177c9285",
+      "case_id": "afb27315-5150-4ce2-8291-8361d026c41f",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Medial Proximal Tibial Angle",
+      "parameter": "MPTA_deg",
+      "target_value": "89.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 4.0,
+        "minor": 2.0,
+        "critical": 6.0
+      },
+      "version": 1,
+      "created_at": "2026-09-28 06:44:37.025331+00:00",
+      "updated_at": "2026-09-28 06:44:37.025331+00:00",
+      "case_version_id": "7e1eff5b-24e5-4c7b-befe-f9ac070d1905"
+    },
+    {
+      "id": "6419a4a0-5497-4bcb-8cbc-8a8d618825f1",
+      "case_id": "afb27315-5150-4ce2-8291-8361d026c41f",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Lateral Distal Femoral Angle",
+      "parameter": "LDFA_deg",
+      "target_value": "88.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 4.0,
+        "minor": 2.0,
+        "critical": 6.0
+      },
+      "version": 1,
+      "created_at": "2026-09-28 06:44:37.025331+00:00",
+      "updated_at": "2026-09-28 06:44:37.025331+00:00",
+      "case_version_id": "7e1eff5b-24e5-4c7b-befe-f9ac070d1905"
+    },
+    {
+      "id": "0640eee4-acd6-46d1-937d-90972252f067",
+      "case_id": "afb27315-5150-4ce2-8291-8361d026c41f",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Anatomical\u2013Mechanical Angle (AMA)",
+      "parameter": "custom_param",
+      "target_value": "6.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "",
+      "severity_rule": {
+        "major": 4.0,
+        "minor": 2.0,
+        "critical": 6.0
+      },
+      "version": 1,
+      "created_at": "2026-09-28 06:44:37.025331+00:00",
+      "updated_at": "2026-09-28 06:44:37.025331+00:00",
+      "case_version_id": "7e1eff5b-24e5-4c7b-befe-f9ac070d1905"
+    },
+    {
+      "id": "ec9d8938-2d53-4951-b7ea-76fc654de2af",
+      "case_id": "afb27315-5150-4ce2-8291-8361d026c41f",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Posterior Tibial Slope (PTS)",
+      "parameter": "custom_param",
+      "target_value": "7.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "",
+      "severity_rule": {
+        "major": 4.0,
+        "minor": 2.0,
+        "critical": 6.0
+      },
+      "version": 1,
+      "created_at": "2026-09-28 06:44:37.025331+00:00",
+      "updated_at": "2026-09-28 06:44:37.025331+00:00",
+      "case_version_id": "7e1eff5b-24e5-4c7b-befe-f9ac070d1905"
+    },
+    {
+      "id": "3e679058-413c-4e5b-9f11-18ba6a355412",
+      "case_id": "e7c9f1d4-91ae-463d-9861-8e4a764f3769",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Mechanical Axis Deviation (MAD)",
+      "parameter": "MAD_mm",
+      "target_value": "12.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "mm",
+      "severity_rule": {
+        "major": 4.0,
+        "minor": 2.0,
+        "critical": 6.0
+      },
+      "version": 1,
+      "created_at": "2026-10-01 09:15:55.823865+00:00",
+      "updated_at": "2026-10-01 09:15:55.823865+00:00",
+      "case_version_id": "c2d97d4f-b0d6-4935-9161-f61fb9739be6"
+    },
+    {
+      "id": "67a4b834-6e67-4f33-ab09-d74ac2dd2496",
+      "case_id": "e7c9f1d4-91ae-463d-9861-8e4a764f3769",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Mechanical Hip-Knee-Ankle Angle",
+      "parameter": "mHKA_deg",
+      "target_value": "174.0",
+      "tolerance_min": "1.5",
+      "tolerance_max": "1.5",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.0,
+        "minor": 1.5,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-10-01 09:15:55.823865+00:00",
+      "updated_at": "2026-10-01 09:15:55.823865+00:00",
+      "case_version_id": "c2d97d4f-b0d6-4935-9161-f61fb9739be6"
+    },
+    {
+      "id": "8761f09c-5d48-4b7f-8d11-f95e69635ee1",
+      "case_id": "e7c9f1d4-91ae-463d-9861-8e4a764f3769",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Medial Proximal Tibial Angle",
+      "parameter": "MPTA_deg",
+      "target_value": "85.5",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.5,
+        "minor": 2.0,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-10-01 09:15:55.823865+00:00",
+      "updated_at": "2026-10-01 09:15:55.823865+00:00",
+      "case_version_id": "c2d97d4f-b0d6-4935-9161-f61fb9739be6"
+    },
+    {
+      "id": "e6763714-2bf9-4cf9-aa0c-95621ad618cc",
+      "case_id": "e7c9f1d4-91ae-463d-9861-8e4a764f3769",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Lateral Distal Femoral Angle",
+      "parameter": "LDFA_deg",
+      "target_value": "87.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.5,
+        "minor": 2.0,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-10-01 09:15:55.823865+00:00",
+      "updated_at": "2026-10-01 09:15:55.823865+00:00",
+      "case_version_id": "c2d97d4f-b0d6-4935-9161-f61fb9739be6"
+    },
+    {
+      "id": "81ae6f09-35b2-4edc-9b36-57920f936a28",
+      "case_id": "10d0862f-f398-411e-b539-586465207281",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Mechanical Axis Deviation (MAD)",
+      "parameter": "MAD_mm",
+      "target_value": "12.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "mm",
+      "severity_rule": {
+        "major": 4.0,
+        "minor": 2.0,
+        "critical": 6.0
+      },
+      "version": 1,
+      "created_at": "2026-10-05 04:31:39.075880+00:00",
+      "updated_at": "2026-10-05 04:31:39.075880+00:00",
+      "case_version_id": "d1b1efeb-99d8-48c4-8e30-2ae486c09f22"
+    },
+    {
+      "id": "db7e583c-babc-459d-a1cb-a6b4a1a91c23",
+      "case_id": "10d0862f-f398-411e-b539-586465207281",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Mechanical Hip-Knee-Ankle Angle",
+      "parameter": "mHKA_deg",
+      "target_value": "174.0",
+      "tolerance_min": "1.5",
+      "tolerance_max": "1.5",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.0,
+        "minor": 1.5,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-10-05 04:31:39.075880+00:00",
+      "updated_at": "2026-10-05 04:31:39.075880+00:00",
+      "case_version_id": "d1b1efeb-99d8-48c4-8e30-2ae486c09f22"
+    },
+    {
+      "id": "9697d543-5568-47d7-a646-c7ae7dbf9fb8",
+      "case_id": "10d0862f-f398-411e-b539-586465207281",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Medial Proximal Tibial Angle",
+      "parameter": "MPTA_deg",
+      "target_value": "85.5",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.5,
+        "minor": 2.0,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-10-05 04:31:39.075880+00:00",
+      "updated_at": "2026-10-05 04:31:39.075880+00:00",
+      "case_version_id": "d1b1efeb-99d8-48c4-8e30-2ae486c09f22"
+    },
+    {
+      "id": "8fe81822-43e7-4b29-a88a-fdf96f72f1bc",
+      "case_id": "10d0862f-f398-411e-b539-586465207281",
+      "skill_id": "116c30d7-817e-417d-afd7-a76c296af9ec",
+      "name": "Lateral Distal Femoral Angle",
+      "parameter": "LDFA_deg",
+      "target_value": "87.0",
+      "tolerance_min": "2.0",
+      "tolerance_max": "2.0",
+      "unit": "\u00b0",
+      "severity_rule": {
+        "major": 3.5,
+        "minor": 2.0,
+        "critical": 5.0
+      },
+      "version": 1,
+      "created_at": "2026-10-05 04:31:39.075880+00:00",
+      "updated_at": "2026-10-05 04:31:39.075880+00:00",
+      "case_version_id": "d1b1efeb-99d8-48c4-8e30-2ae486c09f22"
+    }
+  ],
+  "case_programs": [
+    {
+      "id": "d32e9c1d-9b69-4033-afca-3158ac679201",
+      "case_id": "c1111111-1111-4111-a111-111111111111",
+      "program_id": "cee1e6e4-971e-4ccb-b28a-a3ae328a53fd",
+      "created_at": "2026-09-23 05:42:11.768557+00:00"
+    },
+    {
+      "id": "55c7e19a-53ae-4e32-8c7b-164339bc45ad",
+      "case_id": "c2222222-2222-4222-a222-222222222222",
+      "program_id": "cee1e6e4-971e-4ccb-b28a-a3ae328a53fd",
+      "created_at": "2026-09-23 05:42:11.768557+00:00"
+    },
+    {
+      "id": "295dd957-2d63-4fce-8e84-c6144e222c25",
+      "case_id": "afb27315-5150-4ce2-8291-8361d026c41f",
+      "program_id": "cee1e6e4-971e-4ccb-b28a-a3ae328a53fd",
+      "created_at": "2026-09-28 06:44:37.025331+00:00"
+    },
+    {
+      "id": "59b38d09-abbc-415b-9d3c-bff35eb221d5",
+      "case_id": "e7c9f1d4-91ae-463d-9861-8e4a764f3769",
+      "program_id": "cee1e6e4-971e-4ccb-b28a-a3ae328a53fd",
+      "created_at": "2026-10-01 09:15:55.823865+00:00"
+    },
+    {
+      "id": "cc6e7ef0-e870-421d-a24f-150f900aa033",
+      "case_id": "10d0862f-f398-411e-b539-586465207281",
+      "program_id": "cee1e6e4-971e-4ccb-b28a-a3ae328a53fd",
+      "created_at": "2026-10-05 04:31:39.075880+00:00"
+    }
+  ],
+  "cohort_case_assignments": [
+    {
+      "id": "8a7d3838-9660-4b20-b6f9-5fc2121f04e7",
+      "cohort_id": "d999e22d-f32e-43f6-9416-4bd6595e76c7",
+      "case_id": "afb27315-5150-4ce2-8291-8361d026c41f",
+      "due_date": null,
+      "required": true,
+      "order": null,
+      "created_at": "2026-09-29 04:54:57.202564+00:00"
+    }
+  ]
+}

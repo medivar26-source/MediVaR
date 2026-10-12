@@ -7,7 +7,7 @@
 
 import type { Point2D } from "./coordinates";
 import type { BoneModel, ComponentKind } from "./fit_markers";
-import { estimatedTibialPlateauOutline, getFemoralImplant, getTibialImplant, placePolygon } from "./implant_templates";
+import { estimatedFemoralCutOutline, estimatedTibialPlateauOutline, getFemoralImplant, getTibialImplant, placePolygon } from "./implant_templates";
 
 export type MapPosition = { x_offset_mm: number; y_offset_mm: number; rotation_deg: number };
 
@@ -26,7 +26,7 @@ export type MapShapes = {
 
 /** Room around the picture: more above and below, where the labels and the rotation handle sit. */
 export const MAP_MARGIN_X_MM = 12;
-export const MAP_MARGIN_Y_MM = 17;
+export const MAP_MARGIN_Y_MM = 22;
 /** In-plane rotation limit of the AP overlay (V1: "minor 2-D alignment"). ENGINEERING_DERIVATION. */
 export const ROTATION_LIMIT_DEG = 15;
 
@@ -44,12 +44,7 @@ export function mapShapes(kind: ComponentKind, size: number, bone: BoneModel, po
   const boneOutline: Point2D[] =
     kind === "tibial"
       ? estimatedTibialPlateauOutline(ml, ap)
-      : [
-          { x: -ml / 2, y: -ap / 2 },
-          { x: ml / 2, y: -ap / 2 },
-          { x: ml / 2, y: ap / 2 },
-          { x: -ml / 2, y: ap / 2 },
-        ];
+      : estimatedFemoralCutOutline(ml, ap);
   const implML = tpl.dimensionsMm.ml;
   const implAP = tpl.dimensionsMm.ap;
 

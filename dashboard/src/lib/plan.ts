@@ -86,7 +86,7 @@ export type SessionConfig = {
 };
 
 export type V1Calibration = {
-  marker_type: "sphere_25mm" | "manual";
+  marker_type: "sphere_25mm" | "ruler_100mm" | "manual";
   marker_diameter_mm: number;
   measured_pixel_diameter?: number;
   mm_per_px: number;
@@ -130,7 +130,10 @@ export type V1Assessment = {
 export type V1Position2D = {
   x_offset_mm: number;
   y_offset_mm: number;
+  /** Tilt on the AP scan, about the middle of the distal cut. */
   rotation_deg: number;
+  /** Femoral flexion on the lateral scan, about the posterior condyle centre. Positive tips the front of the component forward. Absent means 0. */
+  flexion_deg?: number;
 };
 
 /** A point on a scan, as a percentage of the image width and height. */

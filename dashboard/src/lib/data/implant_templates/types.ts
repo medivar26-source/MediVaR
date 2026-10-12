@@ -38,11 +38,32 @@ export type TemplateLayer = {
   fill: number;
 };
 
+/** One bone-facing cut of a component, as the saw sees it. Template-local mm, same frame as the view. */
+export type ResectionCut = {
+  id: "distal" | "anterior" | "posterior" | "anterior_chamfer" | "posterior_chamfer";
+  label: string;
+  /** Order the cuts are normally made in. */
+  sequence: number;
+  /** The cut as a segment on the component's bone-facing side. */
+  a: Point2D;
+  b: Point2D;
+  /** Bone removed at this cut (= the component's thickness there), in mm. */
+  thicknessMm?: number;
+};
+
 export type ViewShape = {
   layers: TemplateLayer[];
   /** The outer outline of everything in the view. Extents and overhang are measured on this. */
   silhouette: Point2D[];
   extents: Extents;
+  /**
+   * The point this view turns about, template-local. On the AP drawing it is the middle of the distal cut
+   * (where the mechanical axis meets the component); on the lateral drawing it is the centre of the
+   * posterior condyle (the knee's flexion axis). Unset means the local origin.
+   */
+  pivot?: Point2D;
+  /** Bone-facing cuts to show on the scan. Only the femoral component has them. */
+  cuts?: ResectionCut[];
 };
 
 export type ComponentKind = "tibial" | "femoral";

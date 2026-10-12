@@ -6,6 +6,7 @@ import { screenDeltaToImageDelta } from "@/lib/data/coordinates";
 import { screenMoveToOffsets, type Origin } from "@/lib/data/fit_markers";
 import { placeTemplateInImage } from "@/lib/data/overlay_geometry";
 import { rotationFromPointer } from "@/lib/data/fit_map";
+import { FLEXION_LIMIT_DEG } from "@/lib/data/resection_geometry";
 import type { ViewportContext } from "./ScanViewport";
 
 /** The planner's template colour: a semi-transparent blue vector graphic (V1 PDF, Page 2 Step 3). */
@@ -21,7 +22,7 @@ interface Props {
   origin: Origin;
   mmPerPx: number;
   anteriorImageSign: 1 | -1;
-  position: { x_offset_mm: number; y_offset_mm: number; rotation_deg: number };
+  position: { x_offset_mm: number; y_offset_mm: number; rotation_deg: number; flexion_deg?: number };
   /** Drawing height relative to the marked level; never part of the fit or the payload. */
   levelOffsetMm: number;
   readOnly: boolean;
@@ -31,7 +32,12 @@ interface Props {
   /** Colour of the label border only; the template itself stays blue. */
   verdictColour: string;
   onMove: (next: { x_offset_mm?: number; y_offset_mm?: number; level_offset_mm?: number }) => void;
+  /** The turn for the scan on show: the tilt on the AP scan, flexion on the lateral scan. */
   onRotate: (deg: number) => void;
+  /** Show the rotation handle on this scan. Defaults to the AP scan only. */
+  rotatable?: boolean;
+  /** Drawn behind the template's own hit areas: the cut lines. */
+  children?: React.ReactNode;
 }
 
 const round1 = (v: number) => Number(v.toFixed(1));
@@ -41,8 +47,9 @@ const round1 = (v: number) => Number(v.toFixed(1));
  * scan's own scale. It draws the AP outline on the FLAP scan and the lateral outline on the KLAT scan.
  *
  *   • drag anywhere on the template, or on the centre handle, to move it;
- *   • on the AP scan only, the round handle above the template turns it in the image plane
- *     (V1: "Rotational handle allows minor 2D alignment with MPTA axis line").
+ *   • the round handle above the template turns it. Each scan turns about its own point: the AP scan tilts
+ *     the component about the middle of the distal cut (V1: "Rotational handle allows minor 2D alignment
+ *     with MPTA axis line"); the lateral scan flexes it about the centre of the posterior condyle.
  *
  * Strokes use non-scaling-stroke so they stay crisp at any zoom.
  */
@@ -61,11 +68,13 @@ export function ImplantOverlay({
   verdictColour,
   onMove,
   onRotate,
+  rotatable = view === "FLAP",
+  children,
 }: Props) {
   const { naturalWidth, naturalHeight, zoom, fitScale, stageRef } = viewport;
   const shape = view === "FLAP" ? template.views.ap : template.views.lateral;
   // One function decides where the template lands on the scan (and is what the geometry tests exercise).
-  const { cx, cy, pxPerMm, flip, rotationDeg: rotation } = placeTemplateInImage({
+  const placement = placeTemplateInImage({
     template,
     view,
     origin,
@@ -74,6 +83,8 @@ export function ImplantOverlay({
     position,
     levelOffsetMm,
   });
+  const { cx, cy, pxPerMm, flip, rotationDeg: rotation, pivotPx } = placement;
+  const pivot = shape.pivot ?? { x: 0, y: 0 };
 
   const [dragging, setDragging] = useState(false);
   const [turning, setTurning] = useState(false);
@@ -110,10 +121,14 @@ export function ImplantOverlay({
   };
 
   // Rotation handle: above the template's top edge, in the template's own (turned) frame.
-  const limit = template.constraints.rotationLimitDeg;
-  const handleDistMm = -shape.extents.minY + 9;
-  const rad = (rotation * Math.PI) / 180;
-  const handle = { x: cx + Math.sin(rad) * handleDistMm * pxPerMm, y: cy - Math.cos(rad) * handleDistMm * pxPerMm };
+  const limit = view === "FLAP" ? template.constraints.rotationLimitDeg : FLEXION_LIMIT_DEG;
+  // The turn as it reads on screen (clockwise from straight up). The lateral drawing is mirrored when the
+  // front of the knee is on the left, and flexion is the opposite way round to the drawing's own turn.
+  const turnDeg = view === "FLAP" ? rotation : flip * rotation;
+  const angle = view === "FLAP" ? position.rotation_deg : position.flexion_deg ?? 0;
+  const handleDistMm = pivot.y - shape.extents.minY + 9;
+  const rad = (turnDeg * Math.PI) / 180;
+  const handle = { x: pivotPx.x + Math.sin(rad) * handleDistMm * pxPerMm, y: pivotPx.y - Math.cos(rad) * handleDistMm * pxPerMm };
 
   const onTurnMove = (e: React.PointerEvent) => {
     if (!turning || readOnly) return;
@@ -121,7 +136,9 @@ export function ImplantOverlay({
     if (!rect || rect.width <= 0 || rect.height <= 0) return;
     const ix = ((e.clientX - rect.left) / rect.width) * naturalWidth;
     const iy = ((e.clientY - rect.top) / rect.height) * naturalHeight;
-    onRotate(rotationFromPointer({ x: cx, y: cy }, { x: ix, y: iy }, limit));
+    const onScreen = rotationFromPointer(pivotPx, { x: ix, y: iy }, limit);
+    // Positive flexion tips the front of the component forward, whichever way the scan faces.
+    onRotate(view === "FLAP" ? onScreen : Number((-flip * onScreen || 0).toFixed(1)));
   };
 
   const boxW = (shape.extents.maxX - shape.extents.minX) * pxPerMm;
@@ -142,7 +159,7 @@ export function ImplantOverlay({
         preserveAspectRatio="none"
         style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", overflow: "visible" }}
       >
-        <g transform={`translate(${cx} ${cy}) scale(${flip * pxPerMm} ${pxPerMm}) rotate(${rotation})`}>
+        <g transform={`translate(${cx} ${cy}) scale(${flip * pxPerMm} ${pxPerMm}) rotate(${rotation} ${pivot.x} ${pivot.y})`}>
           {shape.layers.map((layer, i) =>
             layer.open ? (
               <polyline
@@ -180,6 +197,8 @@ export function ImplantOverlay({
         </g>
       </svg>
 
+      {children}
+
       {/* Hit area for dragging the whole template. */}
       <div
         data-implant-drag
@@ -202,7 +221,7 @@ export function ImplantOverlay({
         }}
       />
 
-      {/* Centre handle: the pivot, and a second place to grab. */}
+      {/* Centre handle: the point this scan turns about, and a second place to grab. */}
       <div
         aria-hidden="true"
         data-implant-centre
@@ -212,8 +231,8 @@ export function ImplantOverlay({
         onPointerCancel={onDragUp}
         style={{
           position: "absolute",
-          left: `${(cx / naturalWidth) * 100}%`,
-          top: `${(cy / naturalHeight) * 100}%`,
+          left: `${(pivotPx.x / naturalWidth) * 100}%`,
+          top: `${(pivotPx.y / naturalHeight) * 100}%`,
           width: 14,
           height: 14,
           borderRadius: "50%",
@@ -228,8 +247,8 @@ export function ImplantOverlay({
         }}
       />
 
-      {/* Rotational handle (AP scan only). */}
-      {view === "FLAP" && !readOnly && (
+      {/* Rotational handle: tilt on the AP scan, flexion on the lateral scan. */}
+      {rotatable && !readOnly && (
         <>
           <svg
             width="100%"
@@ -238,17 +257,21 @@ export function ImplantOverlay({
             preserveAspectRatio="none"
             style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", overflow: "visible", zIndex: 34 }}
           >
-            <line x1={cx} y1={cy} x2={handle.x} y2={handle.y} stroke={TEMPLATE_BLUE} strokeWidth={1.2} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+            <line x1={pivotPx.x} y1={pivotPx.y} x2={handle.x} y2={handle.y} stroke={TEMPLATE_BLUE} strokeWidth={1.2} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
           </svg>
           <div
             role="slider"
-            aria-label="Rotate the template in the image plane"
+            aria-label={view === "FLAP" ? "Tilt the component on the AP scan" : "Flex the component on the lateral scan"}
             aria-valuemin={Number(-limit)}
             aria-valuemax={Number(limit)}
-            aria-valuenow={Number(rotation)}
-            aria-valuetext={`${rotation.toFixed(1)} degrees`}
+            aria-valuenow={Number(angle)}
+            aria-valuetext={`${angle.toFixed(1)} degrees`}
             data-implant-rotate
-            title={`Rotate (±${limit}°) to align with the plateau / MPTA line`}
+            title={
+              view === "FLAP"
+                ? `Tilt (±${limit}°): set the distal cut square to the mechanical axis`
+                : `Flexion (±${limit}°): tip the front of the component forward (+) or back (−) about the back of the condyle`
+            }
             onPointerDown={(e) => {
               if (busy) return;
               e.stopPropagation();

@@ -231,16 +231,17 @@ test("Overlay placement is physical: scaled by the scan's own scale, independent
     assert.ok(Math.abs(lat0.cx - lat.cx - 8) < 1e-9, "posterior (+y) is towards the image left when anterior is on the right");
   });
 
-  await t.test("rotation turns the AP drawing in place about its centre handle and leaves the lateral drawing alone", () => {
+  await t.test("tilt turns the AP drawing about the pivot (the centre handle) and leaves the lateral drawing alone", () => {
     const tpl = getFemoralImplant(4);
     const flat = placeTemplateInImage({ template: tpl, view: "FLAP", origin, mmPerPx: 0.2, anteriorImageSign: 1, position: pos() });
     const turned = placeTemplateInImage({ template: tpl, view: "FLAP", origin, mmPerPx: 0.2, anteriorImageSign: 1, position: pos(0, 0, 10) });
     assert.equal(turned.cx, flat.cx);
     assert.equal(turned.cy, flat.cy);
+    assert.deepEqual(turned.pivotPx, flat.pivotPx);
     assert.notDeepEqual(turned.silhouettePx, flat.silhouettePx);
     // A rotation preserves every distance from the pivot.
-    const dist = (p: { x: number; y: number }, c: { cx: number; cy: number }) => Math.hypot(p.x - c.cx, p.y - c.cy);
-    flat.silhouettePx.forEach((p, i) => assert.ok(Math.abs(dist(p, flat) - dist(turned.silhouettePx[i], turned)) < 1e-6));
+    const dist = (p: { x: number; y: number }, c: { x: number; y: number }) => Math.hypot(p.x - c.x, p.y - c.y);
+    flat.silhouettePx.forEach((p, i) => assert.ok(Math.abs(dist(p, flat.pivotPx) - dist(turned.silhouettePx[i], turned.pivotPx)) < 1e-6));
     const latFlat = placeTemplateInImage({ template: tpl, view: "KLAT", origin, mmPerPx: 0.2, anteriorImageSign: 1, position: pos() });
     const latTurned = placeTemplateInImage({ template: tpl, view: "KLAT", origin, mmPerPx: 0.2, anteriorImageSign: 1, position: pos(0, 0, 10) });
     assert.deepEqual(latFlat.silhouettePx, latTurned.silhouettePx);

@@ -155,7 +155,7 @@ export function FitMap({ kind, shapes, position, orientation, sides, headline, t
   return (
     <section className={c.mapBox} aria-label="Fit map">
       <div className={c.mapHead}>
-        <h4 className={c.sectionLabel}>Fit map · from above (estimate)</h4>
+        <h4 className={c.sectionLabel}>{kind === "femoral" ? "Cut bone · from above (estimate)" : "Fit map · from above (estimate)"}</h4>
         {!readOnly && (
           <div className={c.mapActions}>
             <button type="button" className={c.mapBtn} onClick={onBest} title="Move to the position that fits the marked bone best">
@@ -199,7 +199,7 @@ export function FitMap({ kind, shapes, position, orientation, sides, headline, t
           </defs>
 
           {/* Bone first, all of it bare: whatever the component does not cover stays red. */}
-          <polygon points={pointsAttr(shapes.bone)} fill={byArea ? "rgba(239,68,68,0.32)" : "rgba(148,163,184,0.16)"} />
+          <polygon points={pointsAttr(shapes.bone)} fill={byArea ? "rgba(239,68,68,0.32)" : "rgba(226,214,190,0.30)"} />
           <line x1={-hw} y1={0} x2={hw} y2={0} stroke="rgba(148,163,184,0.25)" strokeWidth={unit * 0.25} strokeDasharray={`${unit} ${unit}`} />
           <line x1={0} y1={-hh} x2={0} y2={hh} stroke="rgba(148,163,184,0.25)" strokeWidth={unit * 0.25} strokeDasharray={`${unit} ${unit}`} />
 
@@ -250,7 +250,7 @@ export function FitMap({ kind, shapes, position, orientation, sides, headline, t
         ) : (
           <>
             <li><i style={{ background: "rgba(59,130,246,0.75)" }} /> Component</li>
-            <li><i style={{ background: "rgba(148,163,184,0.45)" }} /> Marked bone</li>
+            <li><i style={{ background: "rgba(226,214,190,0.6)" }} /> Bone at the cut</li>
           </>
         )}
         <li><i className={c.mapHatch} /> Overhang</li>
@@ -262,7 +262,7 @@ export function FitMap({ kind, shapes, position, orientation, sides, headline, t
       <p className={c.hint} style={{ margin: 0 }}>
         {kind === "tibial"
           ? "Outline estimated from your width and depth marks, not traced anatomy."
-          : "Based on the marked width and depth; no area is claimed."}
+          : "Bone outline at the distal cut, estimated from your width and depth marks; not traced anatomy. No area is claimed."}
       </p>
     </section>
   );

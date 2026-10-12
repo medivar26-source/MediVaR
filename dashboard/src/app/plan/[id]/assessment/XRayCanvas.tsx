@@ -125,8 +125,54 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, placing, onPlace, 
   const placingHere = placing && LANDMARK_INFO[placing].view === viewMode && !isAccepted ? placing : null;
   const placedCount = (LANDMARK_ORDER as Key[]).filter((k) => landmarks[k]).length;
 
+  // Lives outside the zoomed stage (ScanViewport `overlay`), so it stays readable at any zoom or pan.
+  const hint = placingHere ? (
+    <div
+      style={{
+        position: "absolute",
+        top: 12,
+        left: 12,
+        right: 210, // clear of the zoom toolbar
+        zIndex: 60,
+        display: "flex",
+        justifyContent: "center",
+        pointerEvents: "none",
+      }}
+    >
+      <div
+        role="status"
+        onPointerDown={(e) => e.stopPropagation()}
+        style={{
+          pointerEvents: "auto",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "6px 12px",
+          borderRadius: 8,
+          background: "rgba(15,23,42,0.92)",
+          border: `1px solid ${LANDMARK_INFO[placingHere].color}`,
+          color: "#fff",
+          fontSize: 13,
+          fontWeight: 600,
+          maxWidth: 420,
+        }}
+      >
+        <span>
+          Point {placedCount + (landmarks[placingHere] ? 0 : 1)} of {LANDMARK_ORDER.length}: click the {LANDMARK_INFO[placingHere].name.toLowerCase()}.
+        </span>
+        <button
+          type="button"
+          onClick={onCancelPlace}
+          style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.3)", background: "transparent", color: "#e2e8f0", fontSize: 12, cursor: "pointer" }}
+        >
+          Stop
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   return (
-    <ScanViewport src={imgSrc} alt={`${viewMode} Scan`}>
+    <ScanViewport src={imgSrc} alt={`${viewMode} Scan`} overlay={placingHere ? hint : null}>
       {({ zoom, stageRef, naturalWidth, naturalHeight, fitScale }) => {
         return (
         <>
@@ -188,40 +234,6 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, placing, onPlace, 
                 }}
                 style={{ position: "absolute", inset: 0, zIndex: 5, cursor: "crosshair" }}
               />
-              <div
-                role="status"
-                style={{
-                  position: "absolute",
-                  left: "50%",
-                  top: 10,
-                  transform: `translateX(-50%) scale(${1 / zoom})`,
-                  transformOrigin: "top center",
-                  zIndex: 70,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "6px 12px",
-                  borderRadius: 8,
-                  background: "rgba(15,23,42,0.92)",
-                  border: `1px solid ${LANDMARK_INFO[placingHere].color}`,
-                  color: "#fff",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  width: "max-content",
-                  maxWidth: 420,
-                }}
-              >
-                <span>
-                  Point {placedCount + (landmarks[placingHere] ? 0 : 1)} of {LANDMARK_ORDER.length}: click the {LANDMARK_INFO[placingHere].name.toLowerCase()}.
-                </span>
-                <button
-                  type="button"
-                  onClick={onCancelPlace}
-                  style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.3)", background: "transparent", color: "#e2e8f0", fontSize: 12, cursor: "pointer" }}
-                >
-                  Stop
-                </button>
-              </div>
             </>
           )}
 

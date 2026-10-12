@@ -27,6 +27,7 @@ import {
   getFemoralImplant,
   getTibialImplant,
   placePolygon,
+  rotateAbout,
   area,
 } from "./implant_templates";
 import { calculatePolygonIntersectionArea, transformPhysicalPolygon } from "./tibial_geometry";
@@ -310,14 +311,18 @@ export type FemoralFitResult = {
 export const FEMORAL_NOTCH_LIMIT_MM = 0.5;
 
 /** Where the femoral template sits once placed: the same extents the fit is measured on. */
-export function femoralExtents(size: number, xOffsetMm: number, yOffsetMm: number, rotationDeg = 0): FitExtents {
+export function femoralExtents(size: number, xOffsetMm: number, yOffsetMm: number, rotationDeg = 0, flexionDeg = 0): FitExtents {
   const tpl = getFemoralImplant(size);
-  const apExt = extentsOf(placePolygon(tpl.views.ap.silhouette, xOffsetMm, 0, rotationDeg));
+  const ap = tpl.views.ap;
+  const lat = tpl.views.lateral;
+  // Each view turns about its own pivot: the AP drawing by the tilt, the lateral drawing by flexion.
+  const apExt = extentsOf(placePolygon(rotateAbout(ap.silhouette, ap.pivot ?? { x: 0, y: 0 }, rotationDeg), xOffsetMm, 0));
+  const latExt = flexionDeg === 0 ? lat.extents : extentsOf(rotateAbout(lat.silhouette, lat.pivot ?? { x: 0, y: 0 }, -flexionDeg));
   return {
     minX: apExt.minX,
     maxX: apExt.maxX,
-    minY: tpl.views.lateral.extents.minX + yOffsetMm,
-    maxY: tpl.views.lateral.extents.maxX + yOffsetMm,
+    minY: latExt.minX + yOffsetMm,
+    maxY: latExt.maxX + yOffsetMm,
   };
 }
 
@@ -337,11 +342,12 @@ export function evaluateFemoralFit(
   patientMlMm?: number,
   rotationDeg = 0,
   orientation: FitOrientation = DEFAULT_ORIENTATION,
+  flexionDeg = 0,
 ): FemoralFitResult {
   const tpl = getFemoralImplant(size);
   const ml = patientMlMm ?? tpl.dimensionsMm.ml;
   const ap = patientApMm ?? tpl.dimensionsMm.ap;
-  const ext = femoralExtents(size, xOffsetMm, yOffsetMm, rotationDeg);
+  const ext = femoralExtents(size, xOffsetMm, yOffsetMm, rotationDeg, flexionDeg);
 
   const boneMinX = -ml / 2;
   const boneMaxX = ml / 2;

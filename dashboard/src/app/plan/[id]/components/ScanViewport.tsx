@@ -21,9 +21,17 @@ interface ScanViewportProps {
   src: string;
   alt?: string;
   children: (props: ViewportContext) => React.ReactNode;
+  /** Drawn over the viewport itself, outside the zoomed stage, so it stays put while zooming and panning. */
+  overlay?: React.ReactNode;
+  /**
+   * Zoom in on the image point (`x`, `y`, natural pixels) so that `spanPx` natural pixels fill about half of
+   * the viewport, with that point in the middle. It is applied once for each new `nonce`, as soon as the
+   * image size is known, so a click can ask for it.
+   */
+  focus?: { x: number; y: number; spanPx: number; nonce: string | number };
 }
 
-export function ScanViewport({ src, alt = "Scan Image", children }: ScanViewportProps) {
+export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus }: ScanViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -56,6 +64,24 @@ export function ScanViewport({ src, alt = "Scan Image", children }: ScanViewport
       setNaturalSize(null);
     }
   }, [src]);
+
+  const appliedFocus = useRef<string | number | null>(null);
+
+  // Wheel zoom and drag are the user's; a focus request only runs when its nonce is new.
+  useEffect(() => {
+    if (!focus || appliedFocus.current === focus.nonce) return;
+    if (!naturalSize || containerSize.width <= 0 || containerSize.height <= 0) return;
+    appliedFocus.current = focus.nonce;
+    const fitScale = Math.min(containerSize.width / naturalSize.width, containerSize.height / naturalSize.height);
+    const zoomTo = Math.max(0.5, Math.min(5, (0.5 * Math.min(containerSize.width, containerSize.height)) / (Math.max(focus.spanPx, 1) * fitScale)));
+    const dx = (focus.x - naturalSize.width / 2) * fitScale;
+    const dy = (focus.y - naturalSize.height / 2) * fitScale;
+    // A one-off move of the view, asked for from outside: there is nothing to derive it from during render.
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setZoom(zoomTo);
+    setPan({ x: -zoomTo * dx, y: -zoomTo * dy });
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [focus, naturalSize, containerSize]);
 
   // Monitor container dimensions with ResizeObserver
   useEffect(() => {
@@ -296,6 +322,8 @@ export function ScanViewport({ src, alt = "Scan Image", children }: ScanViewport
           Reset
         </button>
       </div>
+
+      {overlay}
 
       {/* Helper text overlay in bottom-left */}
       <div

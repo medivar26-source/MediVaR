@@ -179,6 +179,9 @@ export async function listCases(
   const token = await getOptionalToken();
 
   let dbCases: CaseCard[] = [];
+  // When the backend answers, the library is exactly what it holds, even if that is nothing. The built-in
+  // demo catalogue is only a stand-in for when it cannot be reached.
+  let backendAnswered = false;
   if (token) {
     try {
       const res = await fetch(`${API_BASE}/cases`, {
@@ -186,6 +189,7 @@ export async function listCases(
         cache: "no-store",
       });
       if (res.ok) {
+        backendAnswered = true;
         const rows = await res.json();
         dbCases = rows.map((r: any) => {
           const stat = stats.get(r.id);
@@ -213,7 +217,7 @@ export async function listCases(
 
   // Combine with seed catalogue, deduplicating by ID
   const seenIds = new Set(dbCases.map((c) => c.id));
-  const seedCases: CaseCard[] = CASES.filter((row) => row.isActive && !seenIds.has(row.id))
+  const seedCases: CaseCard[] = CASES.filter((row) => !backendAnswered && row.isActive && !seenIds.has(row.id))
     .map((row) => {
       const stat = stats.get(row.id);
       return {

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useCallback } from "react";
 import type { FemoralViewMode } from "./FemoralWorkspace";
 import { ScanViewport } from "../components/ScanViewport";
 import { CalibrationLayer, DimsReporter, EdgeGapOverlay, FitMarkerLayer, ScaleBar, type ScaleTools } from "../components/FitMarkerLayer";
@@ -9,13 +9,20 @@ import { getFemoralImplant } from "@/lib/data/implant_templates";
 import type { BoneModel, MarkerKey, ScanView } from "@/lib/data/fit_markers";
 import type { V1FemoralComponent, V1FitMarkers } from "@/lib/plan";
 import { ImplantOverlay } from "../components/ImplantOverlay";
+import { ResectionGuides, CUT_COLOUR } from "../components/ResectionGuides";
+import { placeTemplateInImage } from "@/lib/data/overlay_geometry";
+import { cutPlan, femoralCutLines, legAxes, tiltFromSquareDeg } from "@/lib/data/resection_geometry";
 
 interface FemoralCanvasProps {
   viewMode: FemoralViewMode;
   femoralComponent: V1FemoralComponent;
   onMove: (next: { x_offset_mm?: number; y_offset_mm?: number; level_offset_mm?: number }) => void;
-  /** In-plane rotation of the AP overlay (V1: minor 2-D alignment). */
+  /** The turn for the scan on show: tilt on the AP scan, flexion on the lateral scan. */
   onRotate: (deg: number) => void;
+  /** The assessment's landmarks (percent of the image), which give the mechanical axis. */
+  landmarks?: Record<string, { x: number; y: number }>;
+  /** The marked edges are confirmed: the scan then zooms in on the knee by itself. */
+  markersConfirmed?: boolean;
   bone: BoneModel;
   markers: V1FitMarkers;
   fit?: FemoralFitResult;
@@ -45,6 +52,8 @@ export function FemoralCanvas({
   femoralComponent,
   onMove,
   onRotate,
+  landmarks,
+  markersConfirmed = false,
   bone,
   markers,
   fit,
@@ -66,8 +75,110 @@ export function FemoralCanvas({
   const level = femoralComponent.level_offset_mm ?? 0;
   const origin = viewMode === "FLAP" ? bone.flapOrigin : bone.klatOrigin;
 
+  const [showCuts, setShowCuts] = useState(true);
+  const [focusNonce, setFocusNonce] = useState(0);
+  const [hotCut, setHotCut] = useState<string | null>(null);
+  const hasOrigin = Boolean(origin);
+
+  // The AP scan's size, reported as it loads, turns the assessment's percentages into pixels for the mechanical axis.
+  const [apDims, setApDims] = useState<{ width: number; height: number } | undefined>();
+  const reportDims = useCallback((view: ScanView, dims: { width: number; height: number }) => {
+    if (view === "FLAP") setApDims((prev) => (prev && prev.width === dims.width && prev.height === dims.height ? prev : dims));
+    onDimsLoaded(view, dims);
+  }, [onDimsLoaded]);
+  const axes = apDims ? legAxes(landmarks, apDims.width, apDims.height) : undefined;
+
+
+  const placement = origin
+    ? placeTemplateInImage({ template, view: viewMode, origin, mmPerPx, anteriorImageSign: bone.anteriorImageSign, position: pos, levelOffsetMm: level })
+    : undefined;
+  const cutLines = placement ? femoralCutLines(template, viewMode, placement) : [];
+  const plan = cutPlan(template);
+  const flexion = pos.flexion_deg ?? 0;
+
+  const focusSpanMm = 110;
+  // Once the edges are confirmed, each scan opens zoomed in on the knee (the whole leg is far too small to work
+  // on), and the button does it again. A new key is a new request, so each scan asks once.
+  const autoFocus = hasOrigin && markersConfirmed;
+  const focus =
+    placement && (autoFocus || focusNonce > 0)
+      ? { x: placement.pivotPx.x, y: placement.pivotPx.y, spanPx: focusSpanMm / mmPerPx, nonce: `${viewMode}:${autoFocus ? "auto" : "manual"}:${focusNonce}` }
+      : undefined;
+
+  const hud = origin ? (
+    <div
+      onPointerDown={(e) => e.stopPropagation()}
+      onWheel={(e) => e.stopPropagation()}
+      style={{
+        position: "absolute",
+        left: 12,
+        bottom: 40,
+        zIndex: 55,
+        width: 224,
+        padding: "8px 10px",
+        borderRadius: 8,
+        background: "rgba(15,23,42,0.9)",
+        border: "1px solid rgba(255,255,255,0.15)",
+        color: "#e2e8f0",
+        fontSize: 12,
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, cursor: "pointer" }}>
+          <input type="checkbox" checked={showCuts} onChange={(e) => setShowCuts(e.target.checked)} />
+          <span style={{ color: CUT_COLOUR }}>Bone cuts</span>
+        </label>
+        <button
+          type="button"
+          onClick={() => setFocusNonce((n) => n + 1)}
+          style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.3)", background: "transparent", color: "#e2e8f0", fontSize: 11, cursor: "pointer" }}
+          title="Zoom in on the knee and the component"
+        >
+          Zoom to knee
+        </button>
+      </div>
+      {showCuts && (
+        <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 2 }}>
+          {plan
+            .filter((c) => viewMode === "KLAT" || c.id === "distal")
+            .map((c) => (
+              <li
+                key={c.id}
+                onPointerEnter={() => setHotCut(c.id)}
+                onPointerLeave={() => setHotCut((h) => (h === c.id ? null : h))}
+                style={{ display: "flex", justifyContent: "space-between", gap: 8, opacity: hotCut && hotCut !== c.id ? 0.6 : 1 }}
+              >
+                <span>
+                  <b style={{ color: CUT_COLOUR }}>{c.sequence}</b> {c.label}
+                </span>
+                <span style={{ color: "#94a3b8" }}>{c.thicknessMm !== undefined ? `${c.thicknessMm.toFixed(1)} mm` : "angled"}</span>
+              </li>
+            ))}
+        </ol>
+      )}
+      <div style={{ color: "#cbd5e1", lineHeight: 1.35 }}>
+        {viewMode === "FLAP" ? (
+          <>
+            Tilt {pos.rotation_deg.toFixed(1)}°
+            {axes && tiltFromSquareDeg(pos.rotation_deg, axes) !== undefined && (
+              <>
+                {" · "}
+                {Math.abs(tiltFromSquareDeg(pos.rotation_deg, axes)!) < 0.05 ? "square to the mechanical axis" : `${Math.abs(tiltFromSquareDeg(pos.rotation_deg, axes)!).toFixed(1)}° off square`}
+              </>
+            )}
+          </>
+        ) : (
+          <>Flexion {flexion.toFixed(1)}° · turns about the back of the condyle</>
+        )}
+      </div>
+    </div>
+  ) : null;
+
   return (
-    <ScanViewport src={imgSrc} alt={`${viewMode} Scan`}>
+    <ScanViewport src={imgSrc} alt={`${viewMode} Scan`} overlay={hud} focus={focus}>
       {(viewport) => {
         const { naturalWidth, naturalHeight, zoom, fitScale, stageRef } = viewport;
         const fontPx = 13 / (fitScale * zoom);
@@ -82,7 +193,7 @@ export function FemoralCanvas({
 
         return (
           <>
-            <DimsReporter view={viewMode} width={naturalWidth} height={naturalHeight} onReport={onDimsLoaded} />
+            <DimsReporter view={viewMode} width={naturalWidth} height={naturalHeight} onReport={reportDims} />
 
             <svg
               width="100%"
@@ -181,7 +292,21 @@ export function FemoralCanvas({
                 verdictColour={colour}
                 onMove={onMove}
                 onRotate={onRotate}
-              />
+                rotatable
+              >
+                {showCuts && (
+                  <ResectionGuides
+                    view={viewMode}
+                    lines={cutLines}
+                    axes={viewMode === "FLAP" ? axes : undefined}
+                    naturalWidth={naturalWidth}
+                    naturalHeight={naturalHeight}
+                    zoom={zoom}
+                    mmPerPx={mmPerPx}
+                    highlightId={hotCut}
+                  />
+                )}
+              </ImplantOverlay>
             )}
 
           </>

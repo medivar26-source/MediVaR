@@ -77,7 +77,7 @@ export function normalizeCalibration(cal?: any, viewHint?: string): V1Calibratio
     const realistic = scale >= REALISTIC_SCALE_MM_PER_PX[0] && scale <= REALISTIC_SCALE_MM_PER_PX[1];
 
     return {
-      marker_type: cal.marker_type === "manual" ? "manual" : "sphere_25mm",
+      marker_type: cal.marker_type === "manual" ? "manual" : cal.marker_type === "ruler_100mm" ? "ruler_100mm" : "sphere_25mm",
       marker_diameter_mm,
       measured_pixel_diameter,
       mm_per_px: scale,
@@ -86,20 +86,21 @@ export function normalizeCalibration(cal?: any, viewHint?: string): V1Calibratio
     };
   }
 
-  // Full-leg scans (FLAP / long_leg / full_leg_xray) cover the full leg (~850mm across ~1100px):
-  // 10cm ruler on flap.jpg measures 130px -> 100mm / 130px = 0.7692 mm/px (25mm marker = 32.5px).
-  // Anything else (a knee close-up) gets the placeholder, which is never valid.
+  // A scan with no stored calibration gets a guess from its view's name, never a measurement, and it is never valid.
+  // A full-length film covers the whole leg, so its pixels are about three times the size of a knee close-up's:
+  // the demo film's printed 10 cm ruler measures 125 px (100 mm / 125 px = 0.8 mm/px, so a 25 mm marker would be
+  // 31.25 px). Anything else (a knee close-up) gets the placeholder.
   const isFullLeg =
     viewHint?.toLowerCase().includes("flap") ||
     viewHint?.toLowerCase().includes("long_leg") ||
     viewHint?.toLowerCase().includes("full_leg");
 
   if (isFullLeg) {
-    const mm_per_px = 25.0 / 32.5; // ~0.7692 mm/px
+    const mm_per_px = 25.0 / 31.25; // 0.8 mm/px
     return {
       marker_type: "sphere_25mm",
       marker_diameter_mm: 25.0,
-      measured_pixel_diameter: 32.5,
+      measured_pixel_diameter: 31.25,
       mm_per_px,
       calibrated_at: new Date().toISOString(),
       isValid: false,

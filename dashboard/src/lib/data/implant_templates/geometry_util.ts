@@ -105,4 +105,16 @@ export function placePolygon(poly: Point2D[], dx: number, dy: number, deg = 0): 
   return poly.map((p) => ({ x: p.x * c - p.y * s + dx, y: p.x * s + p.y * c + dy }));
 }
 
+/** Rotate about `pivot` by `deg` (positive = clockwise on a y-down screen). A turn of 0 returns the points as they are. */
+export function rotateAbout(poly: Point2D[], pivot: Point2D, deg: number): Point2D[] {
+  if (deg === 0) return poly.map((p) => ({ ...p }));
+  const c = Math.cos(rad(deg));
+  const s = Math.sin(rad(deg));
+  return poly.map((p) => {
+    const x = p.x - pivot.x;
+    const y = p.y - pivot.y;
+    return { x: pivot.x + x * c - y * s, y: pivot.y + x * s + y * c };
+  });
+}
+
 export const round3 = (v: number) => Math.round(v * 1000) / 1000;

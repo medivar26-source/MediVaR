@@ -11,11 +11,12 @@ import {
   clearanceText,
   screenMoveToOffsets,
   sideGaps,
-  plateauLineAngleDeg,
   type FemoralSizeRow,
 } from "@/lib/data/fit_markers";
 import { adviseFemoral } from "@/lib/data/fit_advice";
 import { ROTATION_LIMIT_DEG } from "@/lib/data/fit_map";
+import { getFemoralImplant } from "@/lib/data/implant_templates";
+import { FLEXION_LIMIT_DEG, cutPlan, legAxes, tiltFromSquareDeg } from "@/lib/data/resection_geometry";
 import type { PlanDetail, V1FemoralComponent } from "@/lib/plan";
 import {
   AdviceCard,
@@ -42,7 +43,7 @@ interface FemoralControlsPanelProps {
   plan: PlanDetail;
 }
 
-type Axis = "x_offset_mm" | "y_offset_mm" | "rotation_deg" | "level_offset_mm";
+type Axis = "x_offset_mm" | "y_offset_mm" | "rotation_deg" | "flexion_deg" | "level_offset_mm";
 type Step = 1 | 2 | 3 | 4;
 
 export function FemoralControlsPanel({
@@ -100,8 +101,11 @@ export function FemoralControlsPanel({
             position_2d: {
               ...prev.position_2d,
               [key]:
-                key === "rotation_deg"
-                  ? Math.max(-ROTATION_LIMIT_DEG, Math.min(ROTATION_LIMIT_DEG, Number((prev.position_2d[key] + delta).toFixed(1))))
+                key === "rotation_deg" || key === "flexion_deg"
+                  ? (() => {
+                      const limit = key === "rotation_deg" ? ROTATION_LIMIT_DEG : FLEXION_LIMIT_DEG;
+                      return Math.max(-limit, Math.min(limit, Number(((prev.position_2d[key] ?? 0) + delta).toFixed(1))));
+                    })()
                   : Number((prev.position_2d[key] + delta).toFixed(1)),
             },
           }),
@@ -112,7 +116,8 @@ export function FemoralControlsPanel({
 
   // Keys move the implant the way it looks on the scan being shown.
   const handleKey = (axis: NudgeAxis, delta: number) => {
-    if (axis === "rotation_deg") return handleOffsetChange("rotation_deg", delta);
+    // Turning keys act on the scan on show: tilt on the AP scan, flexion on the lateral scan.
+    if (axis === "rotation_deg") return handleOffsetChange(session.viewMode === "FLAP" ? "rotation_deg" : "flexion_deg", delta);
     const move = screenMoveToOffsets(session.viewMode, axis === "horizontal" ? delta : 0, axis === "vertical" ? delta : 0, bone.anteriorImageSign);
     if (move.x) handleOffsetChange("x_offset_mm", move.x);
     if (move.y) handleOffsetChange("y_offset_mm", move.y);
@@ -121,13 +126,17 @@ export function FemoralControlsPanel({
 
   useNudgeKeys(!isReadOnly, handleKey);
 
+  // The distal cut is set square to the leg's mechanical axis (hip centre to knee centre).
   const flapDims = session.calibration.dims.FLAP;
-  const plateauAngle = plateauLineAngleDeg(markers, flapDims ? { widthPx: flapDims.width, heightPx: flapDims.height } : undefined);
-  const alignToPlateauLine = () => {
-    if (isReadOnly || plateauAngle === undefined) return;
-    const clamped = Math.max(-ROTATION_LIMIT_DEG, Math.min(ROTATION_LIMIT_DEG, plateauAngle));
+  const axes = flapDims ? legAxes(plan.payload.assessment_landmarks, flapDims.width, flapDims.height) : undefined;
+  const squareToAxis = () => {
+    if (isReadOnly || !axes) return;
+    const clamped = Math.max(-ROTATION_LIMIT_DEG, Math.min(ROTATION_LIMIT_DEG, axes.squareRotationDeg));
     setFemoralComponent((prev) => ({ ...prev, position_2d: { ...prev.position_2d, rotation_deg: clamped }, is_confirmed: false }));
   };
+  const flexion = pos.flexion_deg ?? 0;
+  const offSquare = tiltFromSquareDeg(pos.rotation_deg, axes);
+  const cuts = cutPlan(getFemoralImplant(femoralComponent.implant_size));
 
   const useBestFit = () => {
     if (ranking.recommended === undefined) return;
@@ -220,6 +229,16 @@ export function FemoralControlsPanel({
             note: "V1 example: 0.0 mm flush · project limit 0.5 mm",
             group: "v1",
           },
+          {
+            label: "Tilt (AP scan)",
+            value: `${pos.rotation_deg.toFixed(1)}°${offSquare !== undefined ? ` · ${Math.abs(offSquare) < 0.05 ? "square to the mechanical axis" : `${Math.abs(offSquare).toFixed(1)}° off square`}` : ""}`,
+            note: axes?.valgusCutAngleDeg !== undefined ? `a cut square to the mechanical axis is ${axes.valgusCutAngleDeg.toFixed(1)}° valgus to the shaft` : "the distal cut is normally square to the mechanical axis",
+            group: "project",
+          },
+          { label: "Flexion (lateral scan)", value: `${flexion.toFixed(1)}°`, note: "a few degrees keeps the front flange off the cortex", group: "project" },
+          ...cuts
+            .filter((cut) => cut.thicknessMm !== undefined)
+            .map((cut) => ({ label: `${cut.sequence}. ${cut.label}`, value: `${cut.thicknessMm!.toFixed(1)} mm of bone`, note: "removed at this cut", group: "project" as const })),
           { label: "Inner (medial) side", value: clearanceText(fitResult.medialOverhangMm, gaps.medial), note: "reported only, no limit set", group: "project" },
           { label: "Outer (lateral) side", value: clearanceText(fitResult.lateralOverhangMm, gaps.lateral), note: "reported only, no limit set", group: "project" },
           { label: "Back (posterior)", value: clearanceText(fitResult.posteriorOverhangMm, gaps.posterior), note: "reported only, no limit set", group: "project" },
@@ -311,8 +330,17 @@ export function FemoralControlsPanel({
 
       {step === 3 && (
         <>
+          <ol className={c.hint} style={{ margin: 0, paddingLeft: "1.1rem", display: "flex", flexDirection: "column", gap: 4 }}>
+            <li>Drag the component on either scan, or on the map, until it spans the bone and the gap at the front is close to zero.</li>
+            <li>
+              <b>AP scan:</b> tilt it with the round handle until the distal cut is square to the green mechanical axis.
+            </li>
+            <li>
+              <b>Lateral scan:</b> flex it a few degrees with the round handle so the front flange sits on the front of the bone without notching it.
+            </li>
+          </ol>
           <p className={c.hint} style={{ margin: 0 }}>
-            Drag the component on either scan or on the Fit map until it spans the bone and the gap at the front is close to zero. The round handle on the map turns it.
+            The orange lines are where the saw goes, numbered in the order the cuts are made.
           </p>
           {!isReadOnly && (
             <details className={c.how}>
@@ -337,7 +365,7 @@ export function FemoralControlsPanel({
                   onIncrease={() => handleOffsetChange("y_offset_mm", 0.2)}
                 />
                 <NudgeRow
-                  label="Rotation (AP view, in the image plane)"
+                  label="Tilt · AP scan (about the middle of the distal cut)"
                   valueText={`${pos.rotation_deg.toFixed(1)}° (limit ±${ROTATION_LIMIT_DEG}°)`}
                   step={0.5}
                   unit="degrees"
@@ -345,16 +373,26 @@ export function FemoralControlsPanel({
                   onDecrease={() => handleOffsetChange("rotation_deg", -0.5)}
                   onIncrease={() => handleOffsetChange("rotation_deg", 0.5)}
                 />
-                {plateauAngle !== undefined && (
+                {axes && (
                   <button
                     type="button"
                     className={c.suggest}
-                    onClick={alignToPlateauLine}
-                    title="Turn the overlay to the line through the two edge marks on the AP scan (the plateau / MPTA line)"
+                    onClick={squareToAxis}
+                    title="Turn the component so its distal cut is square (90°) to the line from the hip centre to the knee centre"
                   >
-                    Align to plateau line ({plateauAngle.toFixed(1)}°)
+                    Square to mechanical axis ({axes.squareRotationDeg.toFixed(1)}°)
                   </button>
                 )}
+                <NudgeRow
+                  label="Flexion · lateral scan (about the back of the condyle)"
+                  valueText={`${flexion.toFixed(1)}° (limit ±${FLEXION_LIMIT_DEG}°)`}
+                  step={0.5}
+                  unit="degrees"
+                  disabled={isReadOnly}
+                  onDecrease={() => handleOffsetChange("flexion_deg", -0.5)}
+                  onIncrease={() => handleOffsetChange("flexion_deg", 0.5)}
+                />
+                <p className={c.hint}>Positive flexion tips the front of the component forward, away from the front of the bone. Turn keys act on the scan on show.</p>
                 <NudgeRow
                   label="Height on scan"
                   valueText={`${Math.abs(level).toFixed(1)} mm ${level === 0 ? "at the marked level" : level > 0 ? "lower" : "higher"}`}

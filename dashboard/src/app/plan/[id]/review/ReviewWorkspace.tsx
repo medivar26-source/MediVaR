@@ -314,7 +314,7 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
                     <span style={{ color: fitStatusColor(femoral.fit_status), fontWeight: 700 }}>{femoral.fit_status}</span>
                   </div>
                   <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-                    Placed {femoral.position_2d.x_offset_mm.toFixed(1)} mm sideways, {femoral.position_2d.y_offset_mm.toFixed(1)} mm front/back, turned {femoral.position_2d.rotation_deg.toFixed(1)}°
+                    Placed {femoral.position_2d.x_offset_mm.toFixed(1)} mm sideways, {femoral.position_2d.y_offset_mm.toFixed(1)} mm front/back, tilted {femoral.position_2d.rotation_deg.toFixed(1)}° (AP), flexed {(femoral.position_2d.flexion_deg ?? 0).toFixed(1)}° (lateral)
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.25rem", fontSize: "0.75rem" }}>
                     <span>Depth covered: <strong>{femoral.ap_coverage_pct?.toFixed(1) ?? "--"}%</strong></span>

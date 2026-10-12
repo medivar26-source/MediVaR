@@ -6,6 +6,7 @@ import type { PlanDetail, V1FemoralComponent } from "@/lib/plan";
 import { evaluateFemoralFit, getFemoralTemplate } from "@/lib/data/tkr_templates";
 import { autoFitFemoral, clearanceText, rankFemoralSizes, seedMarkers, sideGaps, type MarkerKey } from "@/lib/data/fit_markers";
 import { mapShapes, type MapPosition } from "@/lib/data/fit_map";
+import { FLEXION_LIMIT_DEG } from "@/lib/data/resection_geometry";
 import { resolvePlanScales, sameScale } from "@/lib/data/scan_scale";
 import { useFitSession } from "../components/useFitSession";
 import { FitMap, type MapSide } from "../components/FitMap";
@@ -75,15 +76,16 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
             bone.mlMm!,
             pos.rotation_deg,
             bone.orientation,
+            pos.flexion_deg ?? 0,
           )
         : undefined,
-    [bone, femoralComponent.implant_size, pos.x_offset_mm, pos.y_offset_mm, pos.rotation_deg],
+    [bone, femoralComponent.implant_size, pos.x_offset_mm, pos.y_offset_mm, pos.rotation_deg, pos.flexion_deg],
   );
 
   const ranking = useMemo(() => rankFemoralSizes(bone, pos.rotation_deg), [bone, pos.rotation_deg]);
 
   // Any move, from the scan, the map or the keys, goes through here and asks for a new confirmation.
-  const handleMove = (next: Partial<MapPosition> & { level_offset_mm?: number }) => {
+  const handleMove = (next: Partial<MapPosition> & { flexion_deg?: number; level_offset_mm?: number }) => {
     if (isReadOnly) return;
     const { level_offset_mm, ...position } = next;
     setFemoralComponent((prev) => ({
@@ -159,7 +161,9 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
               viewMode={session.viewMode}
               femoralComponent={femoralComponent}
               onMove={handleMove}
-              onRotate={(deg) => handleMove({ rotation_deg: deg })}
+              onRotate={(deg) => handleMove(session.viewMode === "FLAP" ? { rotation_deg: deg } : { flexion_deg: Math.max(-FLEXION_LIMIT_DEG, Math.min(FLEXION_LIMIT_DEG, deg)) })}
+              landmarks={plan.payload.assessment_landmarks}
+              markersConfirmed={session.markersConfirmed}
               bone={bone}
               markers={session.markers}
               fit={fitResult}
@@ -197,7 +201,7 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
               tone={fitResult?.worstTone}
               readOnly={isReadOnly}
               onChange={handleMove}
-              onCentre={() => handleMove({ x_offset_mm: 0, y_offset_mm: 0, rotation_deg: 0, level_offset_mm: 0 })}
+              onCentre={() => handleMove({ x_offset_mm: 0, y_offset_mm: 0, rotation_deg: 0, flexion_deg: 0, level_offset_mm: 0 })}
               onBest={bestPosition}
             />
             <FemoralControlsPanel
