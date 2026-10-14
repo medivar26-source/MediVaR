@@ -1,17 +1,24 @@
 .container {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 100dvh;
+  position: relative;
   padding: 2rem;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 @media (min-width: 768px) {
   .container {
-    padding: 4rem;
+    padding: 1.5rem;
   }
 }
 
+/* sits in the top-right corner of the form area, no longer taking its own row */
 .helpLinkContainer {
-  display: flex;
-  justify-content: flex-end;
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 1;
 }
 .helpLink {
   font-size: 0.875rem;
@@ -29,40 +36,45 @@
   justify-content: center;
 }
 
+/* no box: the form uses the whole right partition, centred */
 .formWrapper {
   width: 100%;
-  max-width: 24rem; /* 384px */
+  max-width: 50rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 0;
 }
 
 .header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 2.25rem;
 }
 .title {
-  font-size: 1.5rem;
+  font-size: 2.75rem;
   font-weight: 700;
   letter-spacing: -0.025em;
   margin: 0;
 }
 .subtitle {
-  font-size: 0.875rem;
+  font-size: 1.15rem;
   color: var(--color-muted-foreground);
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
 }
 
 .tabs {
   display: flex;
   background-color: var(--color-muted);
   border-radius: 9999px;
-  padding: 0.25rem;
-  margin-bottom: 1.5rem;
+  padding: 0.3rem;
+  margin-bottom: 1.75rem;
 }
 .tabButton {
   flex: 1;
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   border-radius: 9999px;
-  padding: 0.5rem 0;
+  padding: 0.9rem 0;
   transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
   border: none;
   background: transparent;
@@ -78,7 +90,19 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.6rem;
+}
+/* larger inputs / button so the form reads at the size of the panel */
+.form input {
+  height: 3.75rem;
+  font-size: 1rem;
+  background-color: var(--surface-sunken);
+  border-color: var(--border);
+  padding-left: 1.1rem;
+  padding-right: 1.1rem;
+}
+.form label {
+  font-size: 0.95rem;
 }
 
 .errorBox {
@@ -106,12 +130,12 @@
 .passwordWrapper {
   position: relative;
 }
-.passwordInput {
-  padding-right: 2.5rem;
+.form .passwordInput {
+  padding-right: 3rem;
 }
 .togglePwButton {
   position: absolute;
-  right: 0.75rem;
+  right: 1rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--color-muted-foreground);
@@ -122,8 +146,8 @@
   display: flex;
 }
 .eyeIcon {
-  width: 1rem;
-  height: 1rem;
+  width: 1.2rem;
+  height: 1.2rem;
 }
 .capsLockWarning {
   font-size: 0.75rem;
@@ -136,7 +160,7 @@
   justify-content: flex-end;
 }
 .forgotPwLink {
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--color-brand-green-deep);
   text-decoration: none;
@@ -144,12 +168,14 @@
 
 .submitButton {
   width: 100%;
+  height: 3.75rem;
+  font-size: 1rem;
   border-radius: 9999px;
   background-color: var(--color-brand-green) !important;
   color: white !important;
 }
 .submitButton:hover {
-  background-color: var(--color-brand-green-deep) !important;
+  background-color: var(--brand-hover) !important;
 }
 
 .dividerContainer {
@@ -170,6 +196,8 @@
 
 .ssoButton {
   width: 100%;
+  height: 3.75rem;
+  font-size: 1rem;
   border-radius: 9999px;
   display: flex;
   gap: 0.5rem;
@@ -183,7 +211,7 @@
 
 .signupPrompt {
   text-align: center;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   color: var(--color-muted-foreground);
   padding-top: 1rem;
 }
@@ -191,4 +219,74 @@
   font-weight: 600;
   color: var(--color-brand-green-deep);
   text-decoration: none;
+}
+
+/* ── Learner mode: invert the form side (white → green) ──────────────────
+   Re-points the tokens the shared Input / Button / Label primitives read. */
+.container[data-mode="learner"] {
+  background-color: var(--brand);
+  color: #ffffff;
+  --foreground: #ffffff;
+  --background: rgba(255, 255, 255, 0.08);
+  --muted: rgba(255, 255, 255, 0.14);
+  --muted-foreground: rgba(255, 255, 255, 0.72);
+  --input: rgba(255, 255, 255, 0.4);
+  --border: rgba(255, 255, 255, 0.3);
+  --ring: #ffffff;
+}
+.container[data-mode="learner"] .title {
+  color: #ffffff;
+}
+.container[data-mode="learner"] input {
+  color: inherit;
+}
+.container[data-mode="learner"] .form input {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.container[data-mode="learner"] .helpLink,
+.container[data-mode="learner"] .subtitle,
+.container[data-mode="learner"] .signupPrompt,
+.container[data-mode="learner"] .dividerText,
+.container[data-mode="learner"] .togglePwButton,
+.container[data-mode="learner"] .tabButton {
+  color: rgba(255, 255, 255, 0.72);
+}
+.container[data-mode="learner"] .helpLink:hover {
+  color: #ffffff;
+}
+.container[data-mode="learner"] .tabs {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+.container[data-mode="learner"] .tabButtonActive {
+  background-color: #ffffff;
+  color: var(--color-brand-green-deep);
+}
+.container[data-mode="learner"] .forgotPwLink,
+.container[data-mode="learner"] .signupLink {
+  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.container[data-mode="learner"] .submitButton {
+  background-color: #ffffff !important;
+  color: var(--color-brand-green-deep) !important;
+}
+.container[data-mode="learner"] .submitButton:hover {
+  background-color: #e7f5ec !important;
+}
+.container[data-mode="learner"] .dividerLine {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+.container[data-mode="learner"] .errorBox {
+  background-color: #ffffff;
+}
+.container[data-mode="learner"] .capsLockWarning {
+  color: #fcd34d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .container {
+    transition: none;
+  }
 }

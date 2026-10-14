@@ -1,10 +1,41 @@
+/* The card fills the whole window: inset brand panel + form side. */
 .layoutContainer {
-  display: grid;
   min-height: 100vh;
+  display: flex;
+  background-color: var(--surface);
+}
+
+.card {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  background-color: var(--surface);
+  transition: background-color 0.4s ease;
 }
 
 @media (min-width: 768px) {
-  .layoutContainer {
+  .card {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* Learner mode inverts the page: the brand panel goes white-on-green → green-on-white.
+   The form side inverts itself (AuthFormPanel); :has() lets the sibling follow. */
+.layoutContainer:has([data-mode="learner"]) .card {
+  background-color: var(--brand);
+}
+.layoutContainer:has([data-mode="learner"]) [data-brand-panel] {
+  --bp-bg: #ffffff;
+  --bp-fg: #0b5c34;
+  --bp-grain-blend: multiply;
+  --bp-grain-opacity: 0.14;
+  /* white in the middle, green only creeping in around the edges */
+  background-image: radial-gradient(
+    ellipse 80% 75% at 50% 50%,
+    #ffffff 0%,
+    #ffffff 52%,
+    #d3efe0 78%,
+    #8fd9b2 100%
+  );
 }

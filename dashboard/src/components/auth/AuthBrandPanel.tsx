@@ -23,7 +23,7 @@ export default function AuthBrandPanel({
   description = "Step into immersive, patient-specific surgical TKR rehearsals — bridging the gap between planning and performance.",
 }: AuthBrandPanelProps) {
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-brand-panel>
 
       {/* top: logo + name */}
       <div className={styles.logoContainer}>

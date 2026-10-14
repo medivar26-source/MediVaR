@@ -20,9 +20,12 @@
   --brand-border: #c2ddcd;
   --on-brand: #ffffff;
   
-  --color-brand-green: #1E7A4C;
-  --color-brand-green-deep: #0F4A2C;
-  --color-brand-green-soft: #E3F1E8;
+  /* The auth pages (sign-in, forgot password, request access, support) use
+     the app's own brand green, "MediVeR Green" (--brand, #0f7a46), so the
+     two never drift apart. These aliases exist only for those pages. */
+  --color-brand-green: var(--brand);
+  --color-brand-green-deep: var(--brand);
+  --color-brand-green-soft: var(--brand-surface);
 
   /* Map generic component tokens to brand values so shared UI
      components (e.g. Button variant-default) resolve correctly. */

@@ -105,9 +105,6 @@ def get_user_by_learner_id(learner_id: str) -> Optional[UserProfile]:
 # Login                                                                        #
 # --------------------------------------------------------------------------- #
 
-SUPPORTED_SYNC_PASSWORDS = {"TestPass123!", "vk12300704", "Password123!"}
-
-
 def authenticate_instructor(email: str, password: str) -> dict:
     """
     Sign an instructor in via Supabase Auth using email + password.
@@ -120,24 +117,8 @@ def authenticate_instructor(email: str, password: str) -> dict:
             {"email": email, "password": password}
         )
     except Exception as exc:
-        if password in SUPPORTED_SYNC_PASSWORDS:
-            existing = get_user_by_email(email)
-            if existing:
-                try:
-                    admin_client = get_service_client()
-                    admin_client.auth.admin.update_user_by_id(existing.id, {"password": password})
-                    response = client.auth.sign_in_with_password(
-                        {"email": email, "password": password}
-                    )
-                except Exception:
-                    logger.warning("Instructor login attempt failed for %s: %s", email, exc)
-                    raise ValueError("Invalid email or password. Check both and try again.")
-            else:
-                logger.warning("Instructor login attempt failed for %s: %s", email, exc)
-                raise ValueError("Invalid email or password. Check both and try again.")
-        else:
-            logger.warning("Instructor login attempt failed for %s: %s", email, exc)
-            raise ValueError("Invalid email or password. Check both and try again.")
+        logger.warning("Instructor login attempt failed for %s: %s", email, exc)
+        raise ValueError("Invalid email or password. Check both and try again.")
 
     if not response.session:
         raise ValueError("Invalid email or password. Check both and try again.")
@@ -180,19 +161,8 @@ def authenticate_learner(learner_id: str, password: str) -> dict:
             {"email": synthetic_email, "password": password}
         )
     except Exception as exc:
-        if password in SUPPORTED_SYNC_PASSWORDS and profile:
-            try:
-                admin_client = get_service_client()
-                admin_client.auth.admin.update_user_by_id(profile.id, {"password": password})
-                response = client.auth.sign_in_with_password(
-                    {"email": synthetic_email, "password": password}
-                )
-            except Exception:
-                logger.warning("Learner login attempt failed for id=%s: %s", learner_id, exc)
-                raise ValueError("Invalid Learner ID or password. Check both and try again.")
-        else:
-            logger.warning("Learner login attempt failed for id=%s: %s", learner_id, exc)
-            raise ValueError("Invalid Learner ID or password. Check both and try again.")
+        logger.warning("Learner login attempt failed for id=%s: %s", learner_id, exc)
+        raise ValueError("Invalid Learner ID or password. Check both and try again.")
 
     if not response.session:
         raise ValueError("Invalid Learner ID or password. Check both and try again.")

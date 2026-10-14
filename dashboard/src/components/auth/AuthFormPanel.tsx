@@ -33,7 +33,7 @@ export default function AuthFormPanel({ next }: { next?: string }) {
   }
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-mode={mode}>
       <div className={styles.helpLinkContainer}>
         <Link href="/support" className={styles.helpLink}>
           Need help?

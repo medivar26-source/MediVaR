@@ -11,6 +11,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className={styles.layoutContainer}>
+      <div className={styles.card}>
       {isForgotPassword ? (
         <AuthBrandPanel
           heading={<>Locked out?<br />We&apos;ve got you.</>}
@@ -20,6 +21,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <AuthBrandPanel />
       )}
       {children}
+      </div>
     </div>
   );
 }
