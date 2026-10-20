@@ -42,3 +42,6 @@ venv/
 env/
 *.egg-info/
 .pytest_cache/
+
+# documentation
+mediver_documentation/changes/

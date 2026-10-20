@@ -63,3 +63,18 @@
 .administeredValue {
   font-weight: var(--fw-medium);
 }
+
+/* The administered facts are separate bordered cards, so they get a gap of their
+   own; without it adjacent borders touch and the rounded corners collide. */
+.rows {
+  gap: var(--s-3);
+}
+
+/* The page as shown inside the settings modal: no app shell, just the content on
+   the dialog surface. The dialog supplies the close bar, so only side padding is
+   needed here. */
+.embedded {
+  min-height: 100dvh;
+  padding: var(--s-2) var(--s-6) var(--s-8);
+  background: var(--surface);
+}

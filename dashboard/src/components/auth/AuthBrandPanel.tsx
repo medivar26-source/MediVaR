@@ -1,13 +1,7 @@
 // components/auth/AuthBrandPanel.tsx
-import { Target, StepForward, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import AuthFeatureGrid from "./AuthFeatureGrid";
 import styles from "./AuthBrandPanel.module.css";
-
-const features = [
-  { icon: Target, title: "Practice before", subtitle: "the procedure." },
-  { icon: StepForward, title: "Every step.", subtitle: "Every Attempt. Measured." },
-  { icon: ShieldCheck, title: "Repeat without", subtitle: "risks." },
-  { icon: CheckCircle2, title: "From first", subtitle: "incision to final closure." },
-];
 
 interface AuthBrandPanelProps {
   heading?: React.ReactNode;
@@ -36,7 +30,7 @@ export default function AuthBrandPanel({
         </div>
       </div>
 
-      {/* middle: heading + description */}
+      {/* middle: heading + description. Fixed size, so it never moves when the grid below is hovered. */}
       <div className={styles.heroContent}>
         <h1 className={styles.heading}>
           {heading}
@@ -46,24 +40,8 @@ export default function AuthBrandPanel({
         </p>
       </div>
 
-      {/* bottom: 4-icon feature row — unchanged on every page, including forgot-password */}
-      <div className={styles.featuresRow}>
-        {features.map(({ icon: Icon, title, subtitle }, i) => (
-          <div key={title} className={styles.featureItem}>
-            <div className={styles.featureContent}>
-              <span className={styles.featureIconWrapper}>
-                <Icon className={styles.featureIcon} strokeWidth={1.5} />
-              </span>
-              <p className={styles.featureText}>
-                {title}<br />{subtitle}
-              </p>
-            </div>
-            {i < features.length - 1 && (
-              <div className={styles.separator} />
-            )}
-          </div>
-        ))}
-      </div>
+      {/* bottom: the feature grid, the same on every auth page, including forgot-password */}
+      <AuthFeatureGrid />
 
     </div>
   );

@@ -1,89 +1,105 @@
 "use client";
 
 import { Suspense, useSyncExternalStore } from "react";
+import type { MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { House, PanelLeftClose, PanelLeftOpen, Stethoscope } from "lucide-react";
+import {
+  ChevronDown,
+  LayoutDashboard,
+  PanelLeft,
+  PanelLeftClose,
+  Settings,
+  Stethoscope,
+} from "lucide-react";
 import { cx } from "@/lib/cx";
 import { sectionForPath, sectionsForPersona } from "@/lib/nav";
 import type { PanelItem, SectionId } from "@/lib/nav";
 import type { NavData } from "@/lib/data/nav";
 import type { Persona } from "@/lib/roles";
+import { SettingsButton } from "./SettingsModal";
 import s from "./AppShell.module.css";
 
 /**
- * One labeled sidebar. Each section of the product is a heading and its
- * destinations sit under it, so the whole menu is readable without clicking
- * anything. Program, cohort and case sub-pages are tabs inside those pages,
- * not extra groups that appear here.
+ * One sidebar for every role, in two states.
  *
- * It can be collapsed to icons; the choice is remembered in this browser only.
+ * Expanded: the Dashboard, then one accordion capsule per section; opening a capsule
+ * lists that section's destinations beneath it.
+ * Collapsed: a narrow rail of round icon buttons. Pressing a section icon opens the
+ * sidebar with that capsule already open.
+ *
+ * The logo at the top and the Settings button at the bottom sit at the same
+ * coordinates in both states. The collapsed/expanded choice and which capsules the
+ * user has opened or closed are remembered in this browser only.
  */
 
 const COLLAPSED_KEY = "mediver.sidebar.collapsed";
+const CAPSULES_KEY = "mediver.sidebar.capsules";
+/** Below this width the sidebar starts collapsed, unless the user has chosen. */
+const COMPACT_QUERY = "(max-width: 1279px)";
+
 const listeners = new Set<() => void>();
 
 function subscribe(onChange: () => void) {
   listeners.add(onChange);
   window.addEventListener("storage", onChange);
+  const media = window.matchMedia(COMPACT_QUERY);
+  media.addEventListener("change", onChange);
   return () => {
     listeners.delete(onChange);
     window.removeEventListener("storage", onChange);
+    media.removeEventListener("change", onChange);
   };
 }
 
-function readCollapsed() {
-  try {
-    return window.localStorage.getItem(COLLAPSED_KEY) === "1";
-  } catch {
-    return false;
-  }
+function notify() {
+  listeners.forEach((listener) => listener());
 }
 
-function writeCollapsed(value: boolean) {
+function readStored(key: string): string | null {
   try {
-    window.localStorage.setItem(COLLAPSED_KEY, value ? "1" : "0");
-  } catch {
-    // Storage can be blocked; the menu then simply stays as it is.
-  }
-  listeners.forEach((notify) => notify());
-}
-
-/**
- * Learners and instructors get two layers: a rail of icons, and a panel that opens beside it when an icon is
- * pressed. The panel can be opened and closed at any time. The choice is remembered in this
- * browser, and the panel follows the user when they move into another section.
- */
-const PANEL_KEY = "mediver.nav.panel";
-const PANEL_ID = "nav-panel";
-
-type PanelState = { open: boolean; section?: SectionId; route?: SectionId | null };
-
-function readPanelRaw() {
-  try {
-    return window.localStorage.getItem(PANEL_KEY);
+    return window.localStorage.getItem(key);
   } catch {
     return null;
   }
 }
 
-function parsePanel(raw: string | null): PanelState {
-  if (!raw) return { open: true };
+function writeStored(key: string, value: string) {
   try {
-    const value = JSON.parse(raw) as PanelState;
-    return { open: value.open !== false, section: value.section, route: value.route };
+    window.localStorage.setItem(key, value);
   } catch {
-    return { open: true };
+    // Storage can be blocked; the menu then simply stays as it is.
+  }
+  notify();
+}
+
+function readCollapsed(): boolean {
+  const stored = readStored(COLLAPSED_KEY);
+  if (stored === "1") return true;
+  if (stored === "0") return false;
+  return window.matchMedia(COMPACT_QUERY).matches;
+}
+
+function writeCollapsed(value: boolean) {
+  writeStored(COLLAPSED_KEY, value ? "1" : "0");
+}
+
+/** Capsule id → closed. An id with no entry follows the default: open only on the current section. */
+type ClosedMap = Partial<Record<SectionId, boolean>>;
+
+function parseClosed(raw: string | null): ClosedMap {
+  if (!raw) return {};
+  try {
+    const value = JSON.parse(raw) as unknown;
+    return value && typeof value === "object" ? (value as ClosedMap) : {};
+  } catch {
+    return {};
   }
 }
 
-function writePanel(state: PanelState) {
-  try {
-    window.localStorage.setItem(PANEL_KEY, JSON.stringify(state));
-  } catch {
-    // Storage can be blocked; the panel then keeps its default behaviour.
-  }
-  listeners.forEach((notify) => notify());
+function writeCapsule(id: SectionId, closed: boolean) {
+  const next = { ...parseClosed(readStored(CAPSULES_KEY)), [id]: closed };
+  writeStored(CAPSULES_KEY, JSON.stringify(next));
 }
 
 export function SideNav(props: { persona: Persona; nav: NavData }) {
@@ -99,7 +115,20 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
   const searchParams = useSearchParams();
   const sections = sectionsForPersona(persona, nav);
   const collapsed = useSyncExternalStore(subscribe, readCollapsed, () => false);
-  const panelRaw = useSyncExternalStore(subscribe, readPanelRaw, () => null);
+  const capsulesRaw = useSyncExternalStore(
+    subscribe,
+    () => readStored(CAPSULES_KEY),
+    () => null,
+  );
+
+  const closedMap = parseClosed(capsulesRaw);
+  const routeSection = sectionForPath(pathname, persona);
+  const homeOn = pathname === "/";
+
+  const isCapsuleOpen = (id: SectionId) => {
+    const closed = closedMap[id];
+    return closed === undefined ? id === routeSection : !closed;
+  };
 
   const isCurrent = (href: string) => {
     const [targetBase, targetQuery] = href.split("?");
@@ -126,16 +155,14 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
     return pathname === targetBase || pathname.startsWith(targetBase + "/");
   };
 
-  const renderItem = (item: PanelItem, depth = 0, onNavigate?: () => void) => {
+  const renderItem = (item: PanelItem, depth = 0) => {
     const on = isCurrent(item.href);
     return (
-      <div key={item.href + item.label} className={cx(!item.icon && s.noIcon)}>
+      <div key={item.href + item.label}>
         <Link
           href={item.href}
           className={cx(s.item, depth > 0 && s.child, on && s.itemOn)}
           aria-current={on ? "page" : undefined}
-          title={collapsed && persona === "admin" ? item.label : undefined}
-          onClick={onNavigate}
         >
           {item.icon && <item.icon className={s.itemIcon} strokeWidth={1.75} aria-hidden="true" />}
           <span className={s.itemLabel}>{item.label}</span>
@@ -143,184 +170,168 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
         </Link>
         {item.children && (
           <div className={s.children}>
-            {item.children.map((child) => renderItem(child, depth + 1, onNavigate))}
+            {item.children.map((child) => renderItem(child, depth + 1))}
           </div>
         )}
       </div>
     );
   };
 
-  const homeOn = pathname === "/";
-
-  // Administrators have a single section, so a second layer would add nothing for them.
-  if (persona !== "admin") {
-    const stored = parsePanel(panelRaw);
-    const routeSection = sectionForPath(pathname, persona);
-    const knows = (id?: SectionId | null) => Boolean(id && sections.some((x) => x.id === id));
-    // The user's own pick holds while they stay in one section; moving to another follows them.
-    const picked = knows(stored.section) && stored.route === routeSection ? stored.section : undefined;
-    const panelSectionId: SectionId | undefined =
-      picked ?? (routeSection && knows(routeSection) ? routeSection : sections[0]?.id);
-    const panelSection = sections.find((x) => x.id === panelSectionId);
-    const open = stored.open && Boolean(panelSection);
-
-    const pressSection = (id: SectionId) => {
-      if (open && panelSectionId === id) {
-        writePanel({ open: false, section: id, route: routeSection });
-      } else {
-        writePanel({ open: true, section: id, route: routeSection });
-      }
-    };
-    // On narrower screens the panel floats over the page, so it gets out of the way after a click.
-    const closeIfNarrow = () => {
-      if (window.matchMedia("(max-width: 1279px)").matches) {
-        writePanel({ open: false, section: panelSectionId, route: routeSection });
-      }
+  if (collapsed) {
+    // Empty rail space (anything that is not a link or button) reopens the sidebar.
+    const reopenFromEmptySpace = (event: MouseEvent<HTMLElement>) => {
+      if (!(event.target as HTMLElement).closest("a, button")) writeCollapsed(false);
     };
 
     return (
-      <div className={s.tiers}>
-        <nav className={s.rail} aria-label="Sections">
+      <aside
+        className={cx(s.sidebar, s.sidebarCollapsed)}
+        aria-label="Main menu"
+        onClick={reopenFromEmptySpace}
+      >
+        {/* Pinned top: brand logo, which is also the reopen toggle */}
+        <div className={s.brand}>
+          <button
+            type="button"
+            className={cx(s.logo, s.logoToggleBtn)}
+            onClick={() => writeCollapsed(false)}
+            aria-label="Expand sidebar"
+            title="Expand sidebar"
+          >
+            <Stethoscope
+              className={cx(s.logoGlyph, s.logoGlyphDefault)}
+              strokeWidth={2}
+              aria-hidden="true"
+            />
+            <PanelLeft
+              className={cx(s.logoGlyph, s.logoGlyphToggle)}
+              strokeWidth={2}
+              aria-hidden="true"
+            />
+          </button>
+        </div>
+
+        <nav className={s.collapsedNav} aria-label="Sections">
           <Link
             href="/"
-            className={cx(s.logo, s.railLogo)}
-            aria-label="Home"
-            title="Home"
+            className={cx(s.railBtn, homeOn && s.railBtnHere)}
+            aria-label="Dashboard"
+            title="Dashboard"
             aria-current={homeOn ? "page" : undefined}
           >
-            <Stethoscope className={s.logoGlyph} strokeWidth={2} />
+            <LayoutDashboard className={s.railIcon} strokeWidth={1.75} aria-hidden="true" />
           </Link>
 
           {sections.map((section) => {
-            const selected = open && section.id === panelSectionId;
             const here = section.id === routeSection;
-            const hasBadge = section.groups.some((g) =>
-              g.items.some((i) => i.badge !== undefined),
-            );
+            const hasBadge = section.groups.some((g) => g.items.some((i) => i.badge !== undefined));
             return (
               <button
                 key={section.id}
                 type="button"
-                className={cx(s.railBtn, selected && s.railBtnOn, here && !selected && s.railBtnHere)}
+                className={cx(s.railBtn, here && s.railBtnHere)}
                 aria-label={section.label}
                 title={section.label}
-                aria-expanded={selected}
-                aria-controls={PANEL_ID}
-                aria-current={here ? "true" : undefined}
-                onClick={() => pressSection(section.id)}
+                onClick={() => {
+                  writeCapsule(section.id, false);
+                  writeCollapsed(false);
+                }}
               >
                 <section.icon className={s.railIcon} strokeWidth={1.75} aria-hidden="true" />
                 {hasBadge && <span className={s.railDot} aria-hidden="true" />}
               </button>
             );
           })}
-
-          <div className={s.railFooter}>
-            <button
-              type="button"
-              className={s.railBtn}
-              aria-label={open ? "Close menu panel" : "Open menu panel"}
-              title={open ? "Close menu panel" : "Open menu panel"}
-              aria-expanded={open}
-              aria-controls={PANEL_ID}
-              onClick={() =>
-                writePanel({ open: !open, section: panelSectionId, route: routeSection })
-              }
-            >
-              {open ? (
-                <PanelLeftClose className={s.railIcon} strokeWidth={1.75} aria-hidden="true" />
-              ) : (
-                <PanelLeftOpen className={s.railIcon} strokeWidth={1.75} aria-hidden="true" />
-              )}
-            </button>
-          </div>
         </nav>
 
-        <div
-          id={PANEL_ID}
-          className={cx(s.panelWrap, !open && s.panelWrapClosed)}
-          inert={!open}
-          role="region"
-          aria-label={panelSection ? `${panelSection.label} menu` : "Menu"}
-        >
-          {panelSection && (
-            <div className={s.panelInner}>
-              <div className={s.panelHead}>
-                <span className={s.panelTitle}>{panelSection.label}</span>
-                <button
-                  type="button"
-                  className={s.collapseBtn}
-                  aria-label="Close menu panel"
-                  title="Close menu panel"
-                  onClick={() =>
-                    writePanel({ open: false, section: panelSectionId, route: routeSection })
-                  }
-                >
-                  <PanelLeftClose width={18} height={18} strokeWidth={1.75} aria-hidden="true" />
-                </button>
-              </div>
-              <nav className={s.sidebarScroll} aria-label={panelSection.label}>
-                {panelSection.groups.map((group, i) => (
-                  <div className={s.subGroup} key={group.label ?? `g-${i}`}>
-                    {group.label && <p className={s.subGroupLabel}>{group.label}</p>}
-                    {group.items.map((item) => renderItem(item, 0, closeIfNarrow))}
-                  </div>
-                ))}
-              </nav>
-            </div>
-          )}
+        {/* Pinned bottom: Settings, a sibling of the nav so it never scrolls */}
+        <div className={s.collapsedFooter}>
+          <SettingsButton className={s.railBtn}>
+            <Settings className={s.railIcon} strokeWidth={1.75} aria-hidden="true" />
+          </SettingsButton>
         </div>
-      </div>
+      </aside>
     );
   }
 
   return (
-    <aside className={cx(s.sidebar, collapsed && s.sidebarCollapsed)} aria-label="Main menu">
+    <aside className={s.sidebar} aria-label="Main menu">
       <div className={s.brand}>
-        <Link href="/" className={s.logo} aria-label="MediVeR XR home">
+        <Link href="/" className={s.logo} aria-label="MediVeR XR home" title="Home">
           <Stethoscope className={s.logoGlyph} strokeWidth={2} />
         </Link>
-        <span className={s.brandName}>MediVeR XR</span>
+        <Link href="/" className={s.brandName} title="Home">
+          MediVeR XR
+        </Link>
         <button
           type="button"
           className={s.collapseBtn}
-          onClick={() => writeCollapsed(!collapsed)}
-          aria-label={collapsed ? "Expand menu" : "Collapse menu"}
-          aria-expanded={!collapsed}
+          onClick={() => writeCollapsed(true)}
+          aria-label="Collapse menu"
+          title="Collapse menu"
         >
-          {collapsed ? (
-            <PanelLeftOpen width={18} height={18} strokeWidth={1.75} />
-          ) : (
-            <PanelLeftClose width={18} height={18} strokeWidth={1.75} />
-          )}
+          <PanelLeftClose width={18} height={18} strokeWidth={1.75} />
         </button>
       </div>
 
-      <nav className={s.sidebarScroll} aria-label="Main">
-        <div className={s.group}>
+      <nav className={s.sidebarScroll} aria-label="Main menu">
+        {/* The dashboard is its own page, not a section */}
+        <div className={s.capsule}>
           <Link
             href="/"
-            className={cx(s.item, homeOn && s.itemOn)}
+            className={cx(s.capsuleBtn, homeOn && s.capsuleBtnHere)}
             aria-current={homeOn ? "page" : undefined}
-            title={collapsed ? "Home" : undefined}
+            title="Dashboard"
           >
-            <House className={s.itemIcon} strokeWidth={1.75} aria-hidden="true" />
-            <span className={s.itemLabel}>Home</span>
+            <LayoutDashboard className={s.capsuleIcon} strokeWidth={1.75} aria-hidden="true" />
+            <span className={s.capsuleLabel}>Dashboard</span>
           </Link>
         </div>
 
-        {sections.map((section) => (
-          <div className={s.group} key={section.id}>
-            <p className={s.groupLabel}>{section.label}</p>
-            {section.groups.map((group, i) => (
-              <div className={s.subGroup} key={group.label ?? `g-${i}`}>
-                {group.label && <p className={cx(s.subGroupLabel, s.noIcon)}>{group.label}</p>}
-                {group.items.map((item) => renderItem(item))}
+        {sections.map((section) => {
+          const isOpen = isCapsuleOpen(section.id);
+          const bodyId = `capsule-${section.id}`;
+          const here = section.id === routeSection;
+          return (
+            <div className={s.capsule} key={section.id}>
+              <button
+                type="button"
+                className={cx(s.capsuleBtn, isOpen && s.capsuleBtnOn, here && s.capsuleBtnHere)}
+                aria-expanded={isOpen}
+                aria-controls={bodyId}
+                onClick={() => writeCapsule(section.id, isOpen)}
+              >
+                <section.icon className={s.capsuleIcon} strokeWidth={1.75} aria-hidden="true" />
+                <span className={s.capsuleLabel}>{section.label}</span>
+                <ChevronDown
+                  className={cx(s.capsuleChevron, isOpen && s.capsuleChevronOpen)}
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
+              </button>
+              <div id={bodyId} className={cx(s.capsuleBody, isOpen && s.capsuleBodyOpen)} inert={!isOpen}>
+                <div className={s.capsuleBodyInner}>
+                  {section.groups.map((group, i) => (
+                    <div className={s.subGroup} key={group.label ?? `g-${i}`}>
+                      {group.label && <p className={s.subGroupLabel}>{group.label}</p>}
+                      <div className={cx(group.label && s.subGroupItems)}>
+                        {group.items.map((item) => renderItem(item, group.label ? 1 : 0))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </nav>
+
+      {/* Pinned bottom: Settings */}
+      <div className={s.navFooter}>
+        <SettingsButton className={s.railBtn}>
+          <Settings className={s.railIcon} strokeWidth={1.75} aria-hidden="true" />
+        </SettingsButton>
+      </div>
     </aside>
   );
 }

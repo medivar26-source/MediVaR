@@ -1,0 +1,232 @@
+/* The feature grid on the brand panel: six connected cells with no gaps, no radius, no
+   card backgrounds and no outer border. Cell separators are fading "guide lines"
+   drawn with pseudo-elements, so the grid reads as one piece that dissolves into the
+   gradient behind it.
+
+   Every colour derives from --bp-fg (set by the brand panel), so the grid follows the
+   panel's foreground colour without any override of its own. */
+
+.frame {
+  /* tuning knobs */
+  --fg-ease: var(--ease-out);
+  --fg-dur: var(--m-xslow);
+  --fg-total-h: clamp(16rem, 36vh, 22rem);
+  --fg-line: 24%;
+  --fg-title-scale: 1.25;
+  --fg-reveal-delay: 150ms; /* description fades in as the room opens, not before */
+  --fg-line-color: color-mix(in srgb, var(--bp-fg) var(--fg-line), transparent);
+
+  /* uses all the vertical space left in the brand column below the hero text */
+  flex: 1 1 auto;
+  display: flex;
+  min-height: var(--fg-total-h);
+}
+
+.grid {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  transition: grid-template-rows var(--fg-dur) var(--fg-ease);
+}
+
+.row {
+  display: grid;
+  min-height: 0;
+  transition: grid-template-columns var(--fg-dur) var(--fg-ease);
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(0.75rem, 1.6vh, 1.1rem) clamp(0.9rem, 1.4vw, 1.25rem);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--bp-fg);
+  text-align: left;
+  cursor: default;
+  overflow: hidden;
+  transition: background-color var(--fg-dur) var(--fg-ease);
+}
+
+.tile:focus-visible {
+  outline: var(--bw-emphasis) solid var(--bp-fg);
+  outline-offset: calc(var(--bw-emphasis) * -2);
+  border-radius: 0;
+}
+
+/* ---------- guide lines ---------- */
+
+/* vertical guide on the right edge (not on the last column) */
+.tile::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--bw);
+  background: var(--fg-line-color);
+  pointer-events: none;
+}
+
+/* horizontal guide on the bottom edge (not on the last row) */
+.tile::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--bw);
+  background: var(--fg-line-color);
+  pointer-events: none;
+}
+
+.tile[data-col="last"]::after,
+.tile[data-col="only"]::after,
+.tile[data-row="last"]::before,
+.tile[data-row="only"]::before {
+  display: none;
+}
+
+/* verticals fade in from the top row and out toward the bottom row */
+.tile[data-row="first"]::after {
+  background: linear-gradient(to bottom, transparent 0%, var(--fg-line-color) 45%);
+}
+.tile[data-row="last"]::after {
+  background: linear-gradient(to bottom, var(--fg-line-color) 55%, transparent 100%);
+}
+.tile[data-row="only"]::after {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--fg-line-color) 30%,
+    var(--fg-line-color) 70%,
+    transparent 100%
+  );
+}
+
+/* horizontals fade in from the first column and out toward the last */
+.tile[data-col="first"]::before {
+  background: linear-gradient(to right, transparent 0%, var(--fg-line-color) 45%);
+}
+.tile[data-col="last"]::before {
+  background: linear-gradient(to right, var(--fg-line-color) 55%, transparent 100%);
+}
+.tile[data-col="only"]::before {
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    var(--fg-line-color) 30%,
+    var(--fg-line-color) 70%,
+    transparent 100%
+  );
+}
+
+/* ---------- content ---------- */
+
+.index {
+  margin-bottom: var(--s-2);
+  font-size: var(--t-overline);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.1em;
+  color: color-mix(in srgb, var(--bp-fg) 60%, transparent);
+}
+
+/* Scaled with a transform, never by animating font-size, which would re-wrap and
+   re-layout every frame. Its width leaves room for the scale, so the wrap is identical
+   at rest and when active. */
+.title {
+  max-width: calc(100% / var(--fg-title-scale));
+  font-size: 1.0625rem;
+  font-weight: var(--fw-bold);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  transform-origin: left top;
+  will-change: transform;
+  transition: transform var(--fg-dur) var(--fg-ease);
+}
+
+/* Revealed by animating its row 0fr -> 1fr, so no max-height is ever guessed. */
+.description {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-top: 0;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--fg-dur) var(--fg-ease),
+    margin-top var(--fg-dur) var(--fg-ease),
+    opacity var(--m-base) var(--fg-ease);
+}
+
+.descriptionInner {
+  min-height: 0;
+  overflow: hidden;
+  font-size: var(--t-caption);
+  line-height: var(--t-caption-lh);
+  color: color-mix(in srgb, var(--bp-fg) 82%, transparent);
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-2);
+  width: 100%;
+  margin-top: auto;
+  padding-top: var(--s-2);
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.45;
+}
+
+/* ---------- active tile ---------- */
+
+.tileActive {
+  background: color-mix(in srgb, var(--brand) 18%, transparent);
+}
+
+.tileActive .title {
+  transform: scale(var(--fg-title-scale));
+}
+
+.tileActive .description {
+  grid-template-rows: 1fr;
+  margin-top: var(--s-4);
+  opacity: 1;
+  /* the text fades in as the room opens, not before */
+  transition:
+    grid-template-rows var(--fg-dur) var(--fg-ease),
+    margin-top var(--fg-dur) var(--fg-ease),
+    opacity var(--m-slow) var(--fg-ease) var(--fg-reveal-delay);
+}
+
+/* ---------- touch: nothing hovers, so nothing expands ---------- */
+
+.compact .grid {
+  height: auto;
+}
+
+.compact .row {
+  transition: none;
+}
+
+.compact .description {
+  grid-template-rows: 1fr;
+  margin-top: var(--s-2);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grid,
+  .row,
+  .tile,
+  .title,
+  .description,
+  .tileActive .description {
+    transition: none;
+  }
+}

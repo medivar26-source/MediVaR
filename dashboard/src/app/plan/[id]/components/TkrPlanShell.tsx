@@ -205,7 +205,7 @@ export function TkrPlanShell({
           </div>
 
           {/* Page Body */}
-          <div className={s.stepBody}>
+          <div className={s.pageBody}>
             {children}
           </div>
 

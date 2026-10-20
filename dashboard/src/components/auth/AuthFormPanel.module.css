@@ -1,19 +1,63 @@
+/* The sign-in form sits directly on the gradient: no white card. Every size scales with
+   the viewport, and every colour is a token or derived from one.
+
+   The page looks the same for Instructor and Learner: light-on-dark over the green
+   gradient. The shared Input / Label / Button primitives read the generic tokens
+   (--foreground, --muted, --border, ...), so re-pointing them here restyles those too. */
+
 .container {
+  --auth-control-h: clamp(3rem, 6.6vh, 3.6rem); /* input & button height */
+  --auth-gap: clamp(1.1rem, 2.8vh, 1.5rem); /* field gap */
+  --auth-text: clamp(0.95rem, 1.15vw, 1.1rem);
+  --auth-form-w: min(100%, 33rem); /* constrained form width */
+
+  /* white ink on deep green */
+  --auth-ink: var(--on-dark);
+  --auth-ink-soft: color-mix(in srgb, var(--auth-ink) 75%, transparent);
+  --auth-fill: color-mix(in srgb, var(--auth-ink) 12%, transparent);
+  --auth-track: color-mix(in srgb, var(--auth-ink) 14%, transparent);
+  --auth-stroke: color-mix(in srgb, var(--auth-ink) 28%, transparent);
+  --auth-hairline: color-mix(in srgb, var(--auth-ink) 25%, transparent);
+  --auth-accent: var(--brand-pressed); /* text on a white pill */
+  --auth-pill: var(--on-dark);
+  --auth-pill-hover: var(--brand-surface);
+  --auth-error-bg: color-mix(in srgb, var(--fail) 40%, transparent);
+  --auth-error-ink: var(--on-dark);
+  --auth-warn: var(--warn-border);
+
+  /* the generic tokens the shared primitives read */
+  --foreground: var(--auth-ink);
+  --background: var(--auth-fill);
+  --muted: var(--auth-track);
+  --muted-foreground: var(--auth-ink-soft);
+  --input: var(--auth-stroke);
+  --border: var(--auth-stroke);
+  --ring: var(--auth-ink);
+  --color-foreground: var(--auth-ink);
+  --color-muted-foreground: var(--auth-ink-soft);
+  --color-muted: var(--auth-track);
+  --color-border: var(--auth-hairline);
+  --color-brand-green: var(--auth-pill);
+  --color-brand-green-deep: var(--auth-accent);
+
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 100dvh;
   position: relative;
   padding: 2rem;
-  transition: background-color 0.4s ease, color 0.4s ease;
+  background: transparent;
+  color: var(--auth-ink);
+  transition: color 0.4s ease;
 }
+
 @media (min-width: 768px) {
   .container {
     padding: 1.5rem;
   }
 }
 
-/* sits in the top-right corner of the form area, no longer taking its own row */
+/* sits in the top-right corner of the form area, not taking its own row */
 .helpLinkContainer {
   position: absolute;
   top: 1.5rem;
@@ -21,12 +65,12 @@
   z-index: 1;
 }
 .helpLink {
-  font-size: 0.875rem;
-  color: var(--color-muted-foreground);
+  font-size: var(--t-label);
+  color: var(--auth-ink-soft);
   text-decoration: none;
 }
 .helpLink:hover {
-  color: var(--color-foreground);
+  color: var(--auth-ink);
 }
 
 .mainContent {
@@ -36,10 +80,8 @@
   justify-content: center;
 }
 
-/* no box: the form uses the whole right partition, centred */
 .formWrapper {
-  width: 100%;
-  max-width: 50rem;
+  width: var(--auth-form-w);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -51,68 +93,77 @@
   margin-bottom: 2.25rem;
 }
 .title {
-  font-size: 2.75rem;
-  font-weight: 700;
+  font-size: clamp(2rem, 2.6vw, 2.75rem);
+  font-weight: var(--fw-bold);
   letter-spacing: -0.025em;
   margin: 0;
+  color: var(--auth-ink);
 }
 .subtitle {
-  font-size: 1.15rem;
-  color: var(--color-muted-foreground);
+  font-size: var(--auth-text);
+  color: var(--auth-ink-soft);
   margin-top: 0.5rem;
 }
 
+/* ---------- Instructor / Learner switcher ---------- */
+
 .tabs {
   display: flex;
-  background-color: var(--color-muted);
-  border-radius: 9999px;
-  padding: 0.3rem;
-  margin-bottom: 1.75rem;
+  background-color: var(--auth-track);
+  border-radius: var(--r-pill);
+  padding: 0.45rem;
+  margin-bottom: var(--auth-gap);
 }
 .tabButton {
   flex: 1;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 9999px;
-  padding: 0.9rem 0;
+  font-size: var(--auth-text);
+  font-weight: var(--fw-semibold);
+  border-radius: var(--r-pill);
+  padding: 0.4rem 0;
   transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
   border: none;
   background: transparent;
   cursor: pointer;
-  color: var(--color-muted-foreground);
+  color: var(--auth-ink-soft);
 }
 .tabButtonActive {
-  background-color: white;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  color: var(--color-foreground);
+  background-color: var(--auth-pill);
+  box-shadow: var(--e-1);
+  color: var(--auth-accent);
 }
+
+/* ---------- the form ---------- */
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.6rem;
+  gap: var(--auth-gap);
 }
-/* larger inputs / button so the form reads at the size of the panel */
 .form input {
-  height: 3.75rem;
-  font-size: 1rem;
-  background-color: var(--surface-sunken);
-  border-color: var(--border);
+  height: var(--auth-control-h);
+  font-size: var(--auth-text);
+  background-color: var(--auth-fill);
+  border-color: var(--auth-stroke);
+  color: var(--auth-ink);
   padding-left: 1.1rem;
   padding-right: 1.1rem;
 }
+.form input::placeholder {
+  color: color-mix(in srgb, var(--auth-ink) 50%, transparent);
+}
 .form label {
-  font-size: 0.95rem;
+  font-size: var(--t-label);
+  color: var(--auth-ink);
 }
 
 .errorBox {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--color-destructive);
-  background-color: rgba(var(--color-destructive), 0.1);
-  border-radius: var(--radius-md);
+  font-size: var(--t-label);
+  color: var(--auth-error-ink);
+  background-color: var(--auth-error-bg);
+  border-radius: var(--r-sm);
   padding: 0.75rem;
 }
 .errorIcon {
@@ -138,7 +189,7 @@
   right: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--color-muted-foreground);
+  color: var(--auth-ink-soft);
   background: none;
   border: none;
   cursor: pointer;
@@ -150,8 +201,8 @@
   height: 1.2rem;
 }
 .capsLockWarning {
-  font-size: 0.75rem;
-  color: #d97706; /* amber-600 */
+  font-size: var(--t-caption);
+  color: var(--auth-warn);
   margin-top: 0.25rem;
 }
 
@@ -160,22 +211,24 @@
   justify-content: flex-end;
 }
 .forgotPwLink {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-brand-green-deep);
-  text-decoration: none;
+  font-size: var(--t-label);
+  font-weight: var(--fw-semibold);
+  color: var(--auth-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .submitButton {
   width: 100%;
-  height: 3.75rem;
-  font-size: 1rem;
-  border-radius: 9999px;
-  background-color: var(--color-brand-green) !important;
-  color: white !important;
+  height: var(--auth-control-h);
+  font-size: var(--auth-text);
+  font-weight: var(--fw-bold);
+  border-radius: var(--r-pill);
+  background-color: var(--auth-pill) !important;
+  color: var(--auth-accent) !important;
 }
 .submitButton:hover {
-  background-color: var(--brand-hover) !important;
+  background-color: var(--auth-pill-hover) !important;
 }
 
 .dividerContainer {
@@ -186,23 +239,27 @@
 }
 .dividerLine {
   flex: 1;
-  height: 1px;
-  background-color: var(--color-border);
+  height: var(--bw);
+  background-color: var(--auth-hairline);
 }
 .dividerText {
-  font-size: 0.875rem;
-  color: var(--color-muted-foreground);
+  font-size: var(--t-label);
+  color: var(--auth-ink-soft);
 }
 
+/* frosted glass */
 .ssoButton {
   width: 100%;
-  height: 3.75rem;
-  font-size: 1rem;
-  border-radius: 9999px;
+  height: var(--auth-control-h);
+  font-size: var(--auth-text);
+  border-radius: var(--r-pill);
   display: flex;
   gap: 0.5rem;
   justify-content: center;
   align-items: center;
+  color: var(--auth-ink);
+  background-color: color-mix(in srgb, var(--auth-ink) 10%, transparent);
+  border-color: var(--auth-hairline);
 }
 .ssoIcon {
   width: 1rem;
@@ -211,78 +268,15 @@
 
 .signupPrompt {
   text-align: center;
-  font-size: 0.95rem;
-  color: var(--color-muted-foreground);
+  font-size: var(--t-label);
+  color: var(--auth-ink-soft);
   padding-top: 1rem;
 }
 .signupLink {
-  font-weight: 600;
-  color: var(--color-brand-green-deep);
-  text-decoration: none;
-}
-
-/* ── Learner mode: invert the form side (white → green) ──────────────────
-   Re-points the tokens the shared Input / Button / Label primitives read. */
-.container[data-mode="learner"] {
-  background-color: var(--brand);
-  color: #ffffff;
-  --foreground: #ffffff;
-  --background: rgba(255, 255, 255, 0.08);
-  --muted: rgba(255, 255, 255, 0.14);
-  --muted-foreground: rgba(255, 255, 255, 0.72);
-  --input: rgba(255, 255, 255, 0.4);
-  --border: rgba(255, 255, 255, 0.3);
-  --ring: #ffffff;
-}
-.container[data-mode="learner"] .title {
-  color: #ffffff;
-}
-.container[data-mode="learner"] input {
-  color: inherit;
-}
-.container[data-mode="learner"] .form input {
-  background-color: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-.container[data-mode="learner"] .helpLink,
-.container[data-mode="learner"] .subtitle,
-.container[data-mode="learner"] .signupPrompt,
-.container[data-mode="learner"] .dividerText,
-.container[data-mode="learner"] .togglePwButton,
-.container[data-mode="learner"] .tabButton {
-  color: rgba(255, 255, 255, 0.72);
-}
-.container[data-mode="learner"] .helpLink:hover {
-  color: #ffffff;
-}
-.container[data-mode="learner"] .tabs {
-  background-color: rgba(255, 255, 255, 0.14);
-}
-.container[data-mode="learner"] .tabButtonActive {
-  background-color: #ffffff;
-  color: var(--color-brand-green-deep);
-}
-.container[data-mode="learner"] .forgotPwLink,
-.container[data-mode="learner"] .signupLink {
-  color: #ffffff;
+  font-weight: var(--fw-semibold);
+  color: var(--auth-ink);
   text-decoration: underline;
   text-underline-offset: 3px;
-}
-.container[data-mode="learner"] .submitButton {
-  background-color: #ffffff !important;
-  color: var(--color-brand-green-deep) !important;
-}
-.container[data-mode="learner"] .submitButton:hover {
-  background-color: #e7f5ec !important;
-}
-.container[data-mode="learner"] .dividerLine {
-  background-color: rgba(255, 255, 255, 0.25);
-}
-.container[data-mode="learner"] .errorBox {
-  background-color: #ffffff;
-}
-.container[data-mode="learner"] .capsLockWarning {
-  color: #fcd34d;
 }
 
 @media (prefers-reduced-motion: reduce) {

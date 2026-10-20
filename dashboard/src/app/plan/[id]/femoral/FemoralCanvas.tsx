@@ -108,7 +108,7 @@ export function FemoralCanvas({
   const hud = origin ? (
     <div
       onPointerDown={(e) => e.stopPropagation()}
-      onWheel={(e) => e.stopPropagation()}
+      data-no-wheel
       style={{
         position: "absolute",
         left: 12,

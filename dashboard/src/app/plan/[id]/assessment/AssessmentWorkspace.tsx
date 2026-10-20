@@ -188,9 +188,9 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
   const totalOn = (view: ViewMode) => (LANDMARK_ORDER as LandmarkKey[]).filter((k) => LANDMARK_INFO[k].view === view).length;
 
   return (
-    <div className={s.body}>
-      <div className={s.card}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-3)", alignItems: "center", marginBottom: "var(--s-4)" }}>
+    <div className={s.workspace}>
+      <div className={s.workCard}>
+        <div className={s.workToolbar}>
           <Segmented
             label="Scan view"
             value={viewMode}
@@ -212,9 +212,9 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "2rem", height: "min(900px, max(720px, calc(100vh - 190px)))" }}>
+        <div className={s.workRow}>
           {/* Main imaging / landmark workspace */}
-          <div style={{ flex: "2", order: 2, border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden", position: "relative" }}>
+          <div className={s.canvasPane}>
             {scan.isFallback && (
               <div
                 role="status"
@@ -252,7 +252,7 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
           </div>
 
           {/* Measurement panel */}
-          <div style={{ flex: "1", order: 1, display: "flex", flexDirection: "column", gap: "1rem", minWidth: 0, minHeight: 0 }}>
+          <div className={s.sidePane}>
             <MeasurementPanel
               landmarks={landmarks}
               reading={reading}

@@ -1,8 +1,11 @@
-/* The card fills the whole window: inset brand panel + form side. */
+/* One seamless horizontal gradient across the whole window, from the far-left edge to
+   the far-right edge, flowing right under the sign-in form. There is no partition line,
+   no ellipse and no step in the middle. Stops live in app/tokens.css (--auth-*). */
+
 .layoutContainer {
   min-height: 100vh;
   display: flex;
-  background-color: var(--surface);
+  background-color: var(--auth-dark-0);
 }
 
 .card {
@@ -10,32 +13,53 @@
   min-height: 100vh;
   min-height: 100dvh;
   display: grid;
-  background-color: var(--surface);
-  transition: background-color 0.4s ease;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    var(--auth-dark-0) 0%,
+    var(--auth-dark-1) 20%,
+    var(--auth-dark-2) 40%,
+    var(--auth-dark-3) 60%,
+    var(--auth-dark-4) 80%,
+    var(--auth-dark-5) 100%
+  );
+  transition: background 0.4s ease;
 }
 
+/* One film grain over the entire card, so the canvas has a single refined finish. */
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncA type='linear' slope='1.4'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* Locked split: the brand column is a little wider than the sign-in column, and the
+   split never changes on hover, so the sign-in form always stays exactly where it is. */
 @media (min-width: 768px) {
   .card {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
   }
 }
 
-/* Learner mode inverts the page: the brand panel goes white-on-green → green-on-white.
-   The form side inverts itself (AuthFormPanel); :has() lets the sibling follow. */
-.layoutContainer:has([data-mode="learner"]) .card {
-  background-color: var(--brand);
+/* Pages other than sign-in (forgot password, request access, support) keep their own
+   dark-on-light styling, so their form sits on a soft sheet over the gradient. */
+.sheet {
+  display: flex;
+  flex-direction: column;
+  margin: var(--s-3);
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background: var(--surface);
 }
-.layoutContainer:has([data-mode="learner"]) [data-brand-panel] {
-  --bp-bg: #ffffff;
-  --bp-fg: #0b5c34;
-  --bp-grain-blend: multiply;
-  --bp-grain-opacity: 0.14;
-  /* white in the middle, green only creeping in around the edges */
-  background-image: radial-gradient(
-    ellipse 80% 75% at 50% 50%,
-    #ffffff 0%,
-    #ffffff 52%,
-    #d3efe0 78%,
-    #8fd9b2 100%
-  );
+
+.card .sheet > * {
+  flex: 1;
+  min-height: calc(100dvh - var(--s-3) * 2);
 }

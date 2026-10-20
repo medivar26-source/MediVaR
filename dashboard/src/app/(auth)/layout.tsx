@@ -5,9 +5,14 @@ import { usePathname } from "next/navigation";
 import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
 import styles from "./layout.module.css";
 
+const LOGIN_PATH = "/login";
+const FORGOT_PASSWORD_PATH = "/forgot-password";
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isForgotPassword = pathname === "/forgot-password";
+  const isForgotPassword = pathname === FORGOT_PASSWORD_PATH;
+  // Sign-in styles itself straight onto the gradient; every other page sits on a sheet.
+  const isLogin = pathname === LOGIN_PATH;
 
   return (
     <div className={styles.layoutContainer}>
@@ -20,7 +25,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       ) : (
         <AuthBrandPanel />
       )}
-      {children}
+      {isLogin ? children : <div className={styles.sheet}>{children}</div>}
       </div>
     </div>
   );

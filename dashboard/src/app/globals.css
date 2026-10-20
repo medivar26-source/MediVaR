@@ -173,3 +173,45 @@ samp {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- settings modal: auto-hiding scrollbar ----------
+   Inside the modal's iframe the page is marked .is-embedded, so there is no permanent
+   grey gutter. EmbedLinkRedirect adds .is-scrolling while the page moves and removes
+   it after --scroll-idle of stillness; only then does a translucent thumb appear. */
+
+html.is-embedded,
+body.is-embedded {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+body.is-embedded {
+  background: var(--surface);
+}
+
+html.is-embedded.is-scrolling,
+body.is-embedded.is-scrolling {
+  scrollbar-color: color-mix(in srgb, var(--ink) 30%, transparent) transparent;
+}
+
+html.is-embedded::-webkit-scrollbar,
+body.is-embedded::-webkit-scrollbar {
+  width: var(--scroll-thin);
+}
+
+html.is-embedded::-webkit-scrollbar-track,
+body.is-embedded::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html.is-embedded::-webkit-scrollbar-thumb,
+body.is-embedded::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: var(--r-pill);
+  transition: background-color var(--m-slow) ease;
+}
+
+html.is-embedded.is-scrolling::-webkit-scrollbar-thumb,
+body.is-embedded.is-scrolling::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--ink) 28%, transparent);
+}

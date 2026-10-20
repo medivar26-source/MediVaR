@@ -7,8 +7,11 @@ import { getSettings } from "@/lib/data/settings";
 import { relativeTime, shortDate, titleCase } from "@/lib/format";
 import { personaFor, ROLE_LABEL } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
+import { isEmbedded, settingsHref } from "@/lib/embed";
+import type { Profile } from "@/lib/types";
 import { AccountForm } from "./AccountForm";
 import { ChangePasswordForm } from "./ChangePasswordForm";
+import { EmbedLinkRedirect } from "./EmbedLinkRedirect";
 import p from "../panels.module.css";
 import s from "./settings.module.css";
 
@@ -25,6 +28,34 @@ const TABS = [
 type Tab = (typeof TABS)[number]["value"];
 
 /**
+ * Normally the page sits in the app shell. Inside the settings modal (`?embed=1`) the
+ * shell is already around it, so only the content is rendered.
+ */
+function SettingsFrame({
+  embedded,
+  user,
+  children,
+}: {
+  embedded: boolean;
+  user: Profile;
+  children: React.ReactNode;
+}) {
+  if (!embedded) {
+    return (
+      <AppShell user={user} searchHint='Try searching "settings"'>
+        {children}
+      </AppShell>
+    );
+  }
+  return (
+    <div className={s.embedded}>
+      <EmbedLinkRedirect />
+      {children}
+    </div>
+  );
+}
+
+/**
  * Five tabs, and the tab is the URL — the same ruling `/performance` made in
  * A settings screen is somewhere people are sent ("check Settings →
  * Device & pairing"), and a section you cannot link to cannot be sent to.
@@ -32,9 +63,10 @@ type Tab = (typeof TABS)[number]["value"];
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; embed?: string }>;
 }) {
-  const { tab: raw } = await searchParams;
+  const { tab: raw, embed } = await searchParams;
+  const embedded = isEmbedded(embed);
   const tab: Tab = (TABS.find((t) => t.value === raw)?.value ?? "account") as Tab;
 
   const user = await getCurrentUser();
@@ -42,7 +74,7 @@ export default async function SettingsPage({
   const persona = personaFor(user.role);
 
   return (
-    <AppShell user={user} searchHint='Try searching "settings"'>
+    <SettingsFrame embedded={embedded} user={user}>
       <PageHeader
         title="Settings"
         lede="Your account, how the product looks, how a headset reaches it, and what this build is made of."
@@ -55,7 +87,7 @@ export default async function SettingsPage({
         {TABS.map((t) => (
           <Link
             key={t.value}
-            href={t.value === "account" ? "/settings" : `/settings?tab=${t.value}`}
+            href={settingsHref(t.value === "account" ? undefined : t.value, embedded)}
             className={cx(p.tab, tab === t.value && p.tabOn)}
             aria-current={tab === t.value ? "page" : undefined}
           >
@@ -108,7 +140,7 @@ export default async function SettingsPage({
               changes them through the account management screen.
             </p>
 
-            <div className={p.rows}>
+            <div className={cx(p.rows, s.rows)}>
               {user.learnerId && (
                 <div className={s.administered}>
                   <span>Learner ID</span>
@@ -394,6 +426,6 @@ export default async function SettingsPage({
           </p>
         </section>
       )}
-    </AppShell>
+    </SettingsFrame>
   );
 }

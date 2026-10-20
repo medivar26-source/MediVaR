@@ -124,9 +124,9 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
   const currentScan = session.scanOf(session.viewMode);
 
   return (
-    <div className={s.body}>
-      <div className={s.card}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-3)", alignItems: "center", marginBottom: "var(--s-4)" }}>
+    <div className={s.workspace}>
+      <div className={s.workCard}>
+        <div className={s.workToolbar}>
           <Segmented
             label="Scan view"
             value={session.viewMode}
@@ -138,8 +138,8 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
           />
         </div>
 
-        <div style={{ display: "flex", gap: "2rem", height: "min(900px, max(720px, calc(100vh - 150px)))" }}>
-          <div style={{ flex: "2", order: 2, border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden", position: "relative" }}>
+        <div className={s.workRow}>
+          <div className={s.canvasPane}>
             {currentScan.isFallback && (
               <div
                 role="status"
@@ -188,7 +188,7 @@ export function TibialWorkspace({ plan }: { plan: PlanDetail }) {
             />
           </div>
 
-          <div style={{ flex: "1", order: 1, display: "flex", flexDirection: "column", gap: "1rem", minWidth: 0, minHeight: 0 }}>
+          <div className={s.sidePane}>
             <FitMap
               kind="tibial"
               shapes={shapes}

@@ -130,9 +130,12 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
     };
   }, [naturalSize, containerSize]);
 
-  // Wheel zoom centered on cursor
+  // Wheel zoom centered on cursor. Registered natively below: React attaches wheel listeners as
+  // passive, so a preventDefault() in an onWheel prop is ignored and the page scrolls as well as the scan.
   const handleWheel = useCallback(
-    (e: React.WheelEvent<HTMLDivElement>) => {
+    (e: WheelEvent) => {
+      // Floating panels over the scan (marked data-no-wheel) keep their own wheel.
+      if ((e.target as Element | null)?.closest("[data-no-wheel]")) return;
       e.preventDefault();
       const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
       const newZoom = Math.max(0.5, Math.min(5.0, zoom * zoomFactor));
@@ -153,6 +156,13 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
     },
     [zoom]
   );
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [handleWheel]);
 
   // Background drag-to-pan
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -213,7 +223,6 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
   return (
     <div
       ref={containerRef}
-      onWheel={handleWheel}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -226,6 +235,7 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
         overflow: "hidden",
         userSelect: "none",
         touchAction: "none",
+        overscrollBehavior: "contain",
         cursor: isPanning ? "grabbing" : zoom > 1 ? "grab" : "default",
       }}
     >
