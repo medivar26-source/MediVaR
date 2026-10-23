@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Activity,
   BookOpen,
   Building2,
   ChartColumn,
@@ -74,16 +73,6 @@ export type NavSection = {
  *
  * The order here is the order of the rail for every persona that sees a section.
  */
-const SKILL_ITEMS: PanelItem[] = [
-  { label: "Pre-op planning", href: "/performance/planning" },
-  { label: "Bone cuts & alignment", href: "/performance/bone-cuts" },
-  { label: "Gap assessment", href: "/performance/gaps" },
-  { label: "Trialling & stability", href: "/performance/trialling" },
-  { label: "Implantation", href: "/performance/implantation" },
-  { label: "Patellar management", href: "/performance/patella" },
-  { label: "Exposure & closure", href: "/performance/exposure" },
-];
-
 export const SECTIONS: NavSection[] = [
   {
     id: "assigned-activities",
@@ -152,17 +141,10 @@ export const SECTIONS: NavSection[] = [
     href: "/performance",
     icon: Compass,
     personas: ["instructor"],
+    // Overview, Activity, Reports and By skill are tabs of this one page, as they are in a learner's Progress.
     groups: [
       {
-        items: [
-          { label: "Activity", href: "/activity", icon: Activity },
-          { label: "Performance", href: "/performance", icon: ChartColumn },
-          { label: "Reports", href: "/reports", icon: FileText },
-        ],
-      },
-      {
-        label: "By skill",
-        items: SKILL_ITEMS,
+        items: [{ label: "Insights", href: "/performance", icon: ChartColumn }],
       },
     ],
   },

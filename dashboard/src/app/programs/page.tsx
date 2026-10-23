@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ChevronRight, GraduationCap, Users } from "lucide-react";
 import { AppShell, PageHeader, SectionHeader } from "@/components/shell";
 import { Button, Chip, EmptyState } from "@/components/ui";
-import { StatCard, StatRow } from "@/components/viz";
 import { getCohorts } from "@/lib/data/cohorts";
 import { getPrograms } from "@/lib/data/programs";
 import { cx } from "@/lib/cx";
@@ -45,9 +44,11 @@ export default async function ProgramsPage({
 
     return (
       <AppShell user={user} searchHint='Try searching "programs"'>
+        {/* As on the learner's Programs: the count beside the title, not a stat card of one number. */}
         <PageHeader
           title="Programs"
-          lede="Manage your academic training programs and the cohorts within them."
+          count={tab === "programs" ? (programs.length > 0 ? programs.length : undefined) : cohorts.length > 0 ? cohorts.length : undefined}
+          lede="Open a program to manage its cohorts, cases and sessions."
         />
 
         <nav className={p.tabs} aria-label="Programs sections">
@@ -94,7 +95,7 @@ export default async function ProgramsPage({
                   </p>
                   <div className={p.cardFoot}>
                     <span className={p.cardOpen}>
-                      Open Cohort
+                      Open cohort
                       <ChevronRight className={p.cardChevron} strokeWidth={2} />
                     </span>
                   </div>
@@ -111,14 +112,6 @@ export default async function ProgramsPage({
           </EmptyState>
         ) : (
           <>
-            <StatRow>
-              <StatCard
-                label="Programs"
-                value={String(programs.length)}
-                variant="dark"
-              />
-            </StatRow>
-
             <div className={p.cards}>
               {programs.map((prog) => (
                 <Link prefetch={false}
@@ -140,7 +133,7 @@ export default async function ProgramsPage({
                       {prog.status === "active" ? "Active" : "Archived"}
                     </Chip>
                     <span className={p.cardOpen}>
-                      Open Program
+                      Open program
                       <ChevronRight className={p.cardChevron} strokeWidth={2} />
                     </span>
                   </div>
@@ -157,7 +150,7 @@ export default async function ProgramsPage({
         <SectionHeader title="Add a program" />
         <section className={p.panel} aria-label="Add a program">
           <div>
-            <p className={p.panelTitle}>New Program</p>
+            <p className={p.panelTitle}>New program</p>
             <p className={p.panelSub}>
               A program acts as the top-level container for your cohorts (e.g. &ldquo;Orthopaedics Residency&rdquo;).
             </p>

@@ -62,7 +62,7 @@ export function NewSession({
       </Select>
 
       <Input
-        label="Scheduled Date & Time"
+        label="Scheduled date and time"
         name="scheduledAt"
         type="datetime-local"
         required
@@ -80,7 +80,8 @@ export function NewSession({
       />
 
       <Input
-        label="Description (optional)"
+        label="Description"
+        optional
         name="description"
         placeholder="Topics covered..."
         className={p.formGrow}

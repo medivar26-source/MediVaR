@@ -181,13 +181,19 @@ function Palette({
             }}
             aria-label="Search query"
             autoComplete="off"
+            // The arrow keys move a highlight without moving focus; these let a screen reader follow it.
+            role="combobox"
+            aria-expanded={results.length > 0}
+            aria-controls="search-results"
+            aria-autocomplete="list"
+            aria-activedescendant={results[active] ? `search-result-${active}` : undefined}
           />
-          <button type="button" className={s.esc} onClick={onClose}>
+          <button type="button" className={s.esc} onClick={onClose} aria-label="Close search">
             ESC
           </button>
         </div>
 
-        <div className={s.results}>
+        <div className={s.results} id="search-results" role="listbox" aria-label="Results">
           {results.length === 0 ? (
             <div className={s.empty}>
               <p className={s.emptyTitle}>No matches for “{query}”</p>
@@ -199,19 +205,23 @@ function Palette({
             results.map((entry, i) => (
               <button
                 key={`${entry.href}-${entry.title}`}
+                id={`search-result-${i}`}
                 type="button"
+                role="option"
+                aria-selected={i === active}
+                tabIndex={-1}
                 className={cx(s.item, i === active && s.itemActive)}
                 onMouseEnter={() => setCursor(i)}
                 onClick={() => go(entry.href)}
               >
-                <span className={s.itemIcon}>
+                <span className={s.itemIcon} aria-hidden="true">
                   <entry.icon width={16} height={16} strokeWidth={1.75} />
                 </span>
                 <span className={s.itemBody}>
                   <span className={s.itemTitle}>{entry.title}</span>
                   <span className={s.itemMeta}>{entry.meta}</span>
                 </span>
-                {i === active && <span className={s.itemKey}>↵</span>}
+                {i === active && <span className={s.itemKey} aria-hidden="true">↵</span>}
               </button>
             ))
           )}

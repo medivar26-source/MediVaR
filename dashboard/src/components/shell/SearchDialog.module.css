@@ -45,7 +45,7 @@
 }
 
 .input::placeholder {
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 .esc {

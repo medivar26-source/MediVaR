@@ -158,8 +158,8 @@ function SideNavContent({ persona, nav, drawer }: SideNavProps) {
     if (targetBase === "/plans") {
       return pathname === "/plans" || pathname.startsWith("/plan/");
     }
-    // The skill pages live below /performance, so the overview matches only itself.
-    if (targetBase === "/performance") return pathname === "/performance";
+    // Insights: its tabs, and the per-skill pages its By skill tab links to.
+    if (targetBase === "/performance") return pathname === "/performance" || pathname.startsWith("/performance/");
     // Progress: its tabs, and the per-skill pages a tab links to.
     if (targetBase === "/progress") return pathname === "/progress" || pathname.startsWith("/performance/");
 

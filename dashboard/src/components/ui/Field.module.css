@@ -63,7 +63,7 @@
 }
 
 .control::placeholder {
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 .control:hover:not(:disabled):not(:read-only) {
@@ -207,4 +207,11 @@
   margin-top: 2px;
   font-size: var(--t-caption);
   color: var(--text-muted);
+}
+
+/* Phone width: 16px text, or Safari on iPhone zooms the whole page in when a field is tapped. */
+@media (max-width: 767px) {
+  .control {
+    font-size: 16px;
+  }
 }

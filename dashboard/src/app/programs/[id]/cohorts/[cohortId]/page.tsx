@@ -18,7 +18,7 @@ import {
 import { getProgramDetail } from "@/lib/data/programs";
 import { getCohort, getCohortCases, getCohortSessions } from "@/lib/data/cohorts";
 import { listCasesForAuthoring } from "@/lib/data/content";
-import { dateTime, shortDate, titleCase } from "@/lib/format";
+import { dateTimeParts, shortDate, titleCase } from "@/lib/format";
 import { cx } from "@/lib/cx";
 import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
@@ -49,7 +49,7 @@ export async function generateMetadata({
  */
 const COHORT_TABS = [
   { value: "sessions", label: "Sessions" },
-  { value: "cases", label: "Case Access" },
+  { value: "cases", label: "Case access" },
   { value: "enrollment", label: "Enrollment" },
 ] as const;
 
@@ -141,20 +141,20 @@ export default async function CohortWorkspacePage({
         ]}
       />
 
+      {/* The breadcrumb already names the program, so no eyebrow repeats it (as on the learner's pages). */}
       <PageHeader
-        eyebrow={`Program: ${program.name}`}
         title={cohort.name}
-        lede={`${cohort.learners} learner${cohort.learners === 1 ? "" : "s"} · owned by ${cohort.ownerName ?? "—"} · created ${shortDate(cohort.createdAt)}`}
+        lede={`${cohort.learners} learner${cohort.learners === 1 ? "" : "s"}${cohort.ownerName ? ` · owned by ${cohort.ownerName}` : ""} · created ${shortDate(cohort.createdAt)}`}
         actions={
           <div style={{ display: "flex", gap: "var(--s-2)", flexWrap: "wrap" }}>
             <Button href={`/programs/${program.id}?tab=learners&cohort=${cohort.id}`} variant="secondary">
-              Learners &amp; Performance
+              Learners &amp; performance
             </Button>
             <Button href={`/programs/${program.id}?tab=performance&cohort=${cohort.id}`} variant="secondary">
-              Cohort Performance
+              Cohort performance
             </Button>
             <Button href={`/programs/${program.id}?tab=cohorts`} variant="secondary">
-              All Cohorts
+              All cohorts
             </Button>
           </div>
         }
@@ -177,10 +177,10 @@ export default async function CohortWorkspacePage({
       {/* 3. SESSIONS TAB (WITH STATUS FILTERS IN PAGE) */}
       {tab === "sessions" && (
         <>
-          <SectionHeader title="Schedule a Session" />
+          <SectionHeader title="Schedule a session" />
           <section className={p.panel} aria-label="Schedule session">
             <div>
-              <p className={p.panelTitle}>New Training Session</p>
+              <p className={p.panelTitle}>New training session</p>
               <p className={p.panelSub}>
                 Plan upcoming training labs or assessment sessions for this cohort from one of the assigned cases below. Every current cohort resident is added to the roster.
               </p>
@@ -188,7 +188,7 @@ export default async function CohortWorkspacePage({
             <NewSession cohortId={cohort.id} cases={cohortCases} />
           </section>
 
-          <SectionHeader title="Cohort Sessions" />
+          <SectionHeader title="Cohort sessions" />
 
           {/* Session Status Filter Chips: [All] [Upcoming] [Live] [Interrupted] [Completed] */}
           <div
@@ -247,7 +247,7 @@ export default async function CohortWorkspacePage({
                   <Th>Session Name</Th>
                   <Th>Case</Th>
                   <Th>Mode</Th>
-                  <Th>Scheduled Date & Time</Th>
+                  <Th>Scheduled</Th>
                   <Th numeric>Duration</Th>
                   <Th>Status</Th>
                   <Th>Roster</Th>
@@ -281,7 +281,13 @@ export default async function CohortWorkspacePage({
                       <Td>
                         <Chip tone="muted">{titleCase(session.mode)}</Chip>
                       </Td>
-                      <Td>{dateTime(session.scheduledAt)}</Td>
+                      <Td>
+                        {/* The time under the date, so the eight columns fit a laptop screen. */}
+                        {dateTimeParts(session.scheduledAt).date}
+                        <div style={{ fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>
+                          {dateTimeParts(session.scheduledAt).time}
+                        </div>
+                      </Td>
                       <Td numeric>{session.duration} mins</Td>
                       <Td>
                         <Badge status={statusBadge}>
@@ -331,7 +337,7 @@ export default async function CohortWorkspacePage({
       {/* 5. CASE ACCESS TAB */}
       {tab === "cases" && (
         <>
-          <SectionHeader title="Case Access" />
+          <SectionHeader title="Case access" />
           <section className={p.panel} aria-label="Assign cases">
             <div>
               <p className={p.panelTitle}>Accessible Cases</p>
@@ -346,7 +352,7 @@ export default async function CohortWorkspacePage({
             />
           </section>
 
-          <SectionHeader title="Configuration Preset" />
+          <SectionHeader title="Configuration preset" />
           <section className={p.panel} aria-label="Configuration preset">
             <div>
               <p className={p.panelTitle}>Cohort Preset</p>
@@ -378,7 +384,7 @@ export default async function CohortWorkspacePage({
       {/* 6. ENROLLMENT TAB */}
       {tab === "enrollment" && (
         <>
-          <SectionHeader title="Enrollment & Learner Provisioning" />
+          <SectionHeader title="Enrollment and learner accounts" />
           <section className={p.panel} aria-label="Manage Learners">
             <div>
               <p className={p.panelTitle}>Provision Learners</p>

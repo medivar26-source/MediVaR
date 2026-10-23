@@ -2,8 +2,7 @@ import Link from "next/link";
 import { ImageOff, ListChecks, ClipboardList } from "lucide-react";
 import { ScanPreview } from "@/components/cases/ScanPreview";
 import { AppShell, Breadcrumbs, PageHeader } from "@/components/shell";
-import { Badge, Button, Card, CardHeader, Chip, EmptyState, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
-import { StatCard, StatRow } from "@/components/viz";
+import { Badge, Button, Card, CardHeader, EmptyState, StatStrip, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
 import type { CaseDetail, InstructorConfig } from "@/lib/data/cases";
 import { getSupervisedLearners } from "@/lib/data/cohorts";
 import { PLANS, type PlanRecord } from "@/lib/data/plans";
@@ -76,22 +75,31 @@ export async function InstructorCaseView({
               Status &amp; imaging
             </Button>
             <Button variant="primary" href={`${base}/edit`}>
-              Edit Draft
+              Edit draft
             </Button>
           </div>
         }
       />
 
-      <div className={s.chips}>
-        <Chip tone="muted">{pathologyText(detail)}</Chip>
-        <Chip tone="muted">{sideText(detail, " knee")}</Chip>
-        <Chip tone="muted">{titleCase(detail.difficulty)}</Chip>
-        {detail.status && (
-          <Chip tone={published ? "muted" : "default"}>
-            {published ? `v${detail.version ?? 1} Published` : detail.status.toUpperCase()}
-          </Chip>
-        )}
-      </div>
+      {/* Case metadata as labelled fields, not tags, as on the learner's case page. */}
+      <dl className={s.meta}>
+        <div>
+          <dt>Pathology</dt>
+          <dd>{pathologyText(detail)}</dd>
+        </div>
+        <div>
+          <dt>Side</dt>
+          <dd>{sideText(detail, " knee")}</dd>
+        </div>
+        <div>
+          <dt>Difficulty</dt>
+          <dd>{titleCase(detail.difficulty)}</dd>
+        </div>
+        <div>
+          <dt>Version</dt>
+          <dd>{`v${detail.version ?? 1}`}</dd>
+        </div>
+      </dl>
 
       <nav className={cx(p.tabs)} aria-label="Case sections">
         {CASE_TABS.map((t) => (
@@ -108,14 +116,16 @@ export async function InstructorCaseView({
 
       {tab === "details" && (
         <>
-          <div className={s.readiness}>
-            <StatRow>
-              <StatCard label="Status" value={published ? "Published" : titleCase(detail.status ?? "draft")} variant="accent" sub={`Version ${detail.version ?? 1}`} />
-              <StatCard label="Pass mark" value={passMark} variant="accent" sub={`${titleCase(detail.difficulty)} difficulty`} />
-              <StatCard label="Imaging views" value={detail.imaging.filter((v) => v.url).length} variant="accent" sub={`of ${detail.imaging.length} expected`} />
-              <StatCard label="Learner plans" value={learnerPlans.length} variant="accent" sub="from your learners" />
-            </StatRow>
-          </div>
+          {/* The case's readiness as a compact strip, as the learner's results are on theirs. */}
+          <StatStrip
+            label="Case readiness"
+            items={[
+              { label: "Status", value: published ? "Published" : titleCase(detail.status ?? "draft"), note: `Version ${detail.version ?? 1}` },
+              { label: "Pass mark", value: passMark, note: `${titleCase(detail.difficulty)} difficulty` },
+              { label: "Imaging views", value: detail.imaging.filter((v) => v.url).length, note: `of ${detail.imaging.length} expected` },
+              { label: "Learner plans", value: learnerPlans.length, note: "from your learners" },
+            ]}
+          />
 
           <div className={s.layout}>
             <div className={s.col}>
@@ -142,7 +152,7 @@ export async function InstructorCaseView({
                   </dl>
                 )}
                 {detail.patient.vitals.length === 0 && detail.patient.notes.length === 0 && (
-                  <p className={s.foot}>No patient details have been authored yet. Add them from Edit Draft.</p>
+                  <p className={s.foot}>No patient details have been authored yet. Add them from Edit draft.</p>
                 )}
               </Card>
             </div>
@@ -239,7 +249,7 @@ export async function InstructorCaseView({
             />
             {!detail.reference_plan ? (
               <EmptyState icon={ClipboardList} title="No reference plan yet">
-                Author the six measurements and the tibial and femoral components in Edit Draft so learner plans can be assessed.
+                Author the six measurements and the tibial and femoral components in Edit draft so learner plans can be assessed.
               </EmptyState>
             ) : (
               <ReferencePlan plan={detail.reference_plan} />

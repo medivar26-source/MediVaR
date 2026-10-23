@@ -17,7 +17,6 @@ import {
   DemoDataNote,
   StatStrip,
 } from "@/components/ui";
-import { StatCard, StatRow } from "@/components/viz";
 import { asMode, asStatus, getSessionList } from "@/lib/data/sessions";
 import { clock, shortDate, titleCase } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
@@ -26,7 +25,6 @@ import { SessionActions } from "@/components/sessions/SessionActions";
 import { isSampleSession } from "@/lib/data/session-links";
 import { SessionFilters } from "./SessionFilters";
 import s from "./sessions.module.css";
-import p from "../panels.module.css";
 
 export const metadata: Metadata = { title: "Sessions" };
 
@@ -66,13 +64,14 @@ export default async function SessionsPage({
 
   return (
     <AppShell user={user} searchHint='Try searching "varus"'>
+      {/* One treatment for every role, as the learner review set it: no eyebrow, the totals as a compact
+          strip above the list they summarise, and a note that says which parts are sample data. */}
       <PageHeader
-        eyebrow={persona === "learner" ? undefined : "Cohort history"}
         title="Sessions"
         lede={
           persona === "learner"
             ? "Open a session to see its report."
-            : "Every session you supervise. Open one to see the report it produced."
+            : "Every session in your cohorts. Schedule new ones from a cohort’s Sessions tab."
         }
         actions={
           persona !== "learner" ? (
@@ -86,79 +85,35 @@ export default async function SessionsPage({
           )
         }
       />
-      {persona === "learner" ? (
-        <DemoDataNote
-          sample="scores, reports and past headset sessions"
-          live="the sessions scheduled for you"
-        />
-      ) : (
-        <DemoDataNote />
-      )}
+      <DemoDataNote
+        sample="scores, reports and past headset sessions"
+        live={persona === "learner" ? "the sessions scheduled for you" : "the sessions scheduled in your cohorts"}
+      />
 
-      {persona !== "learner" && (
-        <p className={p.panelSub} style={{ marginTop: 0 }}>
-          Sessions are scheduled from a cohort: choose a cohort, then open its
-          Sessions tab.
-        </p>
-      )}
-
-      {persona === "learner" ? (
-        <StatStrip
-          label="Session totals"
-          items={[
-            { label: "Sessions", value: stats.sessions, note: filtered ? "Matching these filters" : "All time" },
-            {
-              label: "Mean score",
-              value: stats.meanScore ?? "—",
-              note:
-                stats.reported === 0
-                  ? "No reports yet"
-                  : `Across ${stats.reported} report${stats.reported === 1 ? "" : "s"}`,
-            },
-            {
-              label: "Below pass mark",
-              value: stats.belowPass,
-              note: stats.reported === 0 ? "Nothing scored yet" : "Of those reported",
-            },
-            {
-              label: "In progress",
-              value: stats.live,
-              note: stats.live === 0 ? "Nothing running" : "Running now",
-            },
-          ]}
-        />
-      ) : (
-      <StatRow>
-        <StatCard
-          label="Sessions"
-          value={stats.sessions}
-          variant="accent"
-          sub={filtered ? "Matching these filters" : "All time"}
-        />
-        <StatCard
-          label="Mean score"
-          value={stats.meanScore ?? "—"}
-          variant="accent"
-          sub={
-            stats.reported === 0
-              ? "No reports yet"
-              : `Across ${stats.reported} report${stats.reported === 1 ? "" : "s"}`
-          }
-        />
-        <StatCard
-          label="Below pass mark"
-          value={stats.belowPass}
-          variant="accent"
-          sub={stats.reported === 0 ? "Nothing scored yet" : "Of those reported"}
-        />
-        <StatCard
-          label="In progress"
-          value={stats.live}
-          variant="accent"
-          sub={stats.live === 0 ? "Nothing running" : "Running now"}
-        />
-      </StatRow>
-      )}
+      <StatStrip
+        label="Session totals"
+        items={[
+          { label: "Sessions", value: stats.sessions, note: filtered ? "Matching these filters" : "All time" },
+          {
+            label: "Mean score",
+            value: stats.meanScore ?? "—",
+            note:
+              stats.reported === 0
+                ? "No reports yet"
+                : `Across ${stats.reported} report${stats.reported === 1 ? "" : "s"}`,
+          },
+          {
+            label: "Below pass mark",
+            value: stats.belowPass,
+            note: stats.reported === 0 ? "Nothing scored yet" : "Of those reported",
+          },
+          {
+            label: "In progress",
+            value: stats.live,
+            note: stats.live === 0 ? "Nothing running" : "Running now",
+          },
+        ]}
+      />
 
       <div className={s.filterWrap}>
         <SessionFilters
@@ -185,16 +140,22 @@ export default async function SessionsPage({
                   <Button variant="secondary" href="/sessions">
                     Clear filters
                   </Button>
-                ) : (
+                ) : persona === "learner" ? (
                   <Button variant="primary" href="/cases">
                     Browse cases
+                  </Button>
+                ) : (
+                  <Button variant="primary" href="/programs?tab=cohorts">
+                    Open cohorts
                   </Button>
                 )
               }
             >
               {filtered
                 ? "Clear one of them, or widen the timeframe."
-                : "Plan a case on the desktop, then perform it in the headset. The report compares the two."}
+                : persona === "learner"
+                  ? "Plan a case on the desktop, then perform it in the headset. The report compares the two."
+                  : "Open a cohort and schedule a training or assessment session from one of its assigned cases."}
             </EmptyState>
           </div>
         ) : (

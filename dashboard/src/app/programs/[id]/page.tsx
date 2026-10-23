@@ -54,8 +54,8 @@ export async function generateMetadata({
 const PROGRAM_TABS = [
   { value: "activities", label: "Activities" },
   { value: "cohorts", label: "Cohorts" },
-  { value: "learners", label: "Learners & Performance" },
-  { value: "performance", label: "Cohort Performance" },
+  { value: "learners", label: "Learners & performance" },
+  { value: "performance", label: "Cohort performance" },
 ] as const;
 
 type ProgramTab = (typeof PROGRAM_TABS)[number]["value"];
@@ -110,7 +110,6 @@ export default async function ProgramDetailPage({
         />
 
         <PageHeader
-          eyebrow="Program Workspace"
           title={program.name}
           lede={program.description || "Comprehensive clinical surgical simulation and procedural curriculum."}
         />

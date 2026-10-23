@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { Calendar, FolderOpen } from "lucide-react";
 import { SectionHeader } from "@/components/shell";
-import { Badge, Button, Card, Chip, EmptyState, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
+import { ProcedureCaseCard } from "@/components/cases/ProcedureCaseCard";
+import { Badge, Button, Chip, EmptyState, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
 import { getCohortSessions, type SessionSummary } from "@/lib/data/cohorts";
 import type { CaseCard } from "@/lib/data/cases";
 import { dateTime, titleCase } from "@/lib/format";
 import p from "@/app/panels.module.css";
-import { pathologyText, sideText } from "@/lib/case-meta";
 
 type Cohort = { id: string; name: string };
 
@@ -118,35 +118,14 @@ export async function ActivitiesTab({
           Browse the Case Library to author or publish surgical cases for this program.
         </EmptyState>
       ) : (
-        <div className={p.cards}>
+        // The same card as Procedures: labelled fields instead of tags, one action, status and version for staff.
+        <ul className={p.cards}>
           {cases.map((item) => (
-            <Card key={item.id} padding="none" className={p.card}>
-              <Link
-                href={`/cases/${item.id}`}
-                style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", height: "100%", padding: "var(--s-4)" }}
-              >
-                <div className={p.panelHead}>
-                  <p className={p.cardTitle}>{item.title}</p>
-                  <Chip tone="muted">v{item.version ?? 1}</Chip>
-                </div>
-                <div style={{ display: "flex", gap: "var(--s-2)", margin: "var(--s-2) 0", flexWrap: "wrap" }}>
-                  <Chip tone="muted">{pathologyText(item)}</Chip>
-                  <Chip tone="muted">{sideText(item, " knee")}</Chip>
-                  <Chip tone="muted">{titleCase(item.difficulty)}</Chip>
-                </div>
-                {item.summary && (
-                  <p className={p.cardBody} style={{ flex: 1 }}>
-                    {item.summary}
-                  </p>
-                )}
-                <div className={p.cardFoot} style={{ marginTop: "var(--s-3)" }}>
-                  <span style={{ fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>{item.status ?? "Published"}</span>
-                  <span className={p.cardOpen}>Inspect case →</span>
-                </div>
-              </Link>
-            </Card>
+            <li key={item.id}>
+              <ProcedureCaseCard item={item} staff />
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       <SectionHeader title="Assessment standards" />

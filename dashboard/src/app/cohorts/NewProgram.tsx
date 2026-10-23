@@ -29,7 +29,8 @@ export function NewProgram() {
       />
 
       <Input
-        label="Description (Optional)"
+        label="Description"
+        optional
         name="description"
         placeholder="Brief description"
         maxLength={200}

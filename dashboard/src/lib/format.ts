@@ -63,6 +63,16 @@ export function dateTime(iso?: string): string {
   });
 }
 
+/** `dateTime` as two parts, for a table cell that stacks the time under the date. */
+export function dateTimeParts(iso?: string): { date: string; time?: string } {
+  if (!iso) return { date: "—" };
+  const at = new Date(iso);
+  return {
+    date: at.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+    time: at.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+  };
+}
+
 /** "3 days ago". `now` is passed in so output stays deterministic. */
 export function relativeTime(iso: string | undefined, now: string): string {
   if (!iso) return "Never";

@@ -93,12 +93,14 @@ test("Navigation persona separation & approved hierarchy", async (t) => {
       "The dashboard is reached from the logo, not from the navigation",
     );
     assert.equal(instructorSections.find((s) => (s.id as string) === "reports"), undefined);
+    // Insights: Activity, Reports and By skill are tabs of one page, as in a learner's Progress.
     const overviewItems = instructorSections
       .find((s) => s.id === "overview")!
       .groups.flatMap((g) => g.items);
-    assert.ok(
-      overviewItems.some((i) => i.href === "/reports"),
-      "Instructor must have Reports at /reports under Overview",
+    assert.deepEqual(
+      overviewItems.map((i) => i.href),
+      ["/performance"],
+      "Instructor Insights is one link; Reports is its tab",
     );
 
     // 4. Sessions and Cohorts are one click away. There is no standalone Learners list:

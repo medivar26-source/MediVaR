@@ -710,6 +710,11 @@
   .searchKey {
     display: none;
   }
+  /* The role's one action sits beside 44px round buttons; at 36px it was the one control a thumb could miss. */
+  .topRight > a,
+  .topRight > button {
+    height: var(--h-md);
+  }
 }
 
 /* ---------- phone menu: the sidebar as a drawer ---------- */

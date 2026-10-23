@@ -43,10 +43,10 @@ describe("one Progress destination", () => {
     }
   });
 
-  it("leaves the instructor's Insights section as it was", () => {
+  it("gives the instructor's Insights one destination, as a learner's Progress has", () => {
     const insights = sectionsForPersona("instructor").find((s) => s.id === "overview")!;
     const hrefs = insights.groups.flatMap((g) => g.items.map((i) => i.href));
-    for (const href of ["/activity", "/performance", "/reports"]) assert.ok(hrefs.includes(href), href);
-    assert.equal(hrefs.filter((h) => h.startsWith("/performance/")).length, 7);
+    // Activity, Reports and By skill are tabs of /performance; the skill pages are reached from By skill.
+    assert.deepEqual(hrefs, ["/performance"]);
   });
 });
