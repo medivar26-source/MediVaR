@@ -29,8 +29,9 @@ import {
   scenesForVariant,
 } from "@/lib/seed";
 import { PLAN_BY_ID } from "./plans";
+import { getLearnerSessions } from "./learner-sessions";
 import { visibleSessions } from "./scope";
-import { normalizeStatus, orderSessions } from "./session-order";
+import { orderSessions } from "./session-order";
 
 export * from "@/lib/report";
 
@@ -91,33 +92,16 @@ export type SessionListStats = {
  */
 export async function getSessionList(
   filters: SessionFilters = {},
-  user?: Profile,
+  // Required: with no user the old fallback was the sample account, so a page that
+  // forgot to pass one listed somebody else's sessions.
+  user: Profile,
 ): Promise<{ sessions: SessionListItem[]; stats: SessionListStats }> {
-  let dbRows: SessionSummary[] = [];
-  try {
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    const token = cookieStore.get("mediver-token")?.value;
-    if (token && user) {
-      const { apiListSessions } = await import("./residents-api");
-      const { toSessionSummary } = await import("./cohorts");
-      
-      const persona = personaFor(user.role);
-      if (persona === "learner") {
-        const raw = await apiListSessions(token, user.id);
-        // The API says "in_progress"; this product's own word for it is "live".
-        // Unify so the status filter and badges treat both the same.
-        dbRows = raw.map(toSessionSummary).map((row) => ({
-          ...row,
-          status: normalizeStatus(row.status) as SessionSummary["status"],
-        })) as unknown as SessionSummary[];
-      }
-    }
-  } catch (err) {
-    console.warn("Failed to fetch sessions from API:", err);
-  }
+  // A learner's list is the shared learner-sessions answer, so this page, the case
+  // pages and the Program page can never disagree about it.
+  const base =
+    personaFor(user.role) === "learner" ? await getLearnerSessions(user.id) : visibleSessions(user);
 
-  const rows = [...dbRows, ...visibleSessions(user)].filter(
+  const rows = base.filter(
     (row) =>
       (!filters.status || row.status === filters.status) &&
       (!filters.mode || row.mode === filters.mode) &&

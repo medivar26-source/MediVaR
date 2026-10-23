@@ -13,6 +13,7 @@ import { PASS_MARK, type Profile } from "@/lib/types";
 import { ConfigurePanel } from "../ConfigurePanel";
 import s from "../case.module.css";
 import p from "@/app/panels.module.css";
+import { pathologyText, procedureText, sideText } from "@/lib/case-meta";
 
 export const CASE_TABS = [
   { value: "details", label: "Details" },
@@ -66,7 +67,7 @@ export async function InstructorCaseView({
         ]}
       />
       <PageHeader
-        eyebrow={`${detail.procedureName} · ${detail.id}`}
+        eyebrow={`${procedureText(detail)} · ${detail.id}`}
         title={detail.title}
         lede={detail.summary}
         actions={
@@ -82,8 +83,8 @@ export async function InstructorCaseView({
       />
 
       <div className={s.chips}>
-        <Chip tone="muted">{detail.pathologyLabel}</Chip>
-        <Chip tone="muted">{titleCase(detail.side)} knee</Chip>
+        <Chip tone="muted">{pathologyText(detail)}</Chip>
+        <Chip tone="muted">{sideText(detail, " knee")}</Chip>
         <Chip tone="muted">{titleCase(detail.difficulty)}</Chip>
         {detail.status && (
           <Chip tone={published ? "muted" : "default"}>

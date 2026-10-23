@@ -4,8 +4,9 @@ import { SectionHeader } from "@/components/shell";
 import { Badge, Button, Card, Chip, EmptyState, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
 import { getCohortSessions, type SessionSummary } from "@/lib/data/cohorts";
 import type { CaseCard } from "@/lib/data/cases";
-import { titleCase } from "@/lib/format";
+import { dateTime, titleCase } from "@/lib/format";
 import p from "@/app/panels.module.css";
+import { pathologyText, sideText } from "@/lib/case-meta";
 
 type Cohort = { id: string; name: string };
 
@@ -76,7 +77,7 @@ export async function ActivitiesTab({
                 <Td>
                   <Chip tone="muted">{titleCase(s.mode)}</Chip>
                 </Td>
-                <Td>{new Date(s.scheduledAt).toLocaleString()}</Td>
+                <Td>{dateTime(s.scheduledAt)}</Td>
                 <Td>
                   <Badge
                     status={
@@ -129,8 +130,8 @@ export async function ActivitiesTab({
                   <Chip tone="muted">v{item.version ?? 1}</Chip>
                 </div>
                 <div style={{ display: "flex", gap: "var(--s-2)", margin: "var(--s-2) 0", flexWrap: "wrap" }}>
-                  <Chip tone="muted">{item.pathologyLabel}</Chip>
-                  <Chip tone="muted">{titleCase(item.side)} knee</Chip>
+                  <Chip tone="muted">{pathologyText(item)}</Chip>
+                  <Chip tone="muted">{sideText(item, " knee")}</Chip>
                   <Chip tone="muted">{titleCase(item.difficulty)}</Chip>
                 </div>
                 {item.summary && (

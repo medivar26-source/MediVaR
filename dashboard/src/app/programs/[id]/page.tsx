@@ -19,6 +19,8 @@ import {
   THead,
   Tr,
 } from "@/components/ui";
+import { SessionActions } from "@/components/sessions/SessionActions";
+import { isSampleSession } from "@/lib/data/session-links";
 import { StatCard, StatRow } from "@/components/viz";
 import { getProgramDetail, getProgramCohorts } from "@/lib/data/programs";
 import { listCases } from "@/lib/data/cases";
@@ -115,7 +117,7 @@ export default async function ProgramDetailPage({
 
         <nav className={p.tabs} aria-label="Program sections">
           {PROGRAM_TABS.map((t) => (
-            <Link
+            <Link prefetch={false}
               key={t.value}
               href={t.value === "activities" ? `/programs/${program.id}` : `/programs/${program.id}?tab=${t.value}`}
               className={cx(p.tab, tab === t.value && p.tabOn)}
@@ -149,7 +151,7 @@ export default async function ProgramDetailPage({
   // --------------------------------------------------------------------------
   const [{ cases }, { sessions, stats }] = await Promise.all([
     listCases(user.id, { attempted: "all" }),
-    getSessionList({}),
+    getSessionList({}, user),
   ]);
 
   const scoredSessions = sessions.filter((s) => s.totalScore !== undefined);
@@ -172,9 +174,8 @@ export default async function ProgramDetailPage({
       />
 
       <PageHeader
-        eyebrow="Training Program"
         title={program.name}
-        lede={program.description || "Comprehensive clinical surgical simulation and procedural curriculum."}
+        lede={program.description || "Open a case to plan it, then perform it in the headset."}
         actions={
           nextCase ? (
             <Button variant="primary" icon={Play} href={`/cases/${nextCase.id}`}>
@@ -238,7 +239,7 @@ export default async function ProgramDetailPage({
         />
       </StatRow>
 
-      <SectionHeader title="Curriculum Cases" />
+      <SectionHeader title="Cases" />
       {cases.length === 0 ? (
         <EmptyState icon={FolderOpen} title="No cases assigned yet"
             action={<Button variant="primary" href="/cases">Browse cases</Button>}>
@@ -250,7 +251,7 @@ export default async function ProgramDetailPage({
             const passMark = PASS_MARK[item.difficulty] ?? 70;
             return (
               <Card key={item.id} padding="none" className={p.card}>
-                <Link
+                <Link prefetch={false}
                   href={`/cases/${item.id}`}
                   style={{
                     textDecoration: "none",
@@ -263,26 +264,11 @@ export default async function ProgramDetailPage({
                 >
                   <div className={p.panelHead}>
                     <p className={p.cardTitle}>{item.title}</p>
-                    {item.bestScore !== undefined ? (
+                    {item.bestScore !== undefined && (
                       <Badge status={item.bestScore >= passMark ? "pass" : "warn"}>
                         {item.bestScore}
                       </Badge>
-                    ) : (
-                      <Badge status="neutral">Not attempted</Badge>
                     )}
-                  </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "var(--s-2)",
-                      margin: "var(--s-2) 0",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <Chip tone="muted">{item.pathologyLabel}</Chip>
-                    <Chip tone="muted">{titleCase(item.side)} knee</Chip>
-                    <Chip tone="muted">{titleCase(item.difficulty)}</Chip>
                   </div>
 
                   {item.summary && (
@@ -295,11 +281,9 @@ export default async function ProgramDetailPage({
                     <span style={{ fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>
                       {item.attempts > 0
                         ? `${item.attempts} attempt${item.attempts === 1 ? "" : "s"}`
-                        : "Unattempted"}
+                        : ""}
                     </span>
-                    <span className={p.cardOpen}>
-                      Plan case →
-                    </span>
+                    <span className={p.cardOpen}>Open case →</span>
                   </div>
                 </Link>
               </Card>
@@ -333,7 +317,15 @@ export default async function ProgramDetailPage({
             {sessions.slice(0, 5).map((s) => (
               <Tr key={s.id}>
                 <Td head>{shortDate(s.endedAt ?? s.startedAt)}</Td>
-                <Td>{s.caseTitle}</Td>
+                <Td>
+                  {s.caseTitle}
+                  {isSampleSession(s.id) && (
+                    <>
+                      {" "}
+                      <Chip tone="muted">Sample</Chip>
+                    </>
+                  )}
+                </Td>
                 <Td>{titleCase(s.mode)}</Td>
                 <Td>{titleCase(s.difficulty)}</Td>
                 <Td numeric>{clock(s.durationS)}</Td>
@@ -344,13 +336,7 @@ export default async function ProgramDetailPage({
                   </Badge>
                 </Td>
                 <Td>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    href={s.status === "completed" ? `/sessions/${s.id}/report` : `/sessions/${s.id}`}
-                  >
-                    {s.status === "completed" ? "Report" : "View"}
-                  </Button>
+                  <SessionActions session={s} />
                 </Td>
               </Tr>
             ))}

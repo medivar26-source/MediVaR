@@ -103,6 +103,8 @@ published_at TIMESTAMPTZ
 UNIQUE(case_id, version_number)
 ```
 
+**Reading case metadata for lists.** `pathology_label` and `side` are columns of `case_versions`, not of `cases`. The case-list queries (`services/cases_service.py`, `get_learner_cases` and `get_institution_cases`) therefore `LEFT JOIN case_versions` on the published version (learners) or `COALESCE(published_version_id, draft_version_id)` (instructors/admins), and `LEFT JOIN procedures` for the procedure name. No schema change: the join is a read, and a case with no matching version yields null metadata.
+
 ### case_imaging
 ```text
 id UUID PK

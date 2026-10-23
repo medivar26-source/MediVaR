@@ -78,3 +78,7 @@ Locked pre-op plan
 ```
 
 The post-operative review surface must support the established comparison of planned values and executed values, including match/adherence percentage where configured, location/context of mistakes, step-level evidence and instructor feedback. Both resident and instructor are permitted to view results; instructor feedback remains reusable by the resident before a later attempt.
+
+## Learner Progress and skills by procedure (2026-10-20)
+
+A learner reads their own results on one page, `/progress` (tabs: Overview, Activity, Reports, By skill, Trends, History). All tabs read the same accessors as the pages they replace (`lib/data/performance.ts`), so source tables, inclusion rules and denominators are unchanged. The By skill tab is grouped by procedure: a group is shown for each published procedure with at least one scored session, and lists the report categories averaged over those sessions. Categories exist only for a procedure with a scoring model (today: total knee replacement). A procedure without one is shown as having no scored skill categories; nothing is derived for it. Report links appear only where a stored report exists.

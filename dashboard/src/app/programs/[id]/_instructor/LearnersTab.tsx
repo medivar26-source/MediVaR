@@ -4,7 +4,7 @@ import { SectionHeader } from "@/components/shell";
 import { Badge, Button, Chip, EmptyState, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
 import { getCohort, getCohortSessions, getSessionRoster } from "@/lib/data/cohorts";
 import { getReportsList } from "@/lib/data/performance";
-import { clock, relativeTime, shortDate, titleCase } from "@/lib/format";
+import { clock, dateTime, relativeTime, shortDate, titleCase } from "@/lib/format";
 import { ROLE_LABEL } from "@/lib/roles";
 import { PASS_MARK, type Difficulty, type Profile } from "@/lib/types";
 import p from "@/app/panels.module.css";
@@ -169,7 +169,7 @@ function SessionView({
         }
       />
       <p className={p.panelSub} style={{ marginBottom: "var(--s-4)" }}>
-        {new Date(session.scheduledAt).toLocaleString()} · {session.caseName ?? "No case"} · {titleCase(session.mode)} ·{" "}
+        {dateTime(session.scheduledAt)} · {session.caseName ?? "No case"} · {titleCase(session.mode)} ·{" "}
         {titleCase(session.status.replace("_", " "))} · {done} of {roster.length} completed
       </p>
 

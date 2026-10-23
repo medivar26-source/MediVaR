@@ -29,7 +29,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 /* An anchor, not a button — it navigates — and at least 44px

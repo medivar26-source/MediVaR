@@ -135,8 +135,14 @@
   z-index: 2;
   border-color: var(--border-strong);
   background: var(--surface);
-  box-shadow: var(--e-2);
-  transform: translateY(var(--nav-lift));
+}
+
+/* The lift and its shadow need a pointer that hovers; a tap on a touch screen would leave the row raised. */
+@media (hover: hover) and (pointer: fine) {
+  .capsuleBtn:hover {
+    box-shadow: var(--e-2);
+    transform: translateY(var(--nav-lift));
+  }
 }
 
 .capsuleBtnOn {
@@ -478,7 +484,7 @@
   border: var(--bw) solid transparent;
   border-radius: var(--r-pill);
   background: var(--surface);
-  color: var(--text-disabled);
+  color: var(--text-muted);
   font-size: var(--t-label);
   cursor: text;
   transition: border-color var(--m-fast) var(--ease-out);
@@ -507,6 +513,7 @@
 .searchKey {
   flex: 0 0 auto;
   padding: 2px var(--s-2);
+  font-family: inherit;
   border: var(--bw) solid var(--border);
   border-radius: var(--r-xs);
   font-size: 10.5px;
@@ -621,6 +628,22 @@
   line-height: var(--t-h1-lh);
 }
 
+.titleCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.6rem;
+  height: 1.6rem;
+  margin-left: var(--s-2);
+  padding: 0 var(--s-1);
+  border-radius: 999px;
+  background: var(--brand-surface);
+  color: var(--brand);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  vertical-align: middle;
+}
+
 .pageLede {
   margin-top: var(--s-2);
   max-width: 68ch;
@@ -672,5 +695,129 @@
   }
   .surface {
     padding: var(--s-5) var(--s-4) var(--s-8);
+  }
+  .topbar {
+    gap: var(--s-2);
+  }
+  /* Search becomes a round icon button like its neighbours, so a longer action label cannot squeeze it away. */
+  .search {
+    flex: 0 0 var(--h-md);
+    justify-content: center;
+    height: var(--h-md);
+    padding: 0;
+  }
+  .searchLabel,
+  .searchKey {
+    display: none;
+  }
+}
+
+/* ---------- phone menu: the sidebar as a drawer ---------- */
+
+.menuBtn {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .menuBtn {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: var(--h-md);
+    height: var(--h-md);
+    border: var(--bw) solid transparent;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--ink);
+  }
+}
+
+.drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: min(20rem, 86vw);
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0 var(--r-lg) var(--r-lg) 0;
+  background: var(--rail);
+  box-shadow: var(--e-4);
+  overflow: hidden;
+  transition: transform var(--m-slow) var(--ease-drawer);
+}
+
+.drawer::backdrop {
+  background: var(--scrim);
+  transition: opacity var(--m-slow) var(--ease-out);
+}
+
+/* Slides in from the edge it belongs to; closing is immediate. */
+@starting-style {
+  .drawer[open] {
+    transform: translateX(-100%);
+  }
+  .drawer[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* The sidebar inside it fills the drawer, whatever width the page is. */
+.drawer .sidebar {
+  display: flex;
+  position: static;
+  width: 100%;
+  height: 100%;
+  flex-basis: auto;
+}
+
+/* Rows and buttons a thumb can hit. */
+.drawer .capsuleBtn,
+.drawer .item {
+  min-height: var(--h-md);
+}
+
+.drawer .collapseBtn {
+  width: var(--h-md);
+  height: var(--h-md);
+}
+
+.drawer .brandName {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+
+/* ---------- navigation progress ---------- */
+
+/* A thin bar under the top edge while a page is being fetched. It moves unless motion is reduced. */
+.navProgress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--brand), transparent);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: navProgress 1s ease-in-out infinite;
+}
+
+@keyframes navProgress {
+  from {
+    background-position: -40% 0;
+  }
+  to {
+    background-position: 140% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navProgress {
+    animation: none;
+    background: var(--brand);
   }
 }

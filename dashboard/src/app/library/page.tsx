@@ -47,7 +47,7 @@ export default async function LibraryPage() {
       <SectionHeader title="Guides" />
       <div className={p.cards}>
         {library.guides.map((entry) => (
-          <Link key={entry.slug} href={`/library/${entry.slug}`} className={p.card}>
+          <Link prefetch={false} key={entry.slug} href={`/library/${entry.slug}`} className={p.card}>
             <p className={p.cardTitle}>{entry.title}</p>
             <p className={p.cardBody}>{entry.summary}</p>
             <div className={p.cardFoot}>
@@ -61,7 +61,7 @@ export default async function LibraryPage() {
       <SectionHeader title="References" />
       <div className={p.cards}>
         {library.references.map((entry) => (
-          <Link key={entry.slug} href={`/library/${entry.slug}`} className={p.card}>
+          <Link prefetch={false} key={entry.slug} href={`/library/${entry.slug}`} className={p.card}>
             <p className={p.cardTitle}>{entry.title}</p>
             <p className={p.cardBody}>{entry.summary}</p>
             <div className={p.cardFoot}>

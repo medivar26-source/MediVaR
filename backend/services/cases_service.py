@@ -144,6 +144,7 @@ def get_institution_cases(institution_id: UUID) -> List[Dict[str, Any]]:
                 SELECT 
                     c.id, c.name, c.difficulty, c.description, c.learning_objective,
                     c.status, c.version, c.institution_id, c.draft_version_id, c.published_version_id,
+                    c.procedure_id, pr.name AS procedure_name, v.pathology_label, v.side,
                     c.created_at, c.updated_at,
                     COALESCE(
                         json_agg(cp.program_id) FILTER (WHERE cp.program_id IS NOT NULL),
@@ -151,8 +152,12 @@ def get_institution_cases(institution_id: UUID) -> List[Dict[str, Any]]:
                     ) AS program_ids
                 FROM cases c
                 LEFT JOIN case_programs cp ON cp.case_id = c.id
+                -- Pathology and side live on the version, not the case: the published one when
+                -- there is one, otherwise the draft an instructor is still working on.
+                LEFT JOIN case_versions v ON v.id = COALESCE(c.published_version_id, c.draft_version_id)
+                LEFT JOIN procedures pr ON pr.id = c.procedure_id
                 WHERE c.institution_id = %s
-                GROUP BY c.id
+                GROUP BY c.id, pr.name, v.pathology_label, v.side
                 ORDER BY c.updated_at DESC
                 """,
                 (str(institution_id),)
@@ -312,9 +317,14 @@ def get_learner_cases(user_id: UUID) -> List[Dict[str, Any]]:
                 """
                 SELECT DISTINCT
                     c.id, c.name, c.difficulty, c.description, c.learning_objective,
-                    c.status, c.version, c.published_version_id, c.created_at, c.updated_at
+                    c.status, c.version, c.published_version_id,
+                    c.procedure_id, pr.name AS procedure_name, v.pathology_label, v.side,
+                    c.created_at, c.updated_at
                 FROM cases c
                 JOIN case_programs cp ON cp.case_id = c.id
+                -- A learner only ever sees the published version.
+                LEFT JOIN case_versions v ON v.id = c.published_version_id
+                LEFT JOIN procedures pr ON pr.id = c.procedure_id
                 JOIN cohorts co ON co.program_id = cp.program_id
                 JOIN cohort_members cm ON cm.cohort_id = co.id
                 WHERE cm.user_id = %s

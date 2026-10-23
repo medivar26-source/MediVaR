@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   Check,
   TriangleAlert,
-  X,
   Eye,
   Save,
   Send,
@@ -51,18 +50,27 @@ import {
   THead,
   Tr,
 } from "@/components/ui";
+import { Dialog } from "@/components/ui/Dialog";
+import { afterCaseSaved, isCaseInfoComplete, type CaseSaved } from "@/lib/case-creation";
 import s from "./wizard.module.css";
 
 export type WizardProps = {
   initialCase?: any;
   availablePrograms: { id: string; name: string }[];
   availableSkills: { id: string; name: string; weight?: number }[];
+  /**
+   * Called with the saved case instead of navigating to it. The Add Case dialog on Procedures
+   * passes this so the user stays on Procedures; on its own page it is absent and the wizard
+   * goes to the case as before.
+   */
+  onDone?: (saved: CaseSaved) => void;
 };
 
 export function CaseAuthoringWizard({
   initialCase,
   availablePrograms,
   availableSkills,
+  onDone,
 }: WizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -78,6 +86,11 @@ export function CaseAuthoringWizard({
   );
   const [side, setSide] = useState<Side>(
     ((activeVersion.side || "right").toLowerCase() as Side)
+  );
+  // A new case starts with a preselected side the author sees. An existing case that records no side
+  // does not get "right" by default: the author has to choose one before it can be published.
+  const [sideChosen, setSideChosen] = useState<boolean>(
+    !initialCase || Boolean(activeVersion.side)
   );
   const [difficulty, setDifficulty] = useState<Difficulty>(
     (initialCase?.difficulty ||
@@ -306,10 +319,12 @@ export function CaseAuthoringWizard({
       {
         id: "metadata",
         label: "Case Information & Scenario Complete",
-        ok: name.trim().length > 0 && !!side && !!pathology,
-        detail: name
-          ? `${name} (${side.toUpperCase()}, ${difficulty})`
-          : "Case title is required",
+        ok: isCaseInfoComplete({ title: name, side, sideChosen, pathology }),
+        detail: !name
+          ? "Case title is required"
+          : sideChosen
+            ? `${name} (${side.toUpperCase()}, ${difficulty})`
+            : "Choose the knee side",
       },
       {
         id: "imaging",
@@ -349,6 +364,7 @@ export function CaseAuthoringWizard({
   }, [
     name,
     side,
+    sideChosen,
     difficulty,
     pathology,
     images,
@@ -409,10 +425,10 @@ export function CaseAuthoringWizard({
         }
         setImages(newImgs);
       } else {
-        alert("Failed to upload image: " + (res.error || "Unknown error"));
+        setErrorMessage(`The image did not upload: ${res.error || "the server gave no reason"}. Choose the file again to retry.`);
       }
     } catch (err: any) {
-      alert("Failed to upload image: " + err.message);
+      setErrorMessage(`The image did not upload: ${err.message}. Choose the file again to retry.`);
     } finally {
       setUploadingImageId(null);
     }
@@ -443,7 +459,8 @@ export function CaseAuthoringWizard({
       difficulty,
       description,
       learning_objective: learningObjective,
-      side,
+      // Not sent while it is only a placeholder, so a save never writes a side nobody chose.
+      side: sideChosen ? side : undefined,
       pathology,
       pathology_label: pathologyLabel,
       program_ids: programIds,
@@ -537,7 +554,7 @@ export function CaseAuthoringWizard({
         res = await createCaseAction(payload);
       }
       if (res.success && res.data) {
-        router.push(`/cases/${res.data.id}`);
+        afterCaseSaved({ id: res.data.id, published: false }, { onDone, href: `/cases/${res.data.id}`, push: router.push });
       } else {
         setErrorMessage(res.error || "Save draft failed.");
       }
@@ -571,7 +588,7 @@ export function CaseAuthoringWizard({
 
       const pubRes = await publishCaseAction(targetId);
       if (pubRes.success) {
-        router.push(`/cases/${targetId}`);
+        afterCaseSaved({ id: targetId, published: true }, { onDone, href: `/cases/${targetId}`, push: router.push });
       } else {
         setErrorMessage(pubRes.error || "Publishing failed.");
       }
@@ -709,8 +726,11 @@ export function CaseAuthoringWizard({
               </label>
               <Segmented<Side>
                 label="Knee side"
-                value={side}
-                onChange={(val) => setSide(val)}
+                value={sideChosen ? side : ("" as Side)}
+                onChange={(val) => {
+                  setSide(val);
+                  setSideChosen(true);
+                }}
                 options={[
                   { value: "right", label: "Right knee" },
                   { value: "left", label: "Left knee" },
@@ -1681,39 +1701,16 @@ export function CaseAuthoringWizard({
         </div>
       </div>
 
-      {/* Learner Preview Modal: Light Clinical SaaS Surface */}
-      {showLearnerPreview && (
-        <div
-          className={s.modalOverlay}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Learner View Preview"
-        >
-          <div className={s.modalContent}>
-            <div className={s.modalHeader}>
-              <div>
-                <h3 className={s.modalTitle}>{name || "Untitled Case"}</h3>
-                <p
-                  style={{
-                    fontSize: "var(--t-caption)",
-                    color: "var(--text-muted)",
-                    marginTop: "2px",
-                  }}
-                >
-                  Learner Preview · {side.toUpperCase()} Knee ·{" "}
-                  {difficulty.toUpperCase()} · Reference data is protected
-                </p>
-              </div>
-              <button
-                type="button"
-                className={s.modalClose}
-                aria-label="Close Preview"
-                onClick={() => setShowLearnerPreview(false)}
-              >
-                <X width={18} height={18} strokeWidth={2} />
-              </button>
-            </div>
-
+      {/* What a learner will see. On the shared dialog: focus stays inside it and Escape closes it. */}
+      <Dialog
+        open={showLearnerPreview}
+        onClose={() => setShowLearnerPreview(false)}
+        title={`Learner preview: ${name || "Untitled case"}`}
+      >
+            <p className={s.previewNote}>
+              {side === "left" ? "Left" : "Right"} knee · {titleCaseWord(difficulty)} · Reference data stays hidden from
+              learners
+            </p>
             <div className={s.stack}>
               <div style={{ display: "flex", gap: "var(--s-2)", flexWrap: "wrap" }}>
                 <Chip tone="muted">{pathologyLabel}</Chip>
@@ -1747,19 +1744,19 @@ export function CaseAuthoringWizard({
                     <span style={{ fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>
                       Occupation
                     </span>
-                    <div style={{ fontWeight: "var(--fw-semibold)" }}>{occupation || "N/A"}</div>
+                    <div style={{ fontWeight: "var(--fw-semibold)" }}>{occupation || "Not recorded"}</div>
                   </div>
                   <div>
                     <span style={{ fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>
                       Activity Level
                     </span>
-                    <div style={{ fontWeight: "var(--fw-semibold)" }}>{activityLevel || "N/A"}</div>
+                    <div style={{ fontWeight: "var(--fw-semibold)" }}>{activityLevel || "Not recorded"}</div>
                   </div>
                   <div>
                     <span style={{ fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>
                       ROM & Deformity
                     </span>
-                    <div style={{ fontWeight: "var(--fw-semibold)" }}>{rangeOfMotion || "N/A"} | {deformity || "N/A"}</div>
+                    <div style={{ fontWeight: "var(--fw-semibold)" }}>{rangeOfMotion || "Not recorded"} | {deformity || "Not recorded"}</div>
                   </div>
                 </div>
               </Card>
@@ -1818,13 +1815,15 @@ export function CaseAuthoringWizard({
 
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "var(--s-4)" }}>
                 <Button variant="secondary" onClick={() => setShowLearnerPreview(false)}>
-                  Close Preview
+                  Close preview
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Dialog>
     </div>
   );
+}
+
+function titleCaseWord(value: string): string {
+  return value ? value[0].toUpperCase() + value.slice(1) : value;
 }

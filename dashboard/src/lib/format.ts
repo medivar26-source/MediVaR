@@ -48,6 +48,21 @@ export function timeOfDay(iso?: string): string {
   return iso ? TIME_FMT.format(new Date(iso)) : "—";
 }
 
+/**
+ * "19 Oct 2026, 16:42": a scheduled date and time, to the minute. In the time zone of wherever it is
+ * rendered, as the bare `toLocaleString()` it replaces was; that only dropped the seconds and the locale.
+ */
+export function dateTime(iso?: string): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 /** "3 days ago". `now` is passed in so output stays deterministic. */
 export function relativeTime(iso: string | undefined, now: string): string {
   if (!iso) return "Never";

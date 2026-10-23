@@ -29,7 +29,7 @@ export default async function SimulationsPage() {
     <AppShell user={user} searchHint='Try searching "total knee"'>
       <PageHeader
         title="Simulations"
-        lede="Procedures published to your account. Total Knee Replacement is the only complete pathway in Phase 1."
+        lede="Procedures published to your account. Total Knee Replacement is the only complete procedure in Phase 1."
         actions={
           published.length > 0 ? (
             <Button variant="primary" icon={Play} href="/setup">

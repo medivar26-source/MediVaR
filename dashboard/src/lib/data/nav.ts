@@ -14,6 +14,8 @@ import { getCohorts } from "./cohorts";
 import { PLANS } from "./plans";
 import { personaFor } from "@/lib/roles";
 import { sessionsFor } from "@/lib/seed";
+import { getLearnerSessions } from "./learner-sessions";
+import { hasRun } from "./session-links";
 import type { Profile } from "@/lib/types";
 
 /** Stable keys the nav panels reference. Absent key → no badge. */
@@ -85,7 +87,12 @@ export async function getNavData(user: Profile): Promise<NavData> {
 
 async function buildNavData(user: Profile): Promise<NavData> {
   const cohortNotes = await cohortNotifications(user);
-  const mine = sessionsFor(user.id).slice(0, 20);
+  // A learner's pinned case, live count and latest report come from the same sessions
+  // the Sessions page lists; anyone else keeps the sample history for their id.
+  const mine =
+    personaFor(user.role) === "learner"
+      ? (await getLearnerSessions(user.id)).filter(hasRun).slice(0, 20)
+      : sessionsFor(user.id).slice(0, 20);
   const readyCount = PLANS.filter(
     (plan) => plan.userId === user.id && plan.isReadyForVr,
   ).length;

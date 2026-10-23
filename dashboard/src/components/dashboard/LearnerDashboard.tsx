@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/shell";
 import { Badge, type BadgeStatus, Button, DemoDataNote } from "@/components/ui";
 import { HeroMetric, StatCard, StatRow } from "@/components/viz";
-import { clock, longDuration, shortDate, titleCase } from "@/lib/format";
+import { clock, dateTime, longDuration, shortDate, titleCase } from "@/lib/format";
 import type { LearnerDashboard as Data } from "@/lib/data/dashboard";
 import type { ProgramSummary } from "@/lib/data/programs";
 import type { PlanRow } from "@/lib/data/plans";
@@ -17,6 +17,7 @@ import { PASS_MARK } from "@/lib/types";
 import { LiveDial } from "./LiveDial";
 import ls from "./learner-dashboard.module.css";
 import s from "./dashboard.module.css";
+import { pathologyText, sideText } from "@/lib/case-meta";
 
 function mapBadgeTone(tone: string): BadgeStatus {
   if (tone === "brand") return "active";
@@ -107,7 +108,7 @@ export function LearnerDashboard({
           <div className={ls.programsRow}>
             <span className={ls.programsRowLabel}>Your programs</span>
             {programs.map((prog) => (
-              <Link key={prog.id} href={`/programs/${prog.id}`} className={ls.programChip}>
+              <Link prefetch={false} key={prog.id} href={`/programs/${prog.id}`} className={ls.programChip}>
                 {prog.name}
                 {prog.cohort_name ? ` · ${prog.cohort_name}` : ""}
                 <ArrowRight size={14} aria-hidden="true" />
@@ -120,7 +121,7 @@ export function LearnerDashboard({
         <div>
           <div className={ls.sectionHeader}>
             <h3 className={ls.sectionTitle}>Your progress</h3>
-            <Link href="/performance" className={ls.sectionLink}>
+            <Link prefetch={false} href="/progress" className={ls.sectionLink}>
               Full progress →
             </Link>
           </div>
@@ -178,7 +179,7 @@ export function LearnerDashboard({
           <div>
             <div className={ls.sectionHeader}>
               <h3 className={ls.sectionTitle}>Assigned cases</h3>
-              <Link href="/cases" className={ls.sectionLink}>
+              <Link prefetch={false} href="/cases" className={ls.sectionLink}>
                 All cases ({cases.length}) →
               </Link>
             </div>
@@ -220,15 +221,15 @@ export function LearnerDashboard({
                 }
 
                 return (
-                  <Link key={c.id} href={actionHref} className={ls.caseCard}>
+                  <Link prefetch={false} key={c.id} href={actionHref} className={ls.caseCard}>
                     <div className={ls.caseCardHead}>
                       <h4 className={ls.caseTitle}>{c.title}</h4>
                       <Badge status={badgeStatus}>{c.statusLabel}</Badge>
                     </div>
                     <div className={ls.caseChips}>
-                      <span className={ls.cohortMeta}>{c.pathologyLabel}</span>
+                      <span className={ls.cohortMeta}>{pathologyText(c)}</span>
                       <span className={ls.cohortMeta}>
-                        · {titleCase(c.side)}
+                        · {sideText(c)}
                       </span>
                       <span className={ls.cohortMeta}>
                         · {titleCase(c.difficulty)}
@@ -255,7 +256,7 @@ export function LearnerDashboard({
           <div>
             <div className={ls.sectionHeader}>
               <h3 className={ls.sectionTitle}>Upcoming sessions</h3>
-              <Link href="/sessions" className={ls.sectionLink}>
+              <Link prefetch={false} href="/sessions" className={ls.sectionLink}>
                 All sessions →
               </Link>
             </div>
@@ -277,7 +278,7 @@ export function LearnerDashboard({
                         <span className={ls.cohortMeta}>· {sess.duration} mins</span>
                       </div>
                       <div className={ls.caseFoot}>
-                        <span>{new Date(sess.scheduledAt).toLocaleString()}</span>
+                        <span>{dateTime(sess.scheduledAt)}</span>
                         {ready !== undefined && (
                           <Badge status={ready ? "pass" : "warn"}>
                             {ready ? "Plan ready" : "Plan not sealed"}
@@ -285,7 +286,7 @@ export function LearnerDashboard({
                         )}
                       </div>
                       {sess.caseId && (
-                        <Link href={`/cases/${sess.caseId}`} className={ls.caseAction}>
+                        <Link prefetch={false} href={`/cases/${sess.caseId}`} className={ls.caseAction}>
                           {ready ? "Open case" : "Prepare plan"}
                         </Link>
                       )}
@@ -366,7 +367,7 @@ export function LearnerDashboard({
         <div>
           <div className={ls.sectionHeader}>
             <h3 className={ls.sectionTitle}>Recent Sessions</h3>
-            <Link href="/sessions" className={ls.sectionLink}>
+            <Link prefetch={false} href="/sessions" className={ls.sectionLink}>
               All sessions ({data.details.length}) →
             </Link>
           </div>
@@ -453,7 +454,7 @@ export function LearnerDashboard({
                         ? `${d.session.totalScore} pts`
                         : "—"}
                     </Badge>
-                    <Link
+                    <Link prefetch={false}
                       href={`/sessions/${d.session.id}/report`}
                       style={{
                         fontSize: "var(--t-caption)",

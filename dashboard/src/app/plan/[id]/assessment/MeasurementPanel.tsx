@@ -34,7 +34,7 @@ interface MeasurementPanelProps {
   lockedBy?: "plan" | "continue";
   /** Both scans have a verified scale. V1 requires radio-opaque calibration before measuring on. */
   scalesVerified: boolean;
-  kneeSide: "RIGHT" | "LEFT";
+  kneeSide?: "RIGHT" | "LEFT";
   onReset: () => void;
   onUnlock: () => void;
   /** Saves the assessment; resolves to whether the server accepted it. */
@@ -241,7 +241,7 @@ export function MeasurementPanel({
             {!isReadOnly && reading.alignment_basis === "knee_side" && (
               <span>
                 {" "}
-                · worked out from the {kneeSide.toLowerCase()} knee on a standard view. Place the outer and inner edge points to
+                · worked out from the {(kneeSide ?? "").toLowerCase()} knee on a standard view. Place the outer and inner edge points to
                 confirm it.
               </span>
             )}

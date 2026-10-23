@@ -16,7 +16,13 @@
   transition:
     background-color var(--m-fast) var(--ease-out),
     border-color var(--m-fast) var(--ease-out),
-    color var(--m-fast) var(--ease-out);
+    color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
+}
+
+/* Every variant gives under the finger, not only the two that also change colour. */
+.btn:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: scale(0.97);
 }
 
 .btn:disabled,
@@ -159,6 +165,21 @@
   border-radius: 50%;
   opacity: 0.85;
   animation: spin 640ms linear infinite;
+}
+
+/* With reduced motion the global rule would stop the spinner after one frame, leaving a broken ring that
+   no longer says "working". It becomes a whole ring that breathes instead: no movement, still alive. */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    border-right-color: currentColor;
+    animation: breathe 1.6s ease-in-out infinite !important;
+  }
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.35;
+  }
 }
 
 @keyframes spin {

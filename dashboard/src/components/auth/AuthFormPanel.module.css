@@ -120,7 +120,7 @@
   font-weight: var(--fw-semibold);
   border-radius: var(--r-pill);
   padding: 0.4rem 0;
-  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+  transition: background-color var(--m-fast) var(--ease-out), color var(--m-fast) var(--ease-out), box-shadow var(--m-fast) var(--ease-out);
   border: none;
   background: transparent;
   cursor: pointer;

@@ -34,14 +34,18 @@ import {
   Stepper,
   Textarea,
 } from "@/components/ui";
+import { afterCaseSaved, isCaseInfoComplete, type CaseSaved } from "@/lib/case-creation";
 import s from "@/components/cases/wizard.module.css";
 
 export type PersonalWizardProps = {
   initialCase?: any;
+  /** Called with the saved case instead of navigating to it (the Add Case dialog on Procedures passes this). */
+  onDone?: (saved: CaseSaved) => void;
 };
 
 export function PersonalCaseAuthoringWizard({
   initialCase,
+  onDone,
 }: PersonalWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -52,6 +56,11 @@ export function PersonalCaseAuthoringWizard({
   const [title, setTitle] = useState<string>(initialCase?.title || "");
   const [side, setSide] = useState<Side>(
     ((initialCase?.side || "right").toLowerCase() as Side)
+  );
+  // A new case starts with a preselected side the author sees. An existing case that records no side
+  // does not get "right" by default: the author has to choose one before saving.
+  const [sideChosen, setSideChosen] = useState<boolean>(
+    !initialCase || Boolean(initialCase.side)
   );
   const [difficulty, setDifficulty] = useState<Difficulty>(
     (initialCase?.difficulty || "intermediate").toLowerCase() as Difficulty
@@ -141,10 +150,12 @@ export function PersonalCaseAuthoringWizard({
       {
         id: "metadata",
         label: "Case Information & Scenario Complete",
-        ok: title.trim().length > 0 && !!side && !!pathology,
-        detail: title
-          ? `${title} (${side.toUpperCase()}, ${difficulty})`
-          : "Case title is required",
+        ok: isCaseInfoComplete({ title, side, sideChosen, pathology }),
+        detail: !title
+          ? "Case title is required"
+          : sideChosen
+            ? `${title} (${side.toUpperCase()}, ${difficulty})`
+            : "Choose the knee side",
       },
       {
         id: "imaging",
@@ -162,6 +173,7 @@ export function PersonalCaseAuthoringWizard({
   }, [
     title,
     side,
+    sideChosen,
     difficulty,
     pathology,
     images,
@@ -211,10 +223,10 @@ export function PersonalCaseAuthoringWizard({
         }
         setImages(newImgs);
       } else {
-        alert("Failed to upload image: " + (res.error || "Unknown error"));
+        setErrorMessage(`The image did not upload: ${res.error || "the server gave no reason"}. Choose the file again to retry.`);
       }
     } catch (err: any) {
-      alert("Failed to upload image: " + err.message);
+      setErrorMessage(`The image did not upload: ${err.message}. Choose the file again to retry.`);
     } finally {
       setUploadingImageId(null);
     }
@@ -235,7 +247,8 @@ export function PersonalCaseAuthoringWizard({
       title,
       difficulty,
       description,
-      side,
+      // Not sent while it is only a placeholder, so a save never writes a side nobody chose.
+      side: sideChosen ? side : undefined,
       pathology,
       pathology_label: pathologyLabel,
       patient: {
@@ -294,7 +307,7 @@ export function PersonalCaseAuthoringWizard({
         res = await createPersonalCaseAction(payload);
       }
       if (res.success && res.data) {
-        router.push(`/personal-cases/${res.data.id}`);
+        afterCaseSaved({ id: res.data.id }, { onDone, href: `/personal-cases/${res.data.id}`, push: router.push });
       } else {
         setErrorMessage(res.error || "Save failed.");
       }
@@ -420,8 +433,11 @@ export function PersonalCaseAuthoringWizard({
               </label>
               <Segmented<Side>
                 label="Knee side"
-                value={side}
-                onChange={(val) => setSide(val)}
+                value={sideChosen ? side : ("" as Side)}
+                onChange={(val) => {
+                  setSide(val);
+                  setSideChosen(true);
+                }}
                 options={[
                   { value: "right", label: "Right knee" },
                   { value: "left", label: "Left knee" },

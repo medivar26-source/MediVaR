@@ -30,12 +30,16 @@ test("Navigation persona separation & approved hierarchy", async (t) => {
     // Content Library: Procedures, Cases, Planning (many plans per case), their own cases
     assert.deepEqual(hrefsOf("content-library"), ["/content?tab=procedures", "/cases", "/plans", "/personal-cases"]);
 
-    // Performance: activity, performance, reports, and the seven skills. The dashboard is not
-    // a section: it is its own page, reached from the logo.
+    // Progress: Overview, Activity, Reports and By skill are tabs of one page, so the section has one
+    // destination. The dashboard is not a section: it is its own page, reached from the logo.
     const performance = hrefsOf("performance");
-    assert.deepEqual(performance.slice(0, 3), ["/activity", "/performance", "/reports"]);
-    assert.ok(!performance.includes("/"), "Dashboard is not a Performance item");
-    assert.equal(performance.filter((h) => h.startsWith("/performance/")).length, 7);
+    assert.deepEqual(performance, ["/progress"]);
+    assert.ok(!performance.includes("/"), "Dashboard is not a Progress item");
+    assert.ok(
+      !performance.some((h) => h === "/activity" || h === "/reports" || h.startsWith("/performance")),
+      "the old Overview, Activity, Reports and skill links are folded into Progress",
+    );
+    assert.equal(learnerSections.find((s) => s.id === "performance")!.href, "/progress");
 
     // Nothing instructor-only leaks in
     const all = learnerSections.flatMap((s) => s.groups.flatMap((g) => g.items));
@@ -148,6 +152,7 @@ test("Navigation persona separation & approved hierarchy", async (t) => {
     assert.equal(sectionForPath("/", "instructor"), null);
     assert.equal(sectionForPath("/settings", "learner"), null);
     assert.equal(sectionForPath("/help", "instructor"), null);
+    assert.equal(sectionForPath("/progress", "learner"), "performance");
     assert.equal(sectionForPath("/activity", "learner"), "performance");
     assert.equal(sectionForPath("/performance/planning", "learner"), "performance");
     assert.equal(sectionForPath("/programs", "instructor"), "programs");

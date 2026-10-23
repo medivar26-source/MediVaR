@@ -18,6 +18,36 @@
   user-select: all;
 }
 
+/* The case's metadata as labelled fields, not tags. */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-6);
+  margin: 0 0 var(--s-5);
+}
+
+.meta > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+}
+
+.meta dt {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.meta dt::after {
+  content: ":";
+}
+
+.meta dd {
+  margin: 0;
+  font-size: var(--t-label);
+  font-weight: 600;
+  color: var(--ink);
+}
+
 .readiness {
   margin-bottom: var(--s-6);
 }
@@ -149,7 +179,7 @@
 
 .viewNote {
   font-size: var(--t-caption);
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 /* ---------- how this case is scored ---------- */

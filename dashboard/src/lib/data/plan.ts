@@ -26,6 +26,7 @@ import {
   STEP_OPTIONS,
   risksFor,
 } from "./planning-content";
+import { casePlanBlocker, parseSide, planningBlocker } from "@/lib/case-meta";
 import { LAST_STEP } from "@/lib/plan";
 import type { PlanCase, PlanDetail, StepGate, CaseRisk } from "@/lib/plan";
 import { normalizeCalibration } from "./coordinates";
@@ -127,6 +128,23 @@ function gatesFor(payload: PlanDetail["payload"]): StepGate[] {
   return gates;
 }
 
+/**
+ * Why this case cannot be planned (no recorded operative side), or null. A case that cannot be found
+ * is not blocked here: the normal not-found handling deals with it.
+ */
+export async function getPlanBlocker(caseId: string, userId: string): Promise<string | null> {
+  const seedCase = CASE_BY_ID.get(caseId);
+  if (seedCase) return casePlanBlocker(seedCase);
+
+  const { getCase } = await import("@/lib/data/cases");
+  const dbCase = await getCase(caseId, userId).catch(() => null);
+  if (dbCase) return casePlanBlocker(dbCase);
+
+  const { getPersonalCase } = await import("@/lib/data/personal-cases");
+  const personal = await getPersonalCase(caseId).catch(() => null);
+  return personal ? planningBlocker(personal, { personal: true }) : null;
+}
+
 export async function getPlan(planId: string): Promise<PlanDetail | null> {
   const { getCurrentUser } = await import("@/lib/session");
   const currentUser = await getCurrentUser();
@@ -149,7 +167,8 @@ export async function getPlan(planId: string): Promise<PlanDetail | null> {
 
     if (!resolvedCaseId) {
       const dbCase = await getCase(planId, currentUser.id).catch(() => null);
-      if (dbCase) resolvedCaseId = planId;
+      // A case that does not record its operative side is not turned into a plan on the fly.
+      if (dbCase && !casePlanBlocker(dbCase)) resolvedCaseId = planId;
     }
 
     if (resolvedCaseId) {
@@ -230,9 +249,9 @@ export async function getPlan(planId: string): Promise<PlanDetail | null> {
           id: pc.id,
           title: pc.title,
           summary: pc.description || "",
-          side: (pc.side || "right") as any,
+          side: parseSide(pc.side),
           difficulty: pc.difficulty as any,
-          pathologyLabel: pc.pathology_label || pc.pathology || "",
+          pathologyLabel: (pc.pathology_label || pc.pathology)?.trim() || undefined,
           patient: fieldsOf(
             {
               ...pc.patient,

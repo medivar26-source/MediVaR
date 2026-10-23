@@ -785,3 +785,14 @@ The V1 specification establishes the four-page learner planning flow, the six st
 The MediVeR project calculation/assessment documentation establishes that clinical values, tolerances, severity boundaries, scoring curves, and competency formulas not explicitly approved must remain configurable and must not be invented.
 
 This document defines the Case Library authoring requirements around those existing product boundaries.
+
+
+## Add Case from Procedures, and the operative side (Learner Mode review, 2026-10-20)
+
+- The Procedures page has an **Add case** button that opens the case-creation workflow in a dialog (`components/cases/AddCaseButton.tsx`, `components/ui/Dialog.tsx`). The workflow is chosen from the signed-in role (`lib/case-creation.ts`): instructors and administrators use the institutional wizard (`CaseAuthoringWizard`), learners use the personal-case wizard (`PersonalCaseAuthoringWizard`). Both wizards take an optional `onDone`; with it they report the saved case instead of navigating, without it they navigate to the case exactly as before. The step order, validation checklist, uploads, calibration and publish rules are unchanged.
+- **Knee side is required to plan.** The side decides how the anatomy is read and is written into the plan sent to the headset, so a case with no recorded side cannot be planned (`planningBlocker` in `lib/case-meta.ts`). Case detail pages show "Not recorded" rather than a default. Editing a case that records no side requires the author to choose one; the wizards no longer silently save "right".
+- Skills offered when authoring come from one list (`lib/data/case-authoring-options.ts`), shared by `/cases/new` and the dialog.
+
+### Verification status of Add case (2026-10-22)
+
+The Add case dialog and both wizards were exercised end to end in a browser (validation, two image uploads, save or publish, the dialog closing, staying on Procedures) **against a synthetic stub API only**. What the real backend does with the same calls was not exercised: `POST /cases/upload-asset` and `POST /cases/{id}/upload-radiograph` (Supabase Storage and the calibration derivation), `POST /cases`, `POST /cases/{id}/publish` (version freezing and the pre-flight validation), and the personal-case endpoints with their imaging. This is an open gap, not a known failure. The checklist for closing it is in `mediver_documentation/changes/learner_mode_review_2026-10-20.md`.

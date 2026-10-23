@@ -38,6 +38,8 @@ export type { ProgressBarProps } from "./ProgressBar";
 
 export { Banner } from "./Banner";
 export { DemoDataNote } from "./DemoDataNote";
+export { StatStrip } from "./StatStrip";
+export type { StatStripItem } from "./StatStrip";
 export { PageSkeleton } from "./PageSkeleton";
 export type { BannerProps, BannerTone } from "./Banner";
 

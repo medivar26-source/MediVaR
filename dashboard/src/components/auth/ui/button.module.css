@@ -9,7 +9,12 @@
   font-size: 0.875rem;
   font-weight: 500;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    border-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out),
+    box-shadow var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
   outline: none;
   user-select: none;
 }

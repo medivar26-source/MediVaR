@@ -10,12 +10,12 @@
 
 import { CATEGORY_META, PARTS, SCENES } from "@/lib/seed";
 import {
-  FIELD_STEP,
   HELP_ARTICLES,
   LIBRARY_RESOURCES,
-  PLAN_STEP_META,
+  PLANNING_PAGES,
+  type PlanningPageDoc,
 } from "./support-content";
-import { STEP_OPTIONS } from "./planning-content";
+import { V1_TKR_STEPS } from "@/lib/plan";
 import { PASS_MARK, TOLERANCE_BAND } from "@/lib/types";
 import type { Difficulty } from "@/lib/types";
 
@@ -152,15 +152,8 @@ export type WalkthroughPart = {
   }[];
 };
 
-export type PlanningStep = {
-  step: number;
-  title: string;
-  budgetLabel: string;
-  parTimeS: number;
-  maxTimeS: number;
-  /** The differentials this step offers, grouped by the field they answer. */
-  fields: { field: string; options: { label: string; detail?: string }[] }[];
-};
+/** One of the four V1 planning pages: its place and title from the planner, its content from the specification. */
+export type PlanningPage = PlanningPageDoc & { step: number; title: string };
 
 export type ScoringCategory = {
   key: string;
@@ -171,7 +164,7 @@ export type ScoringCategory = {
 
 export type LibraryDoc =
   | { slug: "tkr-walkthrough"; entry: LibraryEntry; parts: WalkthroughPart[] }
-  | { slug: "preoperative-planning"; entry: LibraryEntry; steps: PlanningStep[] }
+  | { slug: "preoperative-planning"; entry: LibraryEntry; pages: PlanningPage[] }
   | {
       slug: "scoring";
       entry: LibraryEntry;
@@ -232,15 +225,10 @@ export async function getLibraryDoc(slug: string): Promise<LibraryDoc | null> {
     return {
       slug: "preoperative-planning",
       entry,
-      steps: PLAN_STEP_META.map((m) => ({
-        ...m,
-        fields: Object.entries(STEP_OPTIONS)
-          .filter(([field]) => FIELD_STEP[field] === m.step)
-          .map(([field, options]) => ({
-            field,
-            options: options.map((o) => ({ label: o.label, detail: o.detail })),
-          })),
-      })),
+      pages: PLANNING_PAGES.map((page) => {
+        const step = V1_TKR_STEPS.find((s) => s.id === page.id)!;
+        return { ...page, step: step.step, title: step.title };
+      }),
     };
   }
 

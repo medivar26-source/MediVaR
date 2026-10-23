@@ -169,20 +169,13 @@ export const SECTIONS: NavSection[] = [
   {
     id: "performance",
     label: "Progress",
-    href: "/performance",
+    href: "/progress",
     icon: BookOpen,
     personas: ["learner"],
+    // Overview, Activity, Reports and By skill are tabs of this one page.
     groups: [
       {
-        items: [
-          { label: "Activity", href: "/activity", icon: Activity },
-          { label: "Overview", href: "/performance", icon: ChartColumn },
-          { label: "Reports", href: "/reports", icon: FileText },
-        ],
-      },
-      {
-        label: "By skill",
-        items: SKILL_ITEMS,
+        items: [{ label: "Progress", href: "/progress", icon: ChartColumn }],
       },
     ],
   },

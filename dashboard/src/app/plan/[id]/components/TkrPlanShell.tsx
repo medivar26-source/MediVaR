@@ -4,9 +4,11 @@ import { ArrowLeft, Check, Lock } from "lucide-react";
 import { cx } from "@/lib/cx";
 import {
   V1_TKR_STEPS,
+  planOperativeSide,
   type PlanDetail,
   type V1TkrStepId,
 } from "@/lib/plan";
+import { planningBlocker } from "@/lib/case-meta";
 import { SCAN_VIEW_NAME, resolvePlanScales } from "@/lib/data/scan_scale";
 import { resolvePatientIdentity } from "@/lib/data/planner_identity";
 import s from "../plan.module.css";
@@ -55,7 +57,9 @@ export function TkrPlanShell({
 
   // Identity comes from the case record only (V1: read-only, "hard-coded for V1"). Nothing is defaulted.
   const identity = resolvePatientIdentity(plan.caseId, plan.case.patient);
-  const operativeSide = (plan.case.side || "right").toUpperCase();
+  const operativeSide = planOperativeSide(plan);
+  // No recorded side, no plan: it decides how the anatomy is read and goes to the headset.
+  const sideBlocker = operativeSide ? null : planningBlocker({}, { personal: plan.case.isPersonalCase });
   // Each scan has its own scale, and a scale nobody verified must not look verified.
   const scanScales = resolvePlanScales(plan);
   const anyEstimated = !scanScales.FLAP.calibrated || !scanScales.KLAT.calibrated;
@@ -82,6 +86,70 @@ export function TkrPlanShell({
           <p className={s.railEyebrow}>Pre-op plan · step {stepIndex} of {V1_TKR_STEPS.length}</p>
           <p className={s.railTitle}>{plan.case.title}</p>
         </div>
+          {/* The four steps, on the header row. A locked step says what unlocks it. */}
+        <nav className={s.steps} aria-label="TKA Planning steps">
+          {V1_TKR_STEPS.map((entry) => {
+            const status = stepStatus[entry.id];
+            const current = entry.id === currentStepId;
+            const accessible = status.accessible;
+            const isDone = status.completed;
+            const prerequisite = V1_TKR_STEPS[entry.step - 2];
+
+            const inner = (
+              <>
+                <span className={s.stepDot} aria-hidden="true">
+                  {isDone ? (
+                    <Check className={s.stepGlyph} strokeWidth={3} />
+                  ) : !accessible ? (
+                    <Lock className={s.stepGlyph} strokeWidth={2.25} />
+                  ) : (
+                    entry.step
+                  )}
+                </span>
+                <span className={s.stepBody}>
+                  <span className={s.stepTitle}>{entry.title}</span>
+                  <span className={s.stepMeta}>
+                    {isDone
+                      ? "Complete"
+                      : current
+                        ? "In progress"
+                        : !accessible
+                          ? prerequisite
+                            ? `Finish ${prerequisite.title} first`
+                            : "Finish the previous step first"
+                          : "Ready"}
+                  </span>
+                </span>
+              </>
+            );
+
+            const classes = cx(
+              s.step,
+              isDone && s.stepDone,
+              current && s.stepOn,
+              !accessible && s.stepLocked
+            );
+
+            if (!accessible) {
+              return (
+                <div key={entry.id} className={classes} title="Complete previous steps to unlock">
+                  {inner}
+                </div>
+              );
+            }
+
+            return (
+              <Link
+                key={entry.id}
+                href={`/plan/${plan.id}/${entry.path}`}
+                className={classes}
+                aria-current={current ? "step" : undefined}
+              >
+                {inner}
+              </Link>
+            );
+          })}
+        </nav>
         {isLocked ? (
           <span className={s.chipLocked}>
             <Lock width={12} height={12} aria-hidden="true" />
@@ -92,73 +160,25 @@ export function TkrPlanShell({
         )}
       </header>
 
-      {/* The four steps across the top. A locked step says what unlocks it. */}
-      <nav className={s.steps} aria-label="TKA Planning steps">
-        {V1_TKR_STEPS.map((entry) => {
-          const status = stepStatus[entry.id];
-          const current = entry.id === currentStepId;
-          const accessible = status.accessible;
-          const isDone = status.completed;
-          const prerequisite = V1_TKR_STEPS[entry.step - 2];
-
-          const inner = (
-            <>
-              <span className={s.stepDot} aria-hidden="true">
-                {isDone ? (
-                  <Check className={s.stepGlyph} strokeWidth={3} />
-                ) : !accessible ? (
-                  <Lock className={s.stepGlyph} strokeWidth={2.25} />
-                ) : (
-                  entry.step
-                )}
-              </span>
-              <span className={s.stepBody}>
-                <span className={s.stepTitle}>{entry.title}</span>
-                <span className={s.stepMeta}>
-                  {isDone
-                    ? "Complete"
-                    : current
-                      ? "In progress"
-                      : !accessible
-                        ? prerequisite
-                          ? `Finish ${prerequisite.title} first`
-                          : "Finish the previous step first"
-                        : "Ready"}
-                </span>
-              </span>
-            </>
-          );
-
-          const classes = cx(
-            s.step,
-            isDone && s.stepDone,
-            current && s.stepOn,
-            !accessible && s.stepLocked
-          );
-
-          if (!accessible) {
-            return (
-              <div key={entry.id} className={classes} title="Complete previous steps to unlock">
-                {inner}
-              </div>
-            );
-          }
-
-          return (
-            <Link
-              key={entry.id}
-              href={`/plan/${plan.id}/${entry.path}`}
-              className={classes}
-              aria-current={current ? "step" : undefined}
-            >
-              {inner}
-            </Link>
-          );
-        })}
-      </nav>
 
       <main className={s.main}>
         <div className={s.surface}>
+          {/* Below 1024px wide everything else on this card is hidden; this says why, and the way back. */}
+          <section className={s.tooSmall} aria-labelledby="plan-too-small">
+            <h2 id="plan-too-small" className={s.titleSm}>
+              Planning needs a larger screen
+            </h2>
+            <p className={s.tooSmallText}>
+              Points on the radiograph are placed to a fraction of a millimetre, which a screen this narrow
+              cannot show accurately. Open <strong>{plan.case.title}</strong> on a laptop or desktop, at least
+              1024 pixels wide, to continue this plan.
+            </p>
+            <Link href={caseHref} className={s.back}>
+              <ArrowLeft width={15} height={15} strokeWidth={2.25} aria-hidden="true" />
+              Back to case
+            </Link>
+          </section>
+
           {/* V1 global header: persistent patient banner on all four pages. */}
           <header className={s.patientBar} aria-label="Patient and plan">
             <dl className={s.patientFacts}>
@@ -176,7 +196,7 @@ export function TkrPlanShell({
               </div>
               <div title="Hard-locked once the session starts">
                 <dt>Surgical side</dt>
-                <dd>{operativeSide === "LEFT" ? "Left" : "Right"} knee</dd>
+                <dd>{operativeSide ? `${operativeSide === "LEFT" ? "Left" : "Right"} knee` : "Not recorded"}</dd>
               </div>
               <div>
                 <dt>Procedure</dt>
@@ -202,16 +222,23 @@ export function TkrPlanShell({
               <h1 className={s.titleSm}>{title}</h1>
               <p className={s.ledeSm}>{lede}</p>
             </div>
+            <p className={s.vrNote}>
+              All intraoperative cuts, resections, and gap adjustments are deferred to VR.
+            </p>
           </div>
 
           {/* Page Body */}
           <div className={s.pageBody}>
-            {children}
+            {sideBlocker && !isLocked ? (
+              <div role="alert" className={s.sideBlocked}>
+                <strong>This plan cannot be worked on yet.</strong>
+                <p>{sideBlocker}</p>
+                <Link href={caseHref}>Back to case</Link>
+              </div>
+            ) : (
+              children
+            )}
           </div>
-
-          <p className={s.vrNote}>
-            All intraoperative cuts, resections, and gap adjustments are deferred to VR.
-          </p>
         </div>
       </main>
     </div>

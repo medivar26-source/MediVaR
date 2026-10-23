@@ -51,7 +51,7 @@ export default async function PersonalCasesPage() {
             return (
               <li key={item.id}>
                 <Card padding="none" className={s.card}>
-                  <Link href={`/personal-cases/${item.id}`} className={s.cardLink}>
+                  <Link prefetch={false} href={`/personal-cases/${item.id}`} className={s.cardLink}>
                     <span className={s.thumb} aria-hidden="true">
                       <FolderOpen width={22} height={22} strokeWidth={1.5} />
                     </span>

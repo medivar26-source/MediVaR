@@ -210,7 +210,7 @@ export const PROCEDURES: ProcedureRow[] = [
     status: "published",
     tagline: "Plan. Simulate. Perform. Perfect.",
     summary:
-      "A complete clinical episode — seven pre-operative planning steps on the desktop, eleven operative parts in the headset, then a report scored against your own plan.",
+      "A complete clinical episode — four planning pages on the desktop (Assessment, Tibial, Femoral, Review & Send to VR), eleven operative parts in the headset, then a report scored against your own plan.",
     typicalDurationS: 840,
   },
   {

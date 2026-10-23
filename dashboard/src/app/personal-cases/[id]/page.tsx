@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/session";
 import { getPersonalCaseAction } from "@/app/actions/personal-cases";
 import { PersonalCaseAuthoringWizard } from "@/components/personal-cases/PersonalCaseAuthoringWizard";
 import { StartPlanning } from "@/app/cases/[id]/StartPlanning";
+import { planningBlocker } from "@/lib/case-meta";
 import { getPlans } from "@/lib/data/plans";
 
 export const metadata: Metadata = { title: "Edit Personal Case" };
@@ -36,6 +37,7 @@ export default async function PersonalCaseDetailPage({ params }: { params: Promi
                 ? { id: myPlan.id, state: myPlan.state, sessionId: myPlan.sessionId }
                 : undefined
             }
+            blocker={planningBlocker(caseData, { personal: true })}
           />
         }
       />

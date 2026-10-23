@@ -212,6 +212,13 @@ class CaseListItem(BaseModel):
     institution_id: Optional[UUID] = None
     draft_version_id: Optional[UUID] = None
     published_version_id: Optional[UUID] = None
+    # Metadata a case card shows. All three are optional and are returned as null when the case
+    # (or its version) does not record them; a client must show "unavailable", never a default.
+    procedure_id: Optional[UUID] = None
+    # The procedure's name, so a learner (who cannot call GET /procedures) can still group cases by procedure.
+    procedure_name: Optional[str] = None
+    pathology_label: Optional[str] = None
+    side: Optional[str] = None
     program_ids: List[UUID] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime

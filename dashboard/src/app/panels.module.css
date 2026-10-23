@@ -282,6 +282,13 @@ a.card:hover {
   font-weight: var(--fw-medium);
 }
 
+/* Phone width: a facet's chips wrap instead of running off the screen. */
+@media (max-width: 767px) {
+  .facet {
+    flex-wrap: wrap;
+  }
+}
+
 .clear {
   display: inline-flex;
   align-items: center;
@@ -343,7 +350,7 @@ a.card:hover {
 
 .cardMeta {
   margin-top: calc(var(--s-2) * -1);
-  color: var(--text-disabled);
+  color: var(--text-muted);
   font-size: var(--t-caption);
   line-height: var(--t-caption-lh);
 }

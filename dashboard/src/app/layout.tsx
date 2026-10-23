@@ -1,5 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { connection } from "next/server";
+import { AppFrame } from "@/components/shell/AppFrame";
+import { getNavData, type NavData } from "@/lib/data/nav";
+import { getOptionalUser } from "@/lib/session";
 import "./globals.css";
 /**
  * One family for the whole product, in two optical roles.
@@ -37,13 +41,28 @@ export const viewport: Viewport = {
   themeColor: "#0f7a46",
 };
 
-export default function RootLayout({
+/**
+ * The signed-in app frame (side navigation and top bar) is drawn here, once, so it stays mounted while the
+ * user moves between pages. It needs the user and the navigation data, which are per user and per request,
+ * so this layout is dynamic. Public screens (sign-in) get no user and render without the frame.
+ */
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  await connection();
+  const user = await getOptionalUser();
+  const nav = user ? await getNavData(user).catch(() => EMPTY_NAV) : null;
+
   return (
     <html lang="en" className={jakarta.variable} suppressHydrationWarning>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <AppFrame user={user} nav={nav}>
+          {children}
+        </AppFrame>
+      </body>
     </html>
-
   );
 }
+
+/** Used only if the navigation data cannot be read: the frame still renders, without counts. */
+const EMPTY_NAV: NavData = { counts: {}, pinned: [], notifications: [] };

@@ -11,11 +11,13 @@ import {
   CASE_BY_ID,
   CATEGORY_META,
   PROCEDURES,
-  sessionsFor,
 } from "@/lib/seed";
 import type { Difficulty, SessionSummary, Side } from "@/lib/types";
 import { PASS_MARK } from "@/lib/types";
 import { apiClient } from "../api-client";
+import { caseMetaFromRecord, parseSide } from "../case-meta";
+import { getLearnerSessions } from "./learner-sessions";
+import { hasRun } from "./session-links";
 
 export type AttemptedFilter = "all" | "attempted" | "unattempted";
 
@@ -31,8 +33,12 @@ export type CaseCard = {
   id: string;
   title: string;
   summary?: string;
-  pathologyLabel: string;
-  side: Side;
+  /** From the case's version; absent when the record has none (see `lib/case-meta.ts`). */
+  pathologyLabel?: string;
+  side?: Side;
+  /** The procedure the case belongs to, as the backend knows it (a UUID) or the demo catalogue (`tkr`). */
+  procedureId?: string;
+  procedureName?: string;
   difficulty: Difficulty;
   attempts: number;
   bestScore?: number;
@@ -128,15 +134,20 @@ function facetOf(
   cases: CaseCard[],
   filters: CaseFilters,
   axis: Axis,
-  valueOf: (item: CaseCard) => string,
+  valueOf: (item: CaseCard) => string | undefined,
   order?: string[],
 ): Facet[] {
   const pool = cases.filter((item) => matches(item, filters, axis));
   const counts = new Map<string, number>();
 
-  for (const item of cases) counts.set(valueOf(item), 0);
+  // A case with no recorded value for this axis is not a facet value: it simply never matches the filter.
+  for (const item of cases) {
+    const key = valueOf(item);
+    if (key !== undefined) counts.set(key, 0);
+  }
   for (const item of pool) {
     const key = valueOf(item);
+    if (key === undefined) continue;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
 
@@ -171,48 +182,87 @@ async function getOptionalToken(): Promise<string | null> {
   }
 }
 
+/** One row of `GET /cases`. Pathology, side and procedure are optional: the record may not have them. */
+export type ApiCaseListRow = {
+  id: string;
+  name: string;
+  description?: string | null;
+  difficulty?: string | null;
+  status?: string;
+  version?: number;
+  pathology_label?: string | null;
+  side?: string | null;
+  procedure_id?: string | null;
+  procedure_name?: string | null;
+  draft_version_id?: string | null;
+  published_version_id?: string | null;
+};
+
+/**
+ * A list row as a card. Nothing is invented for a field the backend left empty: a case with
+ * no recorded pathology or side stays without one, and the card says "Not recorded".
+ */
+export function cardFromApiRow(
+  r: ApiCaseListRow,
+  stat?: { attempts: number; best?: number; last?: number },
+): CaseCard {
+  return {
+    id: r.id,
+    title: r.name,
+    summary: r.description ?? undefined,
+    pathologyLabel: r.pathology_label?.trim() || undefined,
+    side: parseSide(r.side),
+    procedureId: r.procedure_id ?? undefined,
+    procedureName: r.procedure_name ?? undefined,
+    difficulty: (r.difficulty || "intermediate").toLowerCase() as Difficulty,
+    attempts: stat?.attempts ?? 0,
+    bestScore: stat?.best,
+    lastScore: stat?.last,
+    status: r.status,
+    version: r.version,
+    draft_version_id: r.draft_version_id,
+    published_version_id: r.published_version_id,
+  };
+}
+
 export async function listCases(
   userId: string,
   filters: CaseFilters = {},
 ): Promise<CaseBrowse> {
-  const stats = statsByCase(sessionsFor(userId));
   const token = await getOptionalToken();
+
+  // The viewer's sessions and the case list do not depend on each other, so they are fetched together
+  // (they used to be fetched one after the other, which added a full round trip to every case page).
+  const [sessions, listed] = await Promise.all([
+    getLearnerSessions(userId),
+    token
+      ? fetch(`${API_BASE}/cases`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }).then(
+          (res) => ({ res }),
+          (error: unknown) => ({ error }),
+        )
+      : null,
+  ]);
+  const stats = statsByCase(sessions.filter(hasRun));
 
   let dbCases: CaseCard[] = [];
   // When the backend answers, the library is exactly what it holds, even if that is nothing. The built-in
   // demo catalogue is only a stand-in for when it cannot be reached.
   let backendAnswered = false;
-  if (token) {
+  if (listed && "res" in listed) {
     try {
-      const res = await fetch(`${API_BASE}/cases`, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-      if (res.ok) {
+      if (listed.res.ok) {
         backendAnswered = true;
-        const rows = await res.json();
-        dbCases = rows.map((r: any) => {
-          const stat = stats.get(r.id);
-          return {
-            id: r.id,
-            title: r.name,
-            summary: r.description,
-            pathologyLabel: r.pathology_label || "Osteoarthritis",
-            side: (r.side || "right").toLowerCase() as Side,
-            difficulty: (r.difficulty || "intermediate").toLowerCase() as Difficulty,
-            attempts: stat?.attempts ?? 0,
-            bestScore: stat?.best,
-            lastScore: stat?.last,
-            status: r.status,
-            version: r.version,
-            draft_version_id: r.draft_version_id,
-            published_version_id: r.published_version_id,
-          };
-        });
+        const rows = await listed.res.json();
+        dbCases = rows.map((r: ApiCaseListRow) => cardFromApiRow(r, stats.get(r.id)));
       }
     } catch (e) {
-      console.warn("Failed to fetch cases from API, falling back to seed catalogue:", e);
+      console.warn("Failed to read cases from API, falling back to seed catalogue:", e);
     }
+  } else if (listed) {
+    console.warn("Failed to fetch cases from API, falling back to seed catalogue:", listed.error);
   }
 
   // Combine with seed catalogue, deduplicating by ID
@@ -226,6 +276,8 @@ export async function listCases(
         summary: row.summary,
         pathologyLabel: row.pathologyLabel,
         side: row.side,
+        procedureId: row.procedureId,
+        procedureName: PROCEDURES.find((p) => p.id === row.procedureId)?.name,
         difficulty: row.difficulty,
         attempts: stat?.attempts ?? 0,
         bestScore: stat?.best,
@@ -278,10 +330,12 @@ export type CaseDetail = {
   id: string;
   title: string;
   summary?: string;
-  procedureId: string;
-  procedureName: string;
-  pathologyLabel: string;
-  side: Side;
+  /** The case's procedure as the backend records it; absent when it cannot be resolved (shown as unavailable). */
+  procedureId?: string;
+  procedureName?: string;
+  /** Absent when the record has none; shown as "Not recorded" (`lib/case-meta.ts`). */
+  pathologyLabel?: string;
+  side?: Side;
   difficulty: Difficulty;
   patient: PatientSnapshot;
   imaging: { view: string; label: string; url?: string; calibration?: any }[];
@@ -345,6 +399,29 @@ function toSnapshot(record: Record<string, unknown>): PatientSnapshot {
   };
 }
 
+/** The case list as the backend returns it, or null when it cannot be read. */
+export async function fetchCaseListRows(token: string): Promise<ApiCaseListRow[] | null> {
+  try {
+    const res = await fetch(`${API_BASE}/cases`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    return res.ok ? ((await res.json()) as ApiCaseListRow[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The name of a case's procedure. The detail response carries only the procedure's id; the case list
+ * carries id and name together, so the name is read from there. A learner cannot call `GET /procedures`.
+ * When the name cannot be resolved it is simply absent, and the page says so.
+ */
+function procedureNameIn(rows: ApiCaseListRow[] | null, procedureId: string | null | undefined): string | undefined {
+  if (!procedureId || !rows) return undefined;
+  return rows.find((r) => r.procedure_id === procedureId && r.procedure_name)?.procedure_name ?? undefined;
+}
+
 export async function getCase(
   caseId: string,
   userId: string,
@@ -354,13 +431,19 @@ export async function getCase(
   // Try API first
   if (token) {
     try {
-      const res = await fetch(`${API_BASE}/cases/${caseId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
+      // The case, the viewer's sessions and the case list (for the procedure's name) are independent,
+      // so they are fetched together instead of one after the other.
+      const [res, sessions, listRows] = await Promise.all([
+        fetch(`${API_BASE}/cases/${caseId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
+        getLearnerSessions(userId),
+        fetchCaseListRows(token),
+      ]);
       if (res.ok) {
         const row = await res.json();
-        const attempts = sessionsFor(userId).filter((s) => s.caseId === caseId);
+        const attempts = sessions.filter((s) => s.caseId === caseId && hasRun(s));
         const scores = attempts
           .map((a) => a.totalScore)
           .filter((s): s is number => s !== undefined);
@@ -385,10 +468,9 @@ export async function getCase(
           id: row.id,
           title: row.active_version?.title || row.title || row.name,
           summary: row.active_version?.description || row.description,
-          procedureId: row.procedure_id || "tkr",
-          procedureName: "Total Knee Replacement",
-          pathologyLabel: row.active_version?.pathology_label || row.pathology_label || "Osteoarthritis",
-          side: (row.active_version?.side || row.side || "right").toLowerCase() as Side,
+          procedureId: row.procedure_id ?? undefined,
+          procedureName: procedureNameIn(listRows, row.procedure_id),
+          ...caseMetaFromRecord(row),
           difficulty: diff,
           patient: toSnapshot(patientObj),
           imaging: imagingViews.length > 0 ? imagingViews : [
@@ -424,7 +506,9 @@ export async function getCase(
   const row = CASE_BY_ID.get(caseId);
   if (!row) return null;
 
-  const attempts = sessionsFor(userId).filter((s) => s.caseId === caseId);
+  const attempts = (await getLearnerSessions(userId)).filter(
+    (s) => s.caseId === caseId && hasRun(s),
+  );
   const scores = attempts
     .map((a) => a.totalScore)
     .filter((s): s is number => s !== undefined);

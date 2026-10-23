@@ -43,7 +43,7 @@
 
 /* The trailing fragment sits back, as in the reference's cents treatment. */
 .heroValueDim {
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 .delta {
@@ -511,7 +511,7 @@
   font-weight: var(--fw-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 .rowHead span:not(:first-child) {
@@ -728,7 +728,7 @@
 }
 
 .breakValueDim {
-  color: var(--text-disabled);
+  color: var(--text-muted);
   font-size: 20px;
 }
 

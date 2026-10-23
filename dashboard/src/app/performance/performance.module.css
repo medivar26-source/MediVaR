@@ -40,9 +40,14 @@
   margin-bottom: var(--s-7);
 }
 
+/* One column: the panels fit the page rather than their widest content (a chart of eight bars). */
 @media (max-width: 1100px) {
   .columns {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel {
+    min-width: 0;
   }
 }
 
@@ -158,4 +163,16 @@
 .outcomeFail {
   color: var(--fail);
   font-weight: var(--fw-semibold);
+}
+
+/* Phone width: the tabs scroll sideways rather than squeezing their labels. */
+@media (max-width: 767px) {
+  .tabs {
+    overflow-x: auto;
+  }
+
+  .tab {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
 }

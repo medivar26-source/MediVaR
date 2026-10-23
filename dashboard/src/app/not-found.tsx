@@ -9,9 +9,9 @@ export const metadata: Metadata = { title: "Page not found" };
  */
 export default function NotFound() {
   return (
-    <main
+    <div
       style={{
-        minHeight: "100vh",
+        minHeight: "60vh",
         display: "grid",
         placeItems: "center",
         padding: "var(--s-6)",
@@ -35,6 +35,6 @@ export default function NotFound() {
           </Link>
         </p>
       </div>
-    </main>
+    </div>
   );
 }

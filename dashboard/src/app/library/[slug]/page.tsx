@@ -113,56 +113,84 @@ export default async function LibraryDocPage({
 
       {doc.slug === "preoperative-planning" && (
         <>
-          {doc.steps.map((step) => (
-            <section key={step.step} aria-label={`Step ${step.step}`}>
-              <SectionHeader title={`${step.step} · ${step.title}`} />
+          <p className={p.panelSub} style={{ marginBottom: "var(--s-4)" }}>
+            Planning is four pages in a fixed order: measure, size, send. A page
+            stays locked until the one before it is complete.
+          </p>
+          {doc.pages.map((page) => (
+            <section key={page.id} aria-label={`Page ${page.step}`}>
+              <SectionHeader title={`${page.step} · ${page.title}`} />
               <div className={p.panel}>
-                <div className={p.panelHead}>
-                  <div>
-                    <p className={p.panelSub}>{step.budgetLabel}</p>
-                  </div>
-                  <div className={p.rowAside}>
-                    <Chip tone="muted">Par {clock(step.parTimeS)}</Chip>
-                    <Chip tone="muted">Max {clock(step.maxTimeS)}</Chip>
-                  </div>
-                </div>
+                <p className={p.panelSub}>{page.objective}</p>
 
-                {step.fields.length === 0 ? (
-                  <p className={p.panelSub}>
-                    This step is answered with measurements rather than from a
-                    list, so there is nothing to enumerate here.
-                  </p>
-                ) : (
-                  step.fields.map((field) => (
-                    <div key={field.field}>
-                      <p className={p.rowTitle}>
-                        {titleCase(field.field.replace(/_/g, " "))}
-                      </p>
-                      <div className={p.rows}>
-                        {field.options.map((option) => (
-                          <div key={option.label} className={p.row}>
-                            <div className={p.rowBody}>
-                              <p className={p.rowTitle}>{option.label}</p>
-                              {option.detail && (
-                                <p className={p.rowDetail}>{option.detail}</p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))
+                {page.measurements.length > 0 && (
+                  <Table label={`Measurements on ${page.title}`}>
+                    <THead>
+                      <Tr>
+                        <Th>Measurement</Th>
+                        <Th>View</Th>
+                        <Th>Points to place</Th>
+                        <Th>Calculated as</Th>
+                      </Tr>
+                    </THead>
+                    <TBody>
+                      {page.measurements.map((m) => (
+                        <Tr key={m.name}>
+                          <Td head>
+                            {m.abbreviation ? `${m.abbreviation} · ` : ""}
+                            {m.name}
+                          </Td>
+                          <Td>{m.view}</Td>
+                          <Td>{m.points}</Td>
+                          <Td>{m.definition}</Td>
+                        </Tr>
+                      ))}
+                    </TBody>
+                  </Table>
+                )}
+
+                {page.sizes && <p className={p.panelSub}>{page.sizes}</p>}
+
+                {page.fitMetrics && (
+                  <Table label={`Fit metrics on ${page.title}`}>
+                    <THead>
+                      <Tr>
+                        <Th>Fit metric</Th>
+                        <Th>Acceptable</Th>
+                      </Tr>
+                    </THead>
+                    <TBody>
+                      {page.fitMetrics.map((f) => (
+                        <Tr key={f.metric}>
+                          <Td head>{f.metric}</Td>
+                          <Td>{f.threshold}</Td>
+                        </Tr>
+                      ))}
+                    </TBody>
+                  </Table>
+                )}
+
+                <p className={p.rowTitle}>To continue</p>
+                <p className={p.panelSub}>{page.gate}</p>
+
+                {page.notes && (
+                  <ul className={p.panelSub}>
+                    {page.notes.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
                 )}
               </div>
             </section>
           ))}
 
           <p className={p.note}>
-            The lists above are the ones the planning screens offer, from{" "}
-            <strong>plan_step_options</strong>. Whether an answer is right is
-            decided on the server, against
-            ground truth no client role can read — so this page can tell you what
-            the choices are and never which one is correct.
+            Taken from the V1 planning specification. Whether a measurement is
+            right is decided against the case&rsquo;s reference plan on the
+            server, which no learner can read &mdash; so this page tells you what
+            each page asks and never which answer is correct. The operative
+            sequence performed in the headset is a separate list; see the TKR
+            walkthrough.
           </p>
         </>
       )}

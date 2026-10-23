@@ -380,6 +380,34 @@ function stepProgress(
   };
 }
 
+/**
+ * Titles for plans whose case is not one of the built-in demo cases: the institution's
+ * cases and the learner's own. Without this a plan on a real case was listed by its id.
+ * Imported on demand because `cases.ts` already depends on this module's neighbours.
+ */
+async function caseTitlesFor(userId: string, caseIds: string[]): Promise<Map<string, string>> {
+  const titles = new Map<string, string>();
+  const unknown = caseIds.filter((id) => !CASE_BY_ID.has(id));
+  if (unknown.length === 0) return titles;
+
+  try {
+    const { listCases } = await import("./cases");
+    const { cases } = await listCases(userId, { attempted: "all" });
+    for (const item of cases) titles.set(item.id, item.title);
+  } catch {
+    // The list failed: fall back to the id rather than hiding the plan.
+  }
+  if (unknown.some((id) => !titles.has(id))) {
+    try {
+      const { listPersonalCases } = await import("./personal-cases");
+      for (const item of await listPersonalCases()) titles.set(item.id, item.title);
+    } catch {
+      // Not signed in as a learner with personal cases: nothing to add.
+    }
+  }
+  return titles;
+}
+
 export async function getPlans(
   state?: PlanState,
   userId: string = CURRENT_USER.id,
@@ -387,6 +415,7 @@ export async function getPlans(
   // `startPlan` files a plan under the signed-in user, so callers pass that id;
   // the seed user is only the default for code that has no session.
   const mine = PLANS.filter((plan) => plan.userId === userId);
+  const titles = await caseTitlesFor(userId, mine.map((plan) => plan.caseId));
 
   const rows: PlanRow[] = mine.map((plan) => {
     const kase = CASE_BY_ID.get(plan.caseId);
@@ -414,7 +443,7 @@ export async function getPlans(
     return {
       id: plan.id,
       caseId: plan.caseId,
-      caseTitle: kase?.title ?? plan.caseId,
+      caseTitle: kase?.title ?? titles.get(plan.caseId) ?? plan.caseId,
       difficulty: config?.difficulty ?? kase?.difficulty ?? "intermediate",
       mode: config?.mode ?? "training",
       createdAt: plan.createdAt,

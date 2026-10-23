@@ -83,7 +83,7 @@ Core paths: Program → Cohort (Learners · Sessions · Reports · Case access �
 
 | # | Finding | Status |
 |---|---|---|
-| F1 | Only a root `loading.tsx`. | ✅ List-shaped skeletons (`PageSkeleton`) for programs, cases, learners, sessions and plans. |
+| F1 | Only a root `loading.tsx`. | ✅ List-shaped skeletons (`PageSkeleton`) for programs, cases, learners, sessions and plans. *Superseded 2026-10-20: the route skeletons were removed (React holds a revealed fallback for 300 ms, which delayed every fast navigation); a progress bar under the top edge now shows while a page loads. `PageSkeleton` remains as a component but no route uses it.* |
 | F2 | Some empty states don't say what to do next. | ✅ Added next-step buttons to the main ones (learners, cohorts, activity, reports, program cases). Detail-level empties (e.g. "No notes yet") left as they are. |
 
 ---

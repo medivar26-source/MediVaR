@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, CircleHelp, LogOut, Search, Settings } from "lucide-react";
+import { Bell, CircleHelp, LogOut, Menu, Search, Settings } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import {
   Popover,
@@ -22,12 +22,16 @@ import s from "./AppShell.module.css";
 
 export type Notification = NavNotification;
 
+const noSubscription = () => () => {};
+
 export function TopBar({
   user,
   persona,
   searchHint,
   notifications,
   primaryAction,
+  menuOpen,
+  onOpenMenu,
 }: {
   user: Profile;
   persona: Persona;
@@ -35,9 +39,18 @@ export function TopBar({
   notifications: Notification[];
   /** The one thing this role most often comes here to do. */
   primaryAction?: NavAction;
+  /** The phone menu: its button shows only where the sidebar has no room. */
+  menuOpen: boolean;
+  onOpenMenu: () => void;
 }) {
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
+  // The shortcut is named the way this keyboard labels it. Read after mounting: the server cannot know.
+  const isMac = useSyncExternalStore(
+    noSubscription,
+    () => /Mac|iPhone|iPad/.test(navigator.platform),
+    () => false,
+  );
 
   // ⌘K / Ctrl+K opens search from anywhere.
   useEffect(() => {
@@ -56,12 +69,25 @@ export function TopBar({
       <header className={s.topbar}>
         <button
           type="button"
+          className={s.menuBtn}
+          onClick={onOpenMenu}
+          aria-label="Open menu"
+          aria-expanded={menuOpen}
+          aria-haspopup="dialog"
+        >
+          <Menu width={20} height={20} strokeWidth={1.75} aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
           className={s.search}
           onClick={() => setSearchOpen(true)}
+          aria-label={`Search. ${searchHint}`}
+          aria-keyshortcuts={isMac ? "Meta+K" : "Control+K"}
         >
           <Search className={s.searchIcon} strokeWidth={2} aria-hidden="true" />
-          <span className={s.searchLabel}>{searchHint}</span>
-          <span className={s.searchKey}>⌘K</span>
+          <span className={s.searchLabel} aria-hidden="true">{searchHint}</span>
+          <kbd className={s.searchKey} aria-hidden="true">{isMac ? "⌘K" : "Ctrl K"}</kbd>
         </button>
 
         <div className={s.topRight}>

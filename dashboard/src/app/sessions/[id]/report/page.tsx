@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { AlertTriangle, Check, Minus } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/shell";
-import { Badge, Card, CardHeader, Chip, EmptyState } from "@/components/ui";
+import { Badge, Button, Card, CardHeader, Chip, EmptyState } from "@/components/ui";
 import {
   deviationOf,
   getReport,
   getSession,
   weakestCategory,
 } from "@/lib/data/sessions";
+import { canViewSession, sessionLinks } from "@/lib/data/session-links";
 import { clock, shortDate, timeOfDay, titleCase } from "@/lib/format";
 import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
@@ -23,7 +24,8 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const report = await getReport(id);
+  const [session, user] = await Promise.all([getSession(id), getCurrentUser()]);
+  const report = session && canViewSession(user, session) ? await getReport(id) : null;
   return { title: report ? `Report — ${report.header.caseTitle}` : "Report" };
 }
 
@@ -49,7 +51,7 @@ export default async function ReportPage({
   const persona = personaFor(user.role);
 
   const [session, report] = await Promise.all([getSession(id), getReport(id)]);
-  if (!session) notFound();
+  if (!session || !canViewSession(user, session)) notFound();
 
   // A session that has not produced a report has a live mirror instead. Sending
   // somebody to an empty report page when there is a running operation to watch
@@ -74,6 +76,7 @@ export default async function ReportPage({
     }
   }
 
+  const links = sessionLinks(session);
   const weakest = weakestCategory(report.categories);
   const largest = Math.max(...report.categories.map((c) => c.max), 1);
 
@@ -83,6 +86,26 @@ export default async function ReportPage({
         eyebrow={`${report.header.caseId} · ${shortDate(report.header.date)}`}
         title={report.header.caseTitle}
         lede={`${titleCase(report.header.mode)} · ${titleCase(report.header.difficulty)} · ${report.header.design} · ${titleCase(report.header.fixation)}`}
+        actions={
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            {links.case && (
+              <Button variant="secondary" href={links.case}>
+                Back to case
+              </Button>
+            )}
+            {links.plan && (
+              <Button variant="secondary" href={links.plan}>
+                Open plan
+              </Button>
+            )}
+            <Button variant="secondary" href={links.session}>
+              Session
+            </Button>
+            <Button variant="ghost" href="/sessions">
+              All sessions
+            </Button>
+          </div>
+        }
       />
 
       {/* ---------- the verdict ---------- */}

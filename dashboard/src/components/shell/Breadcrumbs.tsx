@@ -25,7 +25,7 @@ export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
                 />
               )}
               {item.href && !isLast ? (
-                <Link href={item.href} className={styles.link}>
+                <Link prefetch={false} href={item.href} className={styles.link}>
                   {item.label}
                 </Link>
               ) : (

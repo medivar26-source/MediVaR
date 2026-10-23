@@ -94,3 +94,13 @@ resolution (no file extensions). Added `tsx` as a dev dependency and a
 pre-existing demo-case/V1-workflow tests and the new content tests pass
 under it (28/28 at the time of writing). This is a tooling fix, not a
 behavior change — no test's assertions were altered.
+
+## Learner Mode review tests (2026-10-20)
+
+Run from `dashboard/` with `npm test` (Git Bash: `npx tsx --test src/app/plan/__tests__/*.test.ts src/lib/__tests__/*.test.ts src/lib/server/calculations/engine.test.ts src/app/content/__tests__/content.test.ts`; the glob does not expand in `cmd`). Backend, from `backend/` with its virtualenv: `venv/Scripts/python.exe -m unittest tests.test_case_authoring tests.test_sessions tests.test_case_list_metadata ...`.
+
+New dashboard suites (`src/lib/__tests__/`): `learner_copy` (wording, planning step labels), `session_links` (which sessions have run, link rules, who may open a session), `planning_help` (the four-page Help article), `case_meta` (case-card metadata, populated and missing), `procedure_cases` (cases under procedures), `planning_side` (no defaults for pathology, side or procedure; the planner blocker), `case_creation` (role permissions, dialog keeps its form, `onDone` versus navigation, validation), `progress_skills` (skills by procedure, one Progress destination), `shell_frame` (which routes are framed, search hints), `early_reads` (token subject used for the early reads). Backend: `test_case_list_metadata.py` (case-list queries, schema with populated and missing metadata).
+
+**Browser checks.** Unit tests cannot cover layout, the dialog or navigation, so these were checked in headless Chrome against a production build and a synthetic stub API (no credentials or real data): the planner at 1366x768, 1280x720 and 1920x1080 (window never scrolls; scan area measured); the Add case dialog (opens with the wizard, Escape closes it, reopening keeps typed text, centred); and client-side navigation (shell kept, requests and backend calls per click, time per click). The harness lives outside the repository. Method: mark the sidebar and top-bar DOM nodes, click sidebar links, record whether the nodes survive, the Network events and the stub API's request log.
+
+**Not covered by automated tests:** a real file upload and publish through the Add case dialog; behaviour against the real backend, database and storage; visual regression. See "Open verification gap: Add case against the real backend and storage" in the change log for the checklist.

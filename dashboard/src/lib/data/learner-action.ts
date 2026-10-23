@@ -3,6 +3,7 @@ import type { PlanRow } from "./plans";
 import type { ReportSummary, SessionSummary } from "../types";
 import { PASS_MARK } from "../types";
 import { shortDate, titleCase } from "../format";
+import { pathologyText, sideText } from "@/lib/case-meta";
 
 export type NextActionType =
   | "live_session"
@@ -72,7 +73,7 @@ export function resolveNextAction({
       subtitle: `Simulation in progress · Scene ${activeSession.session.currentScene}`,
       badge: "Live Simulation",
       badgeTone: "pass",
-      actionLabel: "Join live session →",
+      actionLabel: "Join live session",
       href: `/sessions/${activeSession.session.id}`,
     };
   }
@@ -85,7 +86,7 @@ export function resolveNextAction({
       subtitle: `Interrupted session · Left off at scene ${activeSession.session.currentScene}`,
       badge: "Interrupted",
       badgeTone: "warn",
-      actionLabel: "Resume session →",
+      actionLabel: "Resume session",
       href: `/sessions/${activeSession.session.id}`,
     };
   }
@@ -99,7 +100,7 @@ export function resolveNextAction({
       subtitle: `Pre-operative plan in progress (${titleCase(draftPlan.difficulty)}) · ${draftPlan.stepsAnswered} of ${draftPlan.stepsTotal ?? 6} steps ${draftPlan.stepsTotal === 4 ? "complete" : "answered"}`,
       badge: "Draft Plan",
       badgeTone: "brand",
-      actionLabel: "Continue planning →",
+      actionLabel: "Continue planning",
       href: `/plan/${draftPlan.id}`,
     };
   }
@@ -118,7 +119,7 @@ export function resolveNextAction({
           : "Locked plan sealed · Ready for headset transfer",
       badge: readyPlan.state === "paired" ? "PIN Issued" : "Ready for VR",
       badgeTone: "pass",
-      actionLabel: "Review & transfer →",
+      actionLabel: "Review & transfer",
       href: `/plan/${readyPlan.id}/review`,
     };
   }
@@ -129,10 +130,10 @@ export function resolveNextAction({
     return {
       type: "start_case",
       title: unattemptedCase.title,
-      subtitle: `${unattemptedCase.pathologyLabel} · ${titleCase(unattemptedCase.side)} knee · ${titleCase(unattemptedCase.difficulty)}`,
+      subtitle: `${pathologyText(unattemptedCase)} · ${sideText(unattemptedCase, " knee")} · ${titleCase(unattemptedCase.difficulty)}`,
       badge: "Assigned Case",
       badgeTone: "neutral",
-      actionLabel: "Start planning →",
+      actionLabel: "Start planning",
       href: `/cases/${unattemptedCase.id}`,
     };
   }
@@ -145,7 +146,7 @@ export function resolveNextAction({
       subtitle: `Scored ${latestReport.report.totalScore}/100 · Completed on ${shortDate(latestReport.session.endedAt)}`,
       badge: "Latest Result",
       badgeTone: "pass",
-      actionLabel: "Review assessment report →",
+      actionLabel: "Review assessment report",
       href: `/sessions/${latestReport.session.id}/report`,
     };
   }
@@ -158,7 +159,7 @@ export function resolveNextAction({
       "You have no pending sessions or unfinished plans. Choose a case to begin a new simulation.",
     badge: "Up to date",
     badgeTone: "neutral",
-    actionLabel: "Browse case catalogue →",
+    actionLabel: "Browse case catalogue",
     href: "/cases",
   };
 }

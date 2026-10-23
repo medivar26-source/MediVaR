@@ -18,7 +18,7 @@ import {
 import { getProgramDetail } from "@/lib/data/programs";
 import { getCohort, getCohortCases, getCohortSessions } from "@/lib/data/cohorts";
 import { listCasesForAuthoring } from "@/lib/data/content";
-import { shortDate, titleCase } from "@/lib/format";
+import { dateTime, shortDate, titleCase } from "@/lib/format";
 import { cx } from "@/lib/cx";
 import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
@@ -271,7 +271,7 @@ export default async function CohortWorkspacePage({
                         <div>
                           <strong>{session.name}</strong>
                           {session.description && (
-                            <div style={{ fontSize: "0.85rem", opacity: 0.7 }}>
+                            <div style={{ fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>
                               {session.description}
                             </div>
                           )}
@@ -281,7 +281,7 @@ export default async function CohortWorkspacePage({
                       <Td>
                         <Chip tone="muted">{titleCase(session.mode)}</Chip>
                       </Td>
-                      <Td>{new Date(session.scheduledAt).toLocaleString()}</Td>
+                      <Td>{dateTime(session.scheduledAt)}</Td>
                       <Td numeric>{session.duration} mins</Td>
                       <Td>
                         <Badge status={statusBadge}>

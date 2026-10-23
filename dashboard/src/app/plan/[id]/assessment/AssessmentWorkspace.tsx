@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Segmented } from "@/components/ui";
 import { fallbackNotice } from "@/lib/plan-scans";
-import type { PlanDetail, V1Assessment } from "@/lib/plan";
+import { planOperativeSide, type PlanDetail, type V1Assessment } from "@/lib/plan";
 import { LANDMARK_INFO, LANDMARK_ORDER, nextMissing } from "@/lib/data/landmark_guide";
 import { measureAssessment, toV1Assessment } from "@/lib/data/assessment_geometry";
 import { resolvePatientIdentity } from "@/lib/data/planner_identity";
@@ -106,7 +106,9 @@ export function AssessmentWorkspace({ plan }: { plan: PlanDetail }) {
   );
 
   const scan = scales[viewMode];
-  const kneeSide: "RIGHT" | "LEFT" = (plan.case.side || "right").toUpperCase() === "LEFT" ? "LEFT" : "RIGHT";
+  // Never assumed: with no recorded side the shell does not open this page, and the measurement
+  // falls back to the surgeon's own points.
+  const kneeSide = planOperativeSide(plan) ?? undefined;
 
   const reading = useMemo(
     () =>

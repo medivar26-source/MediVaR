@@ -1,0 +1,92 @@
+.dialog {
+  /* The global reset removes the browser's `margin: auto`, which is what centres a modal dialog. */
+  margin: auto;
+  width: min(1040px, 96vw);
+  max-height: 92dvh;
+  padding: 0;
+  border: var(--bw) solid var(--border-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--e-4);
+  overflow: hidden;
+  transition:
+    opacity var(--m-base) var(--ease-out),
+    transform var(--m-base) var(--ease-out);
+}
+
+/* A short form does not need the width of a wizard. */
+.sm {
+  width: min(520px, 96vw);
+}
+
+.dialog::backdrop {
+  background: var(--scrim);
+  transition: opacity var(--m-base) var(--ease-out);
+}
+
+/* Opens by settling into place, the same way the settings dialog does; closing is immediate. */
+@starting-style {
+  .dialog[open] {
+    opacity: 0;
+    transform: translateY(var(--s-2)) scale(0.98);
+  }
+  .dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* `dialog` is display:none when closed; the frame lays out only when it is open. */
+.dialog[open] .frame {
+  display: flex;
+}
+
+.frame {
+  display: none;
+  flex-direction: column;
+  max-height: 92dvh;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  border-bottom: var(--bw) solid var(--divider);
+}
+
+.title {
+  font-size: var(--t-h3);
+  line-height: var(--t-h3-lh);
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: var(--h-sm);
+  height: var(--h-sm);
+  border: 0;
+  border-radius: var(--r-xs);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out);
+}
+
+.close:hover {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.body {
+  overflow-y: auto;
+  padding: var(--s-5);
+}

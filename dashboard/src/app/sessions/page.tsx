@@ -15,12 +15,15 @@ import {
   THead,
   Tr,
   DemoDataNote,
+  StatStrip,
 } from "@/components/ui";
 import { StatCard, StatRow } from "@/components/viz";
 import { asMode, asStatus, getSessionList } from "@/lib/data/sessions";
 import { clock, shortDate, titleCase } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { personaFor } from "@/lib/roles";
+import { SessionActions } from "@/components/sessions/SessionActions";
+import { isSampleSession } from "@/lib/data/session-links";
 import { SessionFilters } from "./SessionFilters";
 import s from "./sessions.module.css";
 import p from "../panels.module.css";
@@ -64,11 +67,11 @@ export default async function SessionsPage({
   return (
     <AppShell user={user} searchHint='Try searching "varus"'>
       <PageHeader
-        eyebrow={persona === "learner" ? "Your history" : "Cohort history"}
+        eyebrow={persona === "learner" ? undefined : "Cohort history"}
         title="Sessions"
         lede={
           persona === "learner"
-            ? "Every case you have performed in the headset, and what each one scored."
+            ? "Open a session to see its report."
             : "Every session you supervise. Open one to see the report it produced."
         }
         actions={
@@ -83,7 +86,14 @@ export default async function SessionsPage({
           )
         }
       />
-      <DemoDataNote />
+      {persona === "learner" ? (
+        <DemoDataNote
+          sample="scores, reports and past headset sessions"
+          live="the sessions scheduled for you"
+        />
+      ) : (
+        <DemoDataNote />
+      )}
 
       {persona !== "learner" && (
         <p className={p.panelSub} style={{ marginTop: 0 }}>
@@ -92,6 +102,32 @@ export default async function SessionsPage({
         </p>
       )}
 
+      {persona === "learner" ? (
+        <StatStrip
+          label="Session totals"
+          items={[
+            { label: "Sessions", value: stats.sessions, note: filtered ? "Matching these filters" : "All time" },
+            {
+              label: "Mean score",
+              value: stats.meanScore ?? "—",
+              note:
+                stats.reported === 0
+                  ? "No reports yet"
+                  : `Across ${stats.reported} report${stats.reported === 1 ? "" : "s"}`,
+            },
+            {
+              label: "Below pass mark",
+              value: stats.belowPass,
+              note: stats.reported === 0 ? "Nothing scored yet" : "Of those reported",
+            },
+            {
+              label: "In progress",
+              value: stats.live,
+              note: stats.live === 0 ? "Nothing running" : "Running now",
+            },
+          ]}
+        />
+      ) : (
       <StatRow>
         <StatCard
           label="Sessions"
@@ -122,6 +158,7 @@ export default async function SessionsPage({
           sub={stats.live === 0 ? "Nothing running" : "Running now"}
         />
       </StatRow>
+      )}
 
       <div className={s.filterWrap}>
         <SessionFilters
@@ -181,7 +218,15 @@ export default async function SessionsPage({
                 return (
                   <Tr key={session.id}>
                     <Td head>{shortDate(session.scheduledAt ?? session.endedAt ?? session.startedAt)}</Td>
-                    <Td>{session.caseTitle}</Td>
+                    <Td>
+                      {session.caseTitle}
+                      {isSampleSession(session.id) && (
+                        <>
+                          {" "}
+                          <Chip tone="muted">Sample</Chip>
+                        </>
+                      )}
+                    </Td>
                     <Td>{titleCase(session.mode)}</Td>
                     <Td>
                       {session.design ?? "—"} · {session.fixation ? titleCase(session.fixation) : "—"}
@@ -209,24 +254,7 @@ export default async function SessionsPage({
                       )}
                     </Td>
                     <Td>
-                      {/* The destination is what actually exists for this row.
-                          A running session has a live mirror and no report; a
-                          finished one has a report. Linking to a report that
-                          has not been generated would be a control that cannot
-                          be used */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        href={
-                          session.status === "scheduled" && session.caseId
-                            ? `/cases/${session.caseId}`
-                            : score !== undefined
-                              ? `/sessions/${session.id}/report`
-                              : `/sessions/${session.id}`
-                        }
-                      >
-                        {session.status === "scheduled" ? "Prepare" : score !== undefined ? "Report" : "Open"}
-                      </Button>
+                      <SessionActions session={session} />
                     </Td>
                   </Tr>
                 );

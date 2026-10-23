@@ -18,7 +18,7 @@
   border-radius: 9999px;
   color: var(--color-brand-green-deep);
   text-decoration: none;
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color var(--m-fast) var(--ease-out), color var(--m-fast) var(--ease-out);
   margin-left: -0.5rem;
 }
 .backButton:hover {
@@ -87,7 +87,7 @@
   font-size: 0.875rem;
   line-height: 1.5;
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  transition: color 0.15s, box-shadow 0.15s;
+  transition: color var(--m-fast) var(--ease-out), box-shadow var(--m-fast) var(--ease-out);
   outline: none;
   resize: vertical;
 }

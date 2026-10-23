@@ -19,14 +19,27 @@
   border-radius: var(--r-lg);
   background: var(--surface);
   box-shadow: var(--e-3);
+  transition:
+    opacity var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
+}
+
+/* Appears from its trigger's corner; closing is immediate. */
+@starting-style {
+  .panel {
+    opacity: 0;
+    transform: translateY(calc(var(--s-1) * -1)) scale(0.97);
+  }
 }
 
 .alignEnd {
   right: 0;
+  transform-origin: top right;
 }
 
 .alignStart {
   left: 0;
+  transform-origin: top left;
 }
 
 .heading {
@@ -35,7 +48,7 @@
   font-weight: var(--fw-bold);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 .item {

@@ -278,7 +278,9 @@
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: all var(--m-fast) var(--ease-out);
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out);
 }
 
 .modalClose:hover {
@@ -325,3 +327,10 @@
   box-shadow: 0 0 0 2px var(--brand-surface);
 }
 
+
+/* The line under the learner preview's title: side, difficulty, and what stays hidden. */
+.previewNote {
+  margin-bottom: var(--s-4);
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}

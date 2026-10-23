@@ -71,7 +71,7 @@
   font-weight: var(--fw-bold);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 .item {
@@ -125,7 +125,7 @@
 .itemKey {
   flex: 0 0 auto;
   font-size: var(--t-caption);
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 .empty {

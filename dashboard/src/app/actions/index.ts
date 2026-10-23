@@ -1,6 +1,8 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { planningBlocker } from "@/lib/case-meta";
+import { planOperativeSide } from "@/lib/plan";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { PLANS, PLAN_BY_ID, type PlanRecord } from "@/lib/data/plans";
@@ -95,6 +97,9 @@ export async function signIn(
     maxAge: 60 * 60,
   });
 
+  // The frame (user, counts, pins) is read once per page load; a new sign-in must not see the last one's.
+  revalidatePath("/", "layout");
+
   // Only same-site relative paths: "//host" and "/\host" are protocol-relative and would leave the site.
   const safeNext = next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/";
   redirect(safeNext);
@@ -117,6 +122,7 @@ export async function signOut() {
     cookieStore.delete("mediver-token");
   }
 
+  revalidatePath("/", "layout");
   redirect("/login");
 }
 
@@ -286,6 +292,11 @@ export async function startPlan(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   const userId = user.id;
 
+  // The control is disabled for a case with no recorded operative side; this stops a request that bypasses it.
+  const { getPlanBlocker } = await import("@/lib/data/plan");
+  const blocker = await getPlanBlocker(caseId, userId);
+  if (blocker) throw new Error(blocker);
+
   // A learner can keep several plans for one case. "Start" resumes the most recent plan that is
   // still a draft; once none is left, or when they ask for a fresh one, it creates a new plan.
   const startFresh = formData.get("new") === "1";
@@ -318,6 +329,8 @@ export async function startPlan(formData: FormData): Promise<void> {
   }
   
   // Route directly to the new TKR Assessment Page
+  // "Resume planning" in the top bar and the ready-for-VR count change with a new plan.
+  revalidatePath("/", "layout");
   redirect(`/plan/${existing.id}/assessment`);
 }
 
@@ -415,7 +428,11 @@ export async function sealTkrPlan(
   }
 
   // The knee comes from the case itself, not from guessing at its name.
-  const kneeSide: "RIGHT" | "LEFT" = (detail.case.side || "right").toUpperCase() === "LEFT" ? "LEFT" : "RIGHT";
+  // The side is never assumed: a plan for a case that does not record one is not sent to the headset.
+  const kneeSide = planOperativeSide(detail);
+  if (!kneeSide) {
+    return { error: planningBlocker({}, { personal: detail.case.isPersonalCase }) ?? "The operative side is not recorded." };
+  }
 
   const vrPayload = buildV1VrPayload({
     patientId: resolvePatientIdentity(plan.caseId, detail.case.patient).patientId,
@@ -434,6 +451,7 @@ export async function sealTkrPlan(
     payload: JSON.parse(JSON.stringify(plan.payload)),
   };
 
+  revalidatePath("/", "layout");
   return { isReadyForVr: true, vrPayload };
 }
 

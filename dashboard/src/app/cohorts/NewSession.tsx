@@ -39,7 +39,7 @@ export function NewSession({
       <Input
         label="Session name"
         name="name"
-        placeholder="e.g. Vascular Surgery Simulation"
+        placeholder="e.g. Varus knee planning lab"
         maxLength={80}
         className={p.formGrow}
         required

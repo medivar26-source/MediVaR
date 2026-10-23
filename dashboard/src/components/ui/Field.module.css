@@ -23,7 +23,7 @@
   margin-left: auto;
   font-size: var(--t-caption);
   font-weight: var(--fw-regular);
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 /* ---------- control ---------- */

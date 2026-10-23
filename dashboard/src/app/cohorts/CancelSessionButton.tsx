@@ -11,7 +11,7 @@ export function CancelSessionButton({ sessionId, cohortId }: { sessionId: string
     <form action={formAction} style={{ display: "inline" }}>
       <input type="hidden" name="sessionId" value={sessionId} />
       <input type="hidden" name="cohortId" value={cohortId} />
-      <Button variant="ghost" type="submit" loading={pending} disabled={pending}>
+      <Button variant="ghost" size="sm" type="submit" loading={pending} disabled={pending}>
         Cancel
       </Button>
     </form>

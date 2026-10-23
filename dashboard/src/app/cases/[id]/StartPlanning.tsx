@@ -27,6 +27,7 @@ export function StartPlanning({
   hasPlans = false,
   startFresh = false,
   variant = "primary",
+  blocker,
 }: {
   caseId: string;
   config: Record<string, string | undefined>;
@@ -36,6 +37,8 @@ export function StartPlanning({
   hasPlans?: boolean;
   startFresh?: boolean;
   variant?: "primary" | "secondary";
+  /** Why this case cannot be planned yet (`planningBlocker`). The control is shown disabled with the reason. */
+  blocker?: string | null;
 }) {
   const label = startFresh
     ? "Start another plan"
@@ -44,6 +47,19 @@ export function StartPlanning({
       : hasPlans
         ? "Start a new plan"
         : "Start planning";
+
+  if (blocker) {
+    return (
+      <div>
+        <Button type="button" variant={variant} icon={Play} disabled>
+          {label}
+        </Button>
+        <p role="note" style={{ margin: "var(--s-2) 0 0", maxWidth: "36ch", fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>
+          {blocker}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <form action={startPlan}>

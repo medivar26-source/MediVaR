@@ -66,7 +66,7 @@ export function InstructorForm({ institutions }: { institutions: Institution[] }
           name="institutionId"
           value={choice}
           onChange={(event) => setChoice(event.target.value)}
-          helper="The instructor, and every learner they create, belong to this institution only."
+          aria-describedby="institution-hint"
           className={p.formGrow}
         >
           {institutions.map((i) => (
@@ -99,7 +99,8 @@ export function InstructorForm({ institutions }: { institutions: Institution[] }
           required
         />
         <Input
-          label="Temporary password (optional)"
+          label="Temporary password"
+          optional
           name="password"
           type="text"
           autoComplete="off"
@@ -110,6 +111,10 @@ export function InstructorForm({ institutions }: { institutions: Institution[] }
           Create instructor
         </Button>
       </form>
+      {/* Under the row, not inside it: a helper inside one field pushes that field's input up out of line. */}
+      <p id="institution-hint" className={p.formHint}>
+        The instructor, and every learner they create, belong to the chosen institution only.
+      </p>
     </div>
   );
 }

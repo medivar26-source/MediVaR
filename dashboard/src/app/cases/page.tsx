@@ -5,6 +5,7 @@ import { FolderOpen, Plus } from "lucide-react";
 import { AppShell, Breadcrumbs, PageHeader } from "@/components/shell";
 import { Badge, Button, Card, Chip, EmptyState, Skeleton } from "@/components/ui";
 import { listCases, type AttemptedFilter } from "@/lib/data/cases";
+import { pathologyText, sideText } from "@/lib/case-meta";
 import { titleCase } from "@/lib/format";
 import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
@@ -82,7 +83,7 @@ export default async function CasesPage({
               { value: "all", label: "All cases" },
             ] as const
           ).map((t) => (
-            <Link
+            <Link prefetch={false}
               key={t.value}
               href={t.value === "all" ? "/cases" : `/cases?attempted=${t.value}`}
               className={cx(p.tab, attempted === t.value && p.tabOn)}
@@ -118,7 +119,7 @@ export default async function CasesPage({
             return (
               <li key={item.id}>
                 <Card padding="none" className={s.card}>
-                  <Link href={`/cases/${item.id}`} className={s.cardLink}>
+                  <Link prefetch={false} href={`/cases/${item.id}`} className={s.cardLink}>
                     {/* Radiographs are not authored yet. A neutral plate is
                         honest; a stock photograph standing in for a patient's
                         imaging is not. */}
@@ -140,13 +141,14 @@ export default async function CasesPage({
                             {item.bestScore}
                           </Badge>
                         ) : (
-                          <Badge status="neutral">Not attempted</Badge>
+                          // An attempt can exist before it has a score; "Not attempted" would contradict the count below.
+                          <Badge status="neutral">{item.attempts > 0 ? "Not scored yet" : "Not attempted"}</Badge>
                         )}
                       </span>
 
                       <span className={s.cardChips}>
-                        <Chip tone="muted">{item.pathologyLabel}</Chip>
-                        <Chip tone="muted">{titleCase(item.side)}</Chip>
+                        <Chip tone="muted">{pathologyText(item)}</Chip>
+                        <Chip tone="muted">{sideText(item)}</Chip>
                         <Chip tone="muted">{titleCase(item.difficulty)}</Chip>
                         {item.status && (
                           <Chip tone={item.status === "active" ? "muted" : "default"}>
@@ -164,7 +166,8 @@ export default async function CasesPage({
                         {isInstructor ? (
                           <span>Version {item.version ?? 1} · {item.status ?? "active"}</span>
                         ) : item.attempts > 0 ? (
-                          `${item.attempts} attempt${item.attempts === 1 ? "" : "s"} · best ${item.bestScore ?? "—"}`
+                          `${item.attempts} attempt${item.attempts === 1 ? "" : "s"}` +
+                          (item.bestScore !== undefined ? ` · best ${item.bestScore}` : "")
                         ) : (
                           "Not yet attempted"
                         )}

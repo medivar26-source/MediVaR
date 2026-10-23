@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Profile } from "./types";
@@ -32,20 +33,14 @@ export async function getSessionToken(): Promise<string | undefined> {
  * Components must not change — they still receive a Profile and do not know
  * or care where it came from. This was the point of the seam.
  */
-export async function getCurrentUser(): Promise<Profile> {
-  let token: string | undefined;
-
-  try {
-    const cookieStore = await cookies();
-    token = cookieStore.get("mediver-token")?.value;
-  } catch {
-    // cookies() can throw in some rendering contexts
-    redirect("/login");
-  }
-
-  if (!token) {
-    redirect("/login");
-  }
+/**
+ * The signed-in user, or null when there is no valid session. Does not redirect, so the root layout can
+ * call it on screens that are open to everybody (sign-in). Cached for the duration of one request, so
+ * the layout and the page share a single `/auth/me` call.
+ */
+export const getOptionalUser = cache(async function getOptionalUser(): Promise<Profile | null> {
+  const token = await getSessionToken();
+  if (!token) return null;
 
   let response: Response;
   try {
@@ -57,17 +52,15 @@ export async function getCurrentUser(): Promise<Profile> {
       cache: "no-store", // Always fetch fresh — this is identity data
     });
   } catch {
-    // Backend unreachable — return null, middleware will redirect
-    redirect("/login");
+    // Backend unreachable: treated as signed out, the middleware sends the user to /login.
+    return null;
   }
 
-  if (!response.ok) {
-    redirect("/login");
-  }
+  if (!response.ok) return null;
 
   const data = await response.json();
   const u = data?.user;
-  if (!u) redirect("/login");
+  if (!u) return null;
 
   // Map the backend UserProfile shape to the frontend Profile type.
   // The two shapes are intentionally kept in alignment so this mapping
@@ -87,4 +80,20 @@ export async function getCurrentUser(): Promise<Profile> {
   };
 
   return profile;
+});
+
+/**
+ * The seam between the UI and authentication.
+ *
+ * Resolves the signed-in user from the httpOnly session cookie and the backend /auth/me endpoint, and
+ * sends everyone else to /login. Re-checked on every navigation (the result is shared only within one
+ * request), so a revoked or expired session is noticed on the next click.
+ *
+ * Components still receive a Profile and do not know or care where it came from. This was the point
+ * of the seam.
+ */
+export async function getCurrentUser(): Promise<Profile> {
+  const user = await getOptionalUser();
+  if (!user) redirect("/login");
+  return user;
 }

@@ -1,74 +1,47 @@
 import type { ReactNode } from "react";
-import { getNavData } from "@/lib/data/nav";
-import { personaFor } from "@/lib/roles";
-import type { Profile } from "@/lib/types";
-import { SideNav } from "./SideNav";
-import { TopBar } from "./TopBar";
 import s from "./AppShell.module.css";
 
 export type AppShellProps = {
-  user: Profile;
-  /** Placeholder copy in the search pill. */
+  /** Kept so existing pages compile unchanged; the frame reads the user itself (see `AppFrame`). */
+  user?: unknown;
+  /** Kept for the same reason; the search suggestion now comes from the route (`lib/shell-routes.ts`). */
   searchHint?: string;
   children: ReactNode;
 };
 
 /**
- * Counts, pinned links and notifications are fetched here rather than passed in
- * by every page — the chrome is the same on all of them, and a page that forgot
- * to pass them used to render a permanently empty bell.
- *
- * Only the *data* crosses into `SideNav`; the sections are resolved on the
- * client from `lib/nav`, because a `NavSection` carries a Lucide icon and
- * handing a component to a `"use client"` module throws at request time
- *.
+ * Formerly the whole page frame: every page rendered its own side navigation and top bar, so both were
+ * rebuilt, and their data re-read, on every navigation. The frame now lives once in the root layout
+ * (`AppFrame`), so this only passes the page content through. Pages are unchanged: they still wrap their
+ * content in `AppShell`, and it still means "this page sits in the app".
  */
-export async function AppShell({
-  user,
-  searchHint = "Search pages, cases, cohorts, learners",
-  children,
-}: AppShellProps) {
-  const persona = personaFor(user.role);
-  const nav = await getNavData(user);
-
-  return (
-    <div className={s.app}>
-      <a href="#main" className="skipLink">
-        Skip to main content
-      </a>
-
-      <SideNav persona={persona} nav={nav} />
-
-      <div className={s.main}>
-        <TopBar
-          user={user}
-          persona={persona}
-          searchHint={searchHint}
-          notifications={nav.notifications}
-          primaryAction={nav.primaryAction}
-        />
-
-        <main id="main" className={s.surface}>
-          {children}
-        </main>
-      </div>
-    </div>
-  );
+export function AppShell({ children }: AppShellProps) {
+  return <>{children}</>;
 }
 
 export type PageHeaderProps = {
   eyebrow?: string;
   title: string;
+  /** A small circular badge beside the title, for a count the title is about ("Your Programs" 2). */
+  count?: number;
   lede?: ReactNode;
   actions?: ReactNode;
 };
 
-export function PageHeader({ eyebrow, title, lede, actions }: PageHeaderProps) {
+export function PageHeader({ eyebrow, title, count, lede, actions }: PageHeaderProps) {
   return (
     <div className={s.pageHead}>
       <div className={s.pageHeadText}>
         {eyebrow && <p className={s.eyebrow}>{eyebrow}</p>}
-        <h1 className={s.pageTitle}>{title}</h1>
+        <h1 className={s.pageTitle}>
+          {title}
+          {count !== undefined && (
+            <span className={s.titleCount}>
+              <span aria-hidden="true">{count}</span>
+              <span className="srOnly"> ({count})</span>
+            </span>
+          )}
+        </h1>
         {lede && <p className={s.pageLede}>{lede}</p>}
       </div>
       {actions && <div className={s.pageActions}>{actions}</div>}

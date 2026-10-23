@@ -1,0 +1,38 @@
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-6);
+  margin: 0 0 var(--s-5);
+  padding: var(--s-3) var(--s-4);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  column-gap: var(--s-2);
+  margin: 0;
+}
+
+.label {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.value {
+  margin: 0;
+  font-size: var(--t-h3);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}

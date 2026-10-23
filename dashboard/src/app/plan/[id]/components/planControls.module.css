@@ -160,6 +160,10 @@
   font-size: var(--t-caption);
   font-weight: var(--fw-semibold);
   white-space: nowrap;
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    border-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out);
 }
 
 .save-saved { color: var(--pass); background: var(--pass-surface); border-color: var(--pass-border); }
@@ -216,7 +220,10 @@
   font-size: var(--t-label);
   font-weight: var(--fw-medium);
   cursor: pointer;
-  transition: all var(--m-fast) var(--ease-out);
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    border-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out);
 }
 
 .sizeButton:hover:not(:disabled) { background: var(--brand-surface); border-color: var(--brand-border); }
@@ -299,7 +306,7 @@
 }
 
 .markerOk { color: var(--pass); flex: 0 0 auto; }
-.markerTodo { color: var(--text-disabled); flex: 0 0 auto; }
+.markerTodo { color: var(--text-muted); flex: 0 0 auto; }
 
 .markerName {
   flex: 1;
@@ -460,7 +467,7 @@
   align-items: center;
   gap: 2px;
   min-width: 0;
-  color: var(--text-disabled);
+  color: var(--text-muted);
   font-size: var(--t-overline);
   font-weight: var(--fw-semibold);
   text-align: center;

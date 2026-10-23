@@ -56,7 +56,7 @@
 .meta {
   margin-top: 2px;
   font-size: var(--t-caption);
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 /* ---------- states ---------- */

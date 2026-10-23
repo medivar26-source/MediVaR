@@ -23,6 +23,8 @@ import {
 import { categoryAverages, marksLost as marksLostFor, weeklyActivity } from "./rollups";
 import { visibleSessions } from "./scope";
 import { slugForCategory } from "@/lib/skills";
+import { getLearnerSessions } from "./learner-sessions";
+import { hasRun } from "./session-links";
 import type { Profile } from "@/lib/types";
 import { shortDate } from "@/lib/format";
 import type { SessionSummary, Verdict } from "@/lib/types";
@@ -159,8 +161,62 @@ export async function getPerformanceOverview(
     weakest: rankedCats[0],
     strongest: rankedCats[rankedCats.length - 1],
     procedures,
-    history: mine,
+    // Every session that ran, scored or not, so History matches the Sessions page.
+    history: (await getLearnerSessions(userId)).filter(hasRun),
   };
+}
+
+/* ============================================================
+   skills, by procedure
+   ============================================================ */
+
+/** The procedures that have a scoring model, and therefore report categories. */
+const PROCEDURES_WITH_SCORING = new Set(["tkr"]);
+
+export type SkillGroup = {
+  procedureId: string;
+  procedureName: string;
+  /** Scored sessions this learner has on the procedure. */
+  sessions: number;
+  /** Empty when the procedure has no scoring model, or no scored session yet. */
+  categories: { key: string; slug?: string; label: string; short: string; pct: number }[];
+  /** True when the procedure has report categories at all (today: total knee replacement). */
+  hasScoringModel: boolean;
+};
+
+/**
+ * Skill averages grouped by procedure. A group appears for each published procedure the learner has a
+ * scored session on. The categories are those the stored reports carry: only a procedure with a
+ * scoring model has any, and today that is total knee replacement alone, so nothing is invented
+ * for another procedure.
+ */
+export async function getSkillGroups(userId: string): Promise<SkillGroup[]> {
+  const scored = sessionsFor(userId).filter(
+    (s) => s.status === "completed" && s.totalScore !== undefined,
+  );
+
+  return PROCEDURES.filter((p) => p.status === "published").flatMap((p) => {
+    const runs = scored.filter((s) => CASE_BY_ID.get(s.caseId)?.procedureId === p.id);
+    if (runs.length === 0) return [];
+    const hasScoringModel = PROCEDURES_WITH_SCORING.has(p.id);
+    return [
+      {
+        procedureId: p.id,
+        procedureName: p.name,
+        sessions: runs.length,
+        hasScoringModel,
+        categories: hasScoringModel
+          ? categoryAverages(runs).map((c) => ({
+              key: c.key,
+              slug: slugForCategory(c.key),
+              label: c.label,
+              short: c.short,
+              pct: c.pct,
+            }))
+          : [],
+      },
+    ];
+  });
 }
 
 /* ============================================================
@@ -359,7 +415,7 @@ export async function getActivity(
   userId: string,
   weeks = 12,
 ): Promise<ActivityView> {
-  const mine = sessionsFor(userId).slice(0, 60);
+  const mine = (await getLearnerSessions(userId)).filter(hasRun).slice(0, 60);
   const weekly = weeklyActivity(mine, weeks);
   const active = weekly.filter((w) => w.sessions > 0);
   const weeklyCaption = active.length

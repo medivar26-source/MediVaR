@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getPlan } from "@/lib/data/plan";
 import { getCurrentUser } from "@/lib/session";
 import { TkrPlanShell } from "../components/TkrPlanShell";
@@ -15,7 +15,8 @@ export default async function TkrReviewPage({
   const plan = await getPlan(id);
   if (!plan) notFound();
 
-  if (plan.hasSession) redirect(`/cases/${plan.caseId}`);
+  // A plan that has been performed is sealed, so this page shows it read-only; the
+  // session and report pages link here as "Open plan".
 
   return (
     <TkrPlanShell

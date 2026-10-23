@@ -3,15 +3,24 @@ import { Banner } from "./Banner";
 /**
  * Says so, on the screens whose numbers are not yet read from saved records.
  *
- * Plans, sessions, reports, performance and activity are served from sample
- * data until the backend stores them. A screen that looks finished but is not
- * connected is a quiet lie, so it carries this note until it is.
+ * A screen that looks finished but is not connected is a quiet lie, so it carries
+ * this note until it is. Say which figures are sample data (and which are live) so
+ * the reader knows what to trust; with no arguments it gives the general statement.
  */
-export function DemoDataNote() {
+export function DemoDataNote({ sample, live }: { sample?: string; live?: string }) {
   return (
     <Banner tone="info" title="Preview data">
-      This screen is not connected to saved records yet, so the figures shown
-      are sample data and will not persist.
+      {sample ? (
+        <>
+          Sample data: {sample}. It is illustrative and will not persist.
+          {live ? <> Live: {live}.</> : null}
+        </>
+      ) : (
+        <>
+          This screen is not connected to saved records yet, so the figures shown
+          are sample data and will not persist.
+        </>
+      )}
     </Banner>
   );
 }

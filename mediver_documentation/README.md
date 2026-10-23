@@ -26,6 +26,7 @@ This documentation pack is the shared source-of-truth for the product requiremen
 | 18_OPEN_DECISIONS.md | Questions that remain unresolved |
 | 19_DEFINITION_OF_DONE.md | Completion and production gates |
 | 20_CLINICAL_AND_ASSESSMENT_CALCULATIONS.md | Calculation and assessment specification |
+| 22_PERSISTENT_PLANS_ATTEMPTS_REPORTS_DESIGN.md | Proposed (not applied) design for persistent plans, attempts and reports; proposed SQL in `proposals/` |
 
 ## Team ownership
 

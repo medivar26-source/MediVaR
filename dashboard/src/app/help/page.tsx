@@ -92,7 +92,7 @@ export default async function HelpPage({
                       ))}
                     </div>
                     {article.route && (
-                      <Link href={article.route} className={p.articleLink}>
+                      <Link prefetch={false} href={article.route} className={p.articleLink}>
                         Go to {article.route}
                       </Link>
                     )}

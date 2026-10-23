@@ -51,14 +51,14 @@ export default async function ProgramsPage({
         />
 
         <nav className={p.tabs} aria-label="Programs sections">
-          <Link
+          <Link prefetch={false}
             href="/programs"
             className={cx(p.tab, tab === "programs" && p.tabOn)}
             aria-current={tab === "programs" ? "page" : undefined}
           >
             Programs
           </Link>
-          <Link
+          <Link prefetch={false}
             href="/programs?tab=cohorts"
             className={cx(p.tab, tab === "cohorts" && p.tabOn)}
             aria-current={tab === "cohorts" ? "page" : undefined}
@@ -76,7 +76,7 @@ export default async function ProgramsPage({
           ) : (
             <div className={p.cards}>
               {cohorts.map((c) => (
-                <Link
+                <Link prefetch={false}
                   key={c.id}
                   href={`/programs/${c.program_id}/cohorts/${c.id}`}
                   className={p.card}
@@ -121,7 +121,7 @@ export default async function ProgramsPage({
 
             <div className={p.cards}>
               {programs.map((prog) => (
-                <Link
+                <Link prefetch={false}
                   key={prog.id}
                   href={`/programs/${prog.id}`}
                   className={p.card}
@@ -174,9 +174,9 @@ export default async function ProgramsPage({
   return (
     <AppShell user={user} searchHint='Try searching "programs"'>
       <PageHeader
-        eyebrow="Curriculum & Pathways"
         title="Your Programs"
-        lede="Training programs you are actively enrolled in. Track your curriculum, practice cases, and clinical progress."
+        count={programs.length > 0 ? programs.length : undefined}
+        lede="Open a program to see its cases and start planning."
       />
 
       {programs.length === 0 ? (
@@ -185,17 +185,9 @@ export default async function ProgramsPage({
         </EmptyState>
       ) : (
         <>
-          <StatRow>
-            <StatCard
-              label="Enrolled programs"
-              value={String(programs.length)}
-              variant="dark"
-            />
-          </StatRow>
-
           <div className={p.cards}>
             {programs.map((prog) => (
-              <Link
+              <Link prefetch={false}
                 key={prog.id}
                 href={`/programs/${prog.id}`}
                 className={p.card}
@@ -205,7 +197,7 @@ export default async function ProgramsPage({
                 </div>
 
                 <p className={p.cardBody}>
-                  {prog.description || "Primary TKA training and simulation pathway."}
+                  {prog.description || "Primary TKA training and simulation."}
                 </p>
 
                 {prog.cohort_name && (

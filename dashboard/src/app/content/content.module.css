@@ -17,7 +17,7 @@
 }
 
 .titleId {
-  color: var(--text-disabled);
+  color: var(--text-muted);
   font-size: var(--t-overline);
   font-family: var(--font-mono);
 }
@@ -181,6 +181,34 @@
 }
 
 .imgPending {
-  color: var(--text-disabled);
+  color: var(--text-muted);
   font-size: var(--t-overline);
+}
+
+/* ---------- procedures: the cases under a procedure ---------- */
+
+.caseGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--s-3);
+  margin: var(--s-3) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps {
+  margin-top: var(--s-4);
+  border-top: var(--bw) solid var(--divider);
+  padding-top: var(--s-3);
+}
+
+.stepsSummary {
+  cursor: pointer;
+  font-size: var(--t-label);
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+}
+
+.stepsSummary:hover {
+  color: var(--ink);
 }

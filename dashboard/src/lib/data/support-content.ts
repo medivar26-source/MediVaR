@@ -60,7 +60,7 @@ Wi-Fi must be provisioned before the kiosk lock is applied, because the user can
     title: "A session stopped part-way through",
     body: `Nothing is lost. Each scene is written as it completes, so the scenes already performed are recorded and visible on the session.
 
-There is no resume. One plan backs exactly one session, and a plan freezes the moment its session starts — it is the record of what was performed, so it cannot be edited or run a second time. To attempt the case again, plan it again: the seven steps are quick the second time and the new plan is a clean contract to be scored against.
+There is no resume. One plan backs exactly one session, and a plan freezes the moment its session starts — it is the record of what was performed, so it cannot be edited or run a second time. To attempt the case again, plan it again: the four planning pages are quick the second time and the new plan is a clean contract to be scored against.
 
 An interrupted session keeps whatever it recorded. It is scored only when a headset reports it finished, so an abandoned run does not produce a report.`,
     route: "/sessions",
@@ -143,10 +143,10 @@ export const LIBRARY_RESOURCES: LibrarySeed[] = [
   {
     slug: "preoperative-planning",
     kind: "guide",
-    title: "Pre-operative planning — the seven steps",
+    title: "Pre-operative planning — the four pages",
     summary:
-      "What each planning step asks and the time budget it is measured against. The differentials are the same lists the planning screens offer.",
-    derivedFrom: "plan steps · plan step options",
+      "Assessment, Tibial Planning, Femoral Planning, then Review & Send to VR: what is measured on each page, the fit thresholds, and what unlocks the next page.",
+    derivedFrom: "V1 planning workflow specification",
   },
   {
     slug: "scoring",
@@ -174,25 +174,182 @@ export const LIBRARY_RESOURCES: LibrarySeed[] = [
   },
 ];
 
-/** Par and maximum seconds for each of the seven planning steps. */
-export const PLAN_STEP_META = [
-  { step: 1, title: "Case history", budgetLabel: "45–60 s", parTimeS: 60, maxTimeS: 150 },
-  { step: 2, title: "Imaging review", budgetLabel: "1.5–2 min", parTimeS: 120, maxTimeS: 300 },
-  { step: 3, title: "Deformity measurement", budgetLabel: "1 min", parTimeS: 60, maxTimeS: 150 },
-  { step: 4, title: "Alignment planning", budgetLabel: "1 min", parTimeS: 60, maxTimeS: 150 },
-  { step: 5, title: "Implant selection", budgetLabel: "45–60 s", parTimeS: 60, maxTimeS: 150 },
-  { step: 6, title: "Risk & strategy", budgetLabel: "30–45 s", parTimeS: 45, maxTimeS: 120 },
-  { step: 7, title: "Plan summary", budgetLabel: "15–20 s", parTimeS: 20, maxTimeS: 60 },
-];
-
-/** Which planning step each option field belongs to. */
-export const FIELD_STEP: Record<string, number> = {
-  diagnosis: 1,
-  kl_grade: 2,
-  compartment: 2,
-  design: 5,
-  femoral_size: 5,
-  tibial_tray_size: 5,
-  pe_insert_mm: 5,
-  tight_side: 6,
+/**
+ * The four V1 planning pages, as written in *Mediver User Planning Workflow V1*
+ * (the authoritative specification). The wording of the measurements, thresholds and
+ * gates is the specification's; nothing here is added to it. The page ids and titles
+ * are `V1_TKR_STEPS`, so this article cannot name a page the planner does not have.
+ * The operative sequence (P0–P11) is a different list and is not described here.
+ */
+export type PlanningMeasurement = {
+  /** The abbreviation the planner shows, where the specification gives one. */
+  abbreviation?: string;
+  name: string;
+  view: "FLAP" | "KLAT";
+  /** What the surgeon clicks, in order. */
+  points: string;
+  /** What is calculated. */
+  definition: string;
 };
+
+export type PlanningFitMetric = { metric: string; threshold: string };
+
+export type PlanningPageDoc = {
+  id: "assessment" | "tibial" | "femoral" | "review";
+  objective: string;
+  measurements: PlanningMeasurement[];
+  /** Component sizes the page offers, when it sizes a component. */
+  sizes?: string;
+  fitMetrics?: PlanningFitMetric[];
+  /** What the page asks of the surgeon before the next page opens. */
+  gate: string;
+  notes?: string[];
+};
+
+export const PLANNING_PAGES: PlanningPageDoc[] = [
+  {
+    id: "assessment",
+    objective:
+      "Establish the baseline anatomical axes and joint geometry from calibrated 2D radiographs. Complete exactly six required measurements across two radiographic views.",
+    measurements: [
+      {
+        abbreviation: "MAD",
+        name: "Mechanical axis deviation",
+        view: "FLAP",
+        points: "Femoral head centre, knee joint centre, ankle joint centre",
+        definition:
+          "Perpendicular distance (mm) from the knee joint centre to the mechanical axis (femoral head to ankle centre).",
+      },
+      {
+        abbreviation: "AMA",
+        name: "Anatomical–mechanical angle",
+        view: "FLAP",
+        points: "Proximal femoral shaft point, distal femoral shaft point",
+        definition:
+          "Angle (°) between the femoral anatomical axis, defined by the two shaft points, and the femoral mechanical axis (femoral head to knee centre).",
+      },
+      {
+        abbreviation: "mHKA",
+        name: "Mechanical hip–knee–ankle angle",
+        view: "FLAP",
+        points: "Femoral head centre, knee joint centre, ankle joint centre",
+        definition:
+          "Included angle (°) between the femoral mechanical axis (hip to knee) and the tibial mechanical axis (knee to ankle). Shown with a Varus / Valgus designation.",
+      },
+      {
+        abbreviation: "MPTA",
+        name: "Medial proximal tibial angle",
+        view: "FLAP",
+        points:
+          "Medial tibial plateau point, lateral tibial plateau point, proximal tibial shaft point, distal tibial shaft point",
+        definition:
+          "Medial angle (°) between the tibial plateau / joint line and the tibial mechanical axis defined by the two shaft points.",
+      },
+      {
+        abbreviation: "LDFA",
+        name: "Lateral distal femoral angle",
+        view: "FLAP",
+        points: "Medial distal femoral point, lateral distal femoral point",
+        definition:
+          "Lateral angle (°) between the distal femoral joint line and the femoral mechanical axis (femoral head to knee centre).",
+      },
+      {
+        abbreviation: "PTS",
+        name: "Posterior tibial slope",
+        view: "KLAT",
+        points:
+          "Two points along the proximal tibial anterior cortex, then one point along the tibial plateau tangent line",
+        definition: "Slope calculated relative to the longitudinal shaft line.",
+      },
+    ],
+    gate:
+      "When all six measurements show a green check, Continue to Tibial Planning becomes active. Continuing locks the assessment values.",
+    notes: [
+      "FLAP is the full-length standing anteroposterior radiograph (the default view); KLAT is the knee lateral radiograph.",
+      "Anatomical landmarks can be reused once placed, so a point is not placed twice.",
+      "Implant overlays scale from the radio-opaque calibration marker (pixels per millimetre).",
+    ],
+  },
+  {
+    id: "tibial",
+    objective:
+      "Determine the optimal tibial component size and verify 2D anatomical fit (coverage and overhang) using calibrated CAD template overlays on the AP and lateral radiographs.",
+    measurements: [
+      {
+        name: "Tibial AP dimension",
+        view: "KLAT",
+        points: "Measured on the lateral radiograph",
+        definition:
+          "Anterior–posterior dimension of the proximal tibia, used for tibial component sizing.",
+      },
+      {
+        name: "Tibial ML dimension",
+        view: "FLAP",
+        points: "Measured on the AP radiograph",
+        definition:
+          "Medial–lateral dimension of the proximal tibia, used for tibial component sizing.",
+      },
+    ],
+    sizes:
+      "Size 1 to Size 6. The size that best matches the measured dimensions is highlighted as suggested; choosing any size swaps the template overlay straight away.",
+    fitMetrics: [
+      { metric: "Cortical coverage", threshold: "90.0% or more" },
+      { metric: "Medial overhang", threshold: "1.0 mm or less" },
+      { metric: "Lateral overhang", threshold: "1.0 mm or less" },
+      { metric: "Overall fit status", threshold: "Acceptable fit when all thresholds are met" },
+    ],
+    gate:
+      "Confirm Tibial Component saves the selected size and the 2D X / Y offset, and enables Continue to Femoral Planning.",
+    notes: [
+      "The fit metrics update live as the template is dragged or the size changes.",
+      "If overhang exceeds 1.5 mm the border turns amber or red with a caution tag.",
+    ],
+  },
+  {
+    id: "femoral",
+    objective:
+      "Select the femoral component size and verify anatomical fit, using the same interaction model as tibial planning.",
+    measurements: [
+      {
+        name: "Femoral AP dimension",
+        view: "KLAT",
+        points: "Measured on the lateral radiograph",
+        definition:
+          "Anterior–posterior dimension of the distal femur, used for femoral component sizing.",
+      },
+      {
+        name: "Femoral ML dimension",
+        view: "FLAP",
+        points: "Measured on the AP radiograph",
+        definition:
+          "Medial–lateral dimension of the distal femur, used for femoral component sizing.",
+      },
+    ],
+    sizes: "Size 1 to Size 8, with a size suggested from the measured dimensions.",
+    fitMetrics: [
+      { metric: "AP coverage", threshold: "Reported live" },
+      { metric: "ML coverage", threshold: "Reported live" },
+      {
+        metric: "Anterior notching risk",
+        threshold: "Checked on the lateral view against the anterior condylar flush line",
+      },
+      { metric: "Fit status", threshold: "Acceptable fit or a caution" },
+    ],
+    gate: "Confirm Femoral Component saves the selection and enables Continue to Review.",
+    notes: [
+      "Toggle to the KLAT view to check the anterior condylar flush line and for anterior notching.",
+    ],
+  },
+  {
+    id: "review",
+    objective:
+      "A read-only summary of the completed assessment measurements and selected implants before the plan is locked and sent to the VR simulation.",
+    measurements: [],
+    gate:
+      "Back to Planning returns to the tibial or femoral page to change a size. Lock Plan & Send to VR asks for confirmation (once locked, parameters cannot be modified in the 2D software), then serialises the patient data, measurements and implant sizes into the VR plan payload.",
+    notes: [
+      "Three cards are shown side by side: Patient & Radiographs, Assessment Measurements, Component Selections.",
+      "In this version the plan is sealed and held for pairing; headset transfer itself is not connected yet.",
+    ],
+  },
+];

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { AppShell, PageHeader } from "@/components/shell";
 import { Button, Card, CardHeader } from "@/components/ui";
 import {
@@ -9,6 +9,7 @@ import {
   getSessionProgress,
   getSessionScenes,
 } from "@/lib/data/sessions";
+import { canViewSession, sessionLinks } from "@/lib/data/session-links";
 import { clock, shortDate, titleCase } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { LiveMirror } from "./LiveMirror";
@@ -20,8 +21,9 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const session = await getSession(id);
-  return { title: session ? `Session — ${session.caseTitle}` : "Session" };
+  const [session, user] = await Promise.all([getSession(id), getCurrentUser()]);
+  // The title names the case, so it follows the same rule as the page: not for a session the viewer may not open.
+  return { title: session && canViewSession(user, session) ? `Session — ${session.caseTitle}` : "Session" };
 }
 
 /**
@@ -49,9 +51,11 @@ export default async function SessionPage({
   const user = await getCurrentUser();
 
   const session = await getSession(id);
-  if (!session) notFound();
+  if (!session || !canViewSession(user, session)) notFound();
 
-  if (session.totalScore !== undefined) redirect(`/sessions/${id}/report`);
+  // The session, its case, its plan and its report are four pages. A finished session
+  // used to jump straight to its report; it now stays here and links to each one that exists.
+  const links = sessionLinks(session);
 
   const [progress, scenes, results] = await Promise.all([
     getSessionProgress(id),
@@ -72,9 +76,26 @@ export default async function SessionPage({
         title={session.caseTitle}
         lede={`${titleCase(session.mode)} · ${titleCase(session.difficulty)} · ${session.design} · ${titleCase(session.fixation)}`}
         actions={
-          <Button variant="secondary" href="/sessions">
-            All sessions
-          </Button>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            {links.case && (
+              <Button variant="secondary" href={links.case}>
+                Back to case
+              </Button>
+            )}
+            {links.plan && (
+              <Button variant="secondary" href={links.plan}>
+                Open plan
+              </Button>
+            )}
+            {links.report && (
+              <Button variant="primary" href={links.report}>
+                View report
+              </Button>
+            )}
+            <Button variant="ghost" href="/sessions">
+              All sessions
+            </Button>
+          </div>
         }
       />
 
@@ -129,25 +150,38 @@ export default async function SessionPage({
             title={
               session.status === "aborted"
                 ? "This session was interrupted"
-                : session.status === "completed"
-                  ? "This session has no report yet"
-                  : "This session has not started"
+                : links.report
+                  ? "This session has a report"
+                  : session.status === "completed"
+                    ? "This session has no report yet"
+                    : "This session has not started"
             }
             subtitle={
               session.status === "aborted"
                 ? "The headset stopped before the operation finished, so no report was generated. The scenes it did record are above."
-                : session.status === "completed"
-                  ? "The operation finished, but the report for this session has not been generated. The scenes it recorded are above."
-                  : "A PIN was issued but no headset has redeemed it yet."
+                : links.report
+                  ? "The operation finished and was scored. The scenes it recorded are above; the report has the marks and the planned-versus-achieved comparison."
+                  : session.status === "completed"
+                    ? "The operation finished, but the report for this session has not been generated. The scenes it recorded are above."
+                    : "A PIN was issued but no headset has redeemed it yet."
             }
           />
           <div className={s.footActions}>
-            <Button variant="secondary" href={`/plan/${session.planId}`}>
-              Open the plan
-            </Button>
-            <Button variant="ghost" href={`/cases/${session.caseId}`}>
-              Back to the case
-            </Button>
+            {links.report && (
+              <Button variant="primary" href={links.report}>
+                View report
+              </Button>
+            )}
+            {links.plan && (
+              <Button variant="secondary" href={links.plan}>
+                Open the plan
+              </Button>
+            )}
+            {links.case && (
+              <Button variant="ghost" href={links.case}>
+                Back to the case
+              </Button>
+            )}
           </div>
         </Card>
       )}

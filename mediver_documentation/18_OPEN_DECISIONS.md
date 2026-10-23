@@ -71,3 +71,9 @@ All other open clinical decisions in this file remain open until explicitly reso
 Authentication is an early implementation priority. Confirm the exact authentication provider and integration model before implementation is treated as final. This includes sign-in method, session/token handling, logout/revocation, password reset policy, account provisioning, and role/institution claims or lookup.
 
 Supabase is confirmed as the project's database platform, but Supabase Auth has not been separately confirmed as the authentication provider.
+
+## Learner Mode review (2026-10-20): open items
+
+- **"VR Dep" report structure — BLOCKED.** The phrase appears only in *Learner Mode Review (20-10-2026)* ("revise the report structure for VR Dep"). It is not defined in the code, backend, migrations or any other document. Its meaning (the post-session report, the "Review & Send to VR" record, or something else) and its required contents are unconfirmed. The report structure is unchanged until this is answered.
+- **Persistent plans, attempts and reports.** Proposed in `22_PERSISTENT_PLANS_ATTEMPTS_REPORTS_DESIGN.md`; not applied. Awaiting approval of the tables, personal-case delete behaviour, the scorer and its category/pass-mark source, whether PINs move to a table, and JSONB-versus-normalised planning data.
+- **Operative sequence (P0–P11).** No newer specification than the current seed; kept separate from the four V1 planning pages. The TKR walkthrough still says "eleven operative parts" for a list of twelve groupings (P0–P11); wording not changed without a decision.

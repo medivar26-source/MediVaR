@@ -257,6 +257,17 @@ export const V1_TKR_STEPS = [
 
 export type V1TkrStepId = (typeof V1_TKR_STEPS)[number]["id"];
 
+/**
+ * Where a draft plan is, in the workflow's own words: "Step 2 of 4 · Tibial Planning".
+ * `answered` is how many steps are done; a plan with another step count (an older
+ * draft) keeps the plain "Step n of m" because its steps are not these four.
+ */
+export function planStepLabel(answered: number, total: number): string {
+  const n = Math.max(1, Math.min(answered + 1, total));
+  const step = total === V1_TKR_STEPS.length ? V1_TKR_STEPS[n - 1] : undefined;
+  return step ? `Step ${n} of ${total} · ${step.title}` : `Step ${n} of ${total}`;
+}
+
 /** What the seven steps accumulate. Each step owns one branch of it. */
 export type PlanPayload = {
   workflow?: "tkr";
@@ -340,9 +351,10 @@ export type PlanCase = {
   id: string;
   title: string;
   summary?: string;
-  side: Side;
+  /** Absent when the case does not record one; a plan cannot be made until it does (see `planningBlocker`). */
+  side?: Side;
   difficulty: Difficulty;
-  pathologyLabel: string;
+  pathologyLabel?: string;
   patient: { label: string; value: string }[];
   narrative: { label: string; value: string }[];
   imaging: { view: string; label: string; src?: string; calibration?: V1Calibration }[];
@@ -391,4 +403,20 @@ export function furthestOpenStep(gates: StepGate[]): number {
     if (!gateFor(gates, step).passed) return step;
   }
   return LAST_STEP;
+}
+
+/**
+ * The operative knee for a plan: the case's recorded side, else the side already sealed into the
+ * plan's VR payload (a plan locked before this rule keeps the side it was locked with). Null when
+ * neither exists; nothing is assumed.
+ */
+export function planOperativeSide(plan: {
+  case: { side?: string };
+  payload: { v1_vr_payload?: { knee_side?: "RIGHT" | "LEFT" } };
+  lockedVersion?: { payload: { v1_vr_payload?: { knee_side?: "RIGHT" | "LEFT" } } };
+}): "RIGHT" | "LEFT" | null {
+  const fromCase = plan.case.side?.trim().toLowerCase();
+  if (fromCase === "left") return "LEFT";
+  if (fromCase === "right") return "RIGHT";
+  return plan.lockedVersion?.payload.v1_vr_payload?.knee_side ?? plan.payload.v1_vr_payload?.knee_side ?? null;
 }

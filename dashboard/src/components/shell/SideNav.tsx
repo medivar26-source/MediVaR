@@ -11,6 +11,7 @@ import {
   PanelLeftClose,
   Settings,
   Stethoscope,
+  X,
 } from "lucide-react";
 import { cx } from "@/lib/cx";
 import { sectionForPath, sectionsForPersona } from "@/lib/nav";
@@ -102,7 +103,14 @@ function writeCapsule(id: SectionId, closed: boolean) {
   writeStored(CAPSULES_KEY, JSON.stringify(next));
 }
 
-export function SideNav(props: { persona: Persona; nav: NavData }) {
+type SideNavProps = {
+  persona: Persona;
+  nav: NavData;
+  /** Set when the menu is shown as the phone drawer: always expanded, with a close button in place of collapse. */
+  drawer?: { onClose: () => void };
+};
+
+export function SideNav(props: SideNavProps) {
   return (
     <Suspense fallback={<aside className={s.sidebar} aria-label="Main menu" />}>
       <SideNavContent {...props} />
@@ -110,11 +118,12 @@ export function SideNav(props: { persona: Persona; nav: NavData }) {
   );
 }
 
-function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
+function SideNavContent({ persona, nav, drawer }: SideNavProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const sections = sectionsForPersona(persona, nav);
-  const collapsed = useSyncExternalStore(subscribe, readCollapsed, () => false);
+  const storedCollapsed = useSyncExternalStore(subscribe, readCollapsed, () => false);
+  const collapsed = !drawer && storedCollapsed;
   const capsulesRaw = useSyncExternalStore(
     subscribe,
     () => readStored(CAPSULES_KEY),
@@ -151,6 +160,8 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
     }
     // The skill pages live below /performance, so the overview matches only itself.
     if (targetBase === "/performance") return pathname === "/performance";
+    // Progress: its tabs, and the per-skill pages a tab links to.
+    if (targetBase === "/progress") return pathname === "/progress" || pathname.startsWith("/performance/");
 
     return pathname === targetBase || pathname.startsWith(targetBase + "/");
   };
@@ -159,7 +170,7 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
     const on = isCurrent(item.href);
     return (
       <div key={item.href + item.label}>
-        <Link
+        <Link prefetch={false}
           href={item.href}
           className={cx(s.item, depth > 0 && s.child, on && s.itemOn)}
           aria-current={on ? "page" : undefined}
@@ -212,7 +223,7 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
         </div>
 
         <nav className={s.collapsedNav} aria-label="Sections">
-          <Link
+          <Link prefetch={false}
             href="/"
             className={cx(s.railBtn, homeOn && s.railBtnHere)}
             aria-label="Dashboard"
@@ -257,27 +268,39 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
   return (
     <aside className={s.sidebar} aria-label="Main menu">
       <div className={s.brand}>
-        <Link href="/" className={s.logo} aria-label="MediVeR XR home" title="Home">
+        <Link prefetch={false} href="/" className={s.logo} aria-label="MediVeR XR home" title="Home">
           <Stethoscope className={s.logoGlyph} strokeWidth={2} />
         </Link>
-        <Link href="/" className={s.brandName} title="Home">
+        <Link prefetch={false} href="/" className={s.brandName} title="Home">
           MediVeR XR
         </Link>
-        <button
-          type="button"
-          className={s.collapseBtn}
-          onClick={() => writeCollapsed(true)}
-          aria-label="Collapse menu"
-          title="Collapse menu"
-        >
-          <PanelLeftClose width={18} height={18} strokeWidth={1.75} />
-        </button>
+        {drawer ? (
+          <button
+            type="button"
+            className={s.collapseBtn}
+            onClick={drawer.onClose}
+            aria-label="Close menu"
+            title="Close menu"
+          >
+            <X width={18} height={18} strokeWidth={1.75} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={s.collapseBtn}
+            onClick={() => writeCollapsed(true)}
+            aria-label="Collapse menu"
+            title="Collapse menu"
+          >
+            <PanelLeftClose width={18} height={18} strokeWidth={1.75} />
+          </button>
+        )}
       </div>
 
       <nav className={s.sidebarScroll} aria-label="Main menu">
         {/* The dashboard is its own page, not a section */}
         <div className={s.capsule}>
-          <Link
+          <Link prefetch={false}
             href="/"
             className={cx(s.capsuleBtn, homeOn && s.capsuleBtnHere)}
             aria-current={homeOn ? "page" : undefined}
@@ -290,7 +313,8 @@ function SideNavContent({ persona, nav }: { persona: Persona; nav: NavData }) {
 
         {sections.map((section) => {
           const isOpen = isCapsuleOpen(section.id);
-          const bodyId = `capsule-${section.id}`;
+          // The desktop sidebar stays in the page while the drawer is open, so the drawer's ids differ.
+          const bodyId = `${drawer ? "drawer-" : ""}capsule-${section.id}`;
           const here = section.id === routeSection;
           return (
             <div className={s.capsule} key={section.id}>

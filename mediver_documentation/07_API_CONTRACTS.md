@@ -76,6 +76,19 @@ GET    /api/v1/cases/{id}/preview       (Instructor/Admin: previews exact saniti
 POST   /api/v1/cases/{id}/upload-radiograph (Instructor/Admin: multipart upload to private storage + dynamic calibration derivation)
 ```
 
+**Case list response (`GET /cases`) — card metadata (Learner Mode review, 2026-10-20):** each item carries, besides its id, name, difficulty, description, status, version, version pointers and `program_ids`, three optional fields and the procedure's name:
+
+| Field | Type | Source | When null |
+|---|---|---|---|
+| `procedure_id` | UUID \| null | `cases.procedure_id` | never for a case created through the API; null only for legacy rows |
+| `procedure_name` | string \| null | `procedures.name` | when `procedure_id` is null. Included because learners cannot call `GET /procedures` (instructor/admin only) but still need to group cases by procedure |
+| `pathology_label` | string \| null | `case_versions.pathology_label` | the version records none |
+| `side` | `"left"` \| `"right"` \| null | `case_versions.side` | the version records none |
+
+Which version is read: for a **learner**, the case's published version (the list already returns only cases that have one); for an **instructor/admin**, the published version, else the draft they are working on. A client must treat null as "not recorded" and show it as unavailable. It must never substitute a default (the dashboard's `lib/case-meta.ts` does this). The change is additive: existing fields, filters, permissions and ordering are unchanged, and no new endpoint, table or migration is involved.
+
+**Case detail and the procedure.** `GET /cases/{id}` returns `procedure_id` but not the procedure's name. The dashboard takes the name from the case list (`procedure_name`, above), which lists the same case, and shows "Procedure not recorded" if it cannot. It never assumes a procedure. The planner implements the V1 total knee arthroplasty workflow only, so a case whose procedure is unknown or is not total knee replacement is not planned (`procedureBlocker`, `lib/case-meta.ts`).
+
 **Implementation status & Notes:** `GET /cases`, `POST /cases`,
 `GET /cases/{id}`, `PUT /cases/{id}`, `PATCH /cases/{id}`, and `POST /cases/{id}/publish` are implemented
 (`backend/api/v1/endpoints/cases.py`), plus `GET /procedures` for procedure catalog and picker.

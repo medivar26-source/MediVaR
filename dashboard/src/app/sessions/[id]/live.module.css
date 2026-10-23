@@ -159,7 +159,7 @@
 }
 
 .sceneState[data-state="pending"] {
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 .sceneState[data-state="pending"]::after {

@@ -167,3 +167,8 @@ Retain the established planning functions from the supplied specification. The r
 
 ### Review & Send
 Retain the previous review content, including assessment, tibial and femoral planning summaries, verification/readiness information and final transfer action. The final plan sent to VR is the locked planning version.
+
+
+## Operative side is a required input (2026-10-20)
+
+Planning does not assume the operative knee. The case must record `left` or `right`; if it does not, the planner does not open and a plan cannot be sealed for the headset. The only exception is a plan sealed earlier, which keeps the `knee_side` already in its VR payload. Pathology is displayed but is not an input to the plan, so a missing pathology does not block planning. No clinical default is supplied for either.

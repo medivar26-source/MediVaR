@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Copy, Lock, AlertCircle } from "lucide-react";
 import { sealTkrPlan } from "@/app/actions";
 import { Button } from "@/components/ui";
-import type { PlanDetail, V1VrPayload } from "@/lib/plan";
+import { planOperativeSide, type PlanDetail, type V1VrPayload } from "@/lib/plan";
 import { SCAN_VIEW_NAME, resolvePlanScales } from "@/lib/data/scan_scale";
 
 function fitStatusColor(status?: string): string {
@@ -58,13 +58,13 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
   ];
 
   const identity = resolvePatientIdentity(plan.caseId, plan.case.patient);
-  const kneeSide: "RIGHT" | "LEFT" = (plan.case.side || "right").toUpperCase() as "RIGHT" | "LEFT";
+  const kneeSide = planOperativeSide(plan);
 
   // Exact V1 VR Payload schema matching Pages 6-7 of PDF
   const vrPayload: V1VrPayload | null =
     plan.lockedVersion?.payload.v1_vr_payload ||
     plan.payload.v1_vr_payload ||
-    (canSealPlan && assessment
+    (canSealPlan && assessment && kneeSide
       ? buildV1VrPayload({ patientId: identity.patientId, kneeSide, assessment, tibial: tibial!, femoral: femoral! })
       : null);
 
@@ -154,11 +154,11 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.875rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "var(--text-muted)" }}>Patient ID:</span>
-              <strong>{vrPayload?.patient_id ?? plan.caseId}</strong>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
+              <span style={{ color: "var(--text-muted)", whiteSpace: "nowrap" }}>Patient ID:</span>
+              <strong style={{ textAlign: "right", overflowWrap: "anywhere" }}>{vrPayload?.patient_id ?? plan.caseId}</strong>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
               <span style={{ color: "var(--text-muted)" }}>Operative Knee:</span>
               <span
                 style={{
@@ -170,16 +170,16 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
                   fontSize: "0.75rem",
                 }}
               >
-                {kneeSide} KNEE
+                {kneeSide ? `${kneeSide} KNEE` : "SIDE NOT RECORDED"}
               </span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
               <span style={{ color: "var(--text-muted)" }}>Procedure:</span>
               <span>Primary Total Knee Arthroplasty</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "var(--text-muted)" }}>Calibration Marker:</span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
+              <span style={{ color: "var(--text-muted)", whiteSpace: "nowrap" }}>Calibration Marker:</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem", textAlign: "right" }}>
                 {`AP ${scanScales.FLAP.mmPerPx.toFixed(3)} · Lateral ${scanScales.KLAT.mmPerPx.toFixed(3)} mm/px`}
                 {unverifiedViews.length > 0 && !isLocked ? " (estimated)" : ""}
               </span>

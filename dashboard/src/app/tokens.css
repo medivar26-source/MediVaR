@@ -211,6 +211,8 @@
   --m-xslow: 700ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  /* Panels that slide in from an edge (the phone menu): quick start, long settle. */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
   /* ---------- elevation: soft and low, never dramatic ---------- */
   --e-0: none;

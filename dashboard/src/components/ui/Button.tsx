@@ -60,7 +60,7 @@ export function Button({
 
   if (href && !disabled && !loading) {
     return (
-      <Link href={href} className={classes} aria-label={rest["aria-label"]}>
+      <Link prefetch={false} href={href} className={classes} aria-label={rest["aria-label"]}>
         {Icon && <Icon className={s.icon} strokeWidth={2} aria-hidden="true" />}
         {children}
         {TrailingIcon && (

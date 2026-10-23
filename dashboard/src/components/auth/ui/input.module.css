@@ -9,7 +9,7 @@
   padding-block: 0.25rem;
   font-size: 1rem;
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  transition: color 0.15s, box-shadow 0.15s;
+  transition: color var(--m-fast) var(--ease-out), box-shadow var(--m-fast) var(--ease-out);
   outline: none;
 }
 

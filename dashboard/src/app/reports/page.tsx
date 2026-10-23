@@ -1,125 +1,38 @@
 import type { Metadata } from "next";
-import { FileText } from "lucide-react";
+import { redirect } from "next/navigation";
 import { AppShell, Breadcrumbs, PageHeader } from "@/components/shell";
-import {
-  Badge,
-  Button,
-  EmptyState,
-  Table,
-  TBody,
-  Td,
-  Th,
-  THead,
-  Tr,
-  DemoDataNote,
-} from "@/components/ui";
+import { DemoDataNote } from "@/components/ui";
 import { getReportsList } from "@/lib/data/performance";
-import { clock, shortDate, titleCase } from "@/lib/format";
-import { getCurrentUser } from "@/lib/session";
-import { PASS_MARK } from "@/lib/types";
-
 import { personaFor } from "@/lib/roles";
+import { getCurrentUser } from "@/lib/session";
+import { ReportsView } from "./ReportsView";
 
 export const metadata: Metadata = { title: "Reports" };
 
+/**
+ * Every generated report an instructor or administrator may read. A learner's reports are a tab of
+ * Progress (`/progress?tab=reports`); this address sends them there, so old links keep working.
+ */
 export default async function ReportsPage() {
   const user = await getCurrentUser();
-  const persona = personaFor(user.role);
+  if (personaFor(user.role) === "learner") redirect("/progress?tab=reports");
+
   const reports = await getReportsList(user);
 
-  // The scope decides whose reports are in the list; a name column only earns its
-  // width when the viewer is an instructor/admin looking at multiple residents.
-  const showLearner = persona !== "learner" && reports.some((r) => r.userId !== user.id);
+  // The scope decides whose reports are in the list; a name column only earns its width when the
+  // viewer is looking across more than their own sessions.
+  const showLearner = reports.some((r) => r.userId !== user.id);
 
   return (
     <AppShell user={user} searchHint='Try searching "reports"'>
-      <Breadcrumbs
-        items={[
-          { label: persona === "learner" ? "Overview" : "Reports" },
-          { label: persona === "learner" ? "Your Assessment Reports" : "Global Reports" },
-        ]}
-      />
+      <Breadcrumbs items={[{ label: "Reports" }, { label: "Global Reports" }]} />
 
       <PageHeader
-        title={persona === "learner" ? "Your Assessment Reports" : "Global Reports"}
-        lede={
-          persona === "learner"
-            ? "Every generated surgical case evaluation report for your completed sessions. Review detailed scores, errors, and surgical accuracy."
-            : "Every generated surgical case report you may read. A report exists once its session completes and the database scores it."
-        }
+        title="Global Reports"
+        lede="Every generated surgical case report you may read. A report exists once its session completes and the database scores it."
       />
       <DemoDataNote />
-
-
-      {reports.length === 0 ? (
-        <EmptyState icon={FileText} title="No reports yet"
-            action={persona === "learner" ? <Button variant="primary" href="/cases">Start a case</Button> : undefined}>
-          {persona === "learner"
-            ? "An assessment report is generated the moment you complete a simulation session in the headset. Finish an attempt to review your evaluation here."
-            : "A report is generated the moment a session completes. Finish a session and its report appears here."}
-        </EmptyState>
-      ) : (
-        <Table label="Generated reports">
-          <THead>
-            <Tr>
-              <Th>Date</Th>
-              {showLearner && <Th>Learner</Th>}
-              <Th>Case</Th>
-              <Th>Mode</Th>
-              <Th>Difficulty</Th>
-              <Th numeric>Duration</Th>
-              <Th numeric>Score</Th>
-              <Th>Outcome</Th>
-              <Th>
-                <span className="srOnly">Open</span>
-              </Th>
-            </Tr>
-          </THead>
-          <TBody>
-            {reports.map((report) => {
-              const passMark = PASS_MARK[report.difficulty];
-              const scored = report.totalScore !== undefined;
-              return (
-                <Tr key={report.id}>
-                  <Td head>{shortDate(report.endedAt ?? report.startedAt)}</Td>
-                  {showLearner && <Td>{report.learnerName ?? "—"}</Td>}
-                  <Td>{report.caseTitle}</Td>
-                  <Td>{titleCase(report.mode)}</Td>
-                  <Td>{titleCase(report.difficulty)}</Td>
-                  <Td numeric>{clock(report.durationS)}</Td>
-                  <Td numeric>{scored ? report.totalScore : "—"}</Td>
-                  <Td>
-                    {scored && (
-                      <Badge
-                        status={
-                          (report.totalScore as number) >= passMark &&
-                          (report.criticalErrors ?? 0) < 3
-                            ? "pass"
-                            : "fail"
-                        }
-                      >
-                        {(report.totalScore as number) >= passMark &&
-                        (report.criticalErrors ?? 0) < 3
-                          ? "Passed"
-                          : "Not passed"}
-                      </Badge>
-                    )}
-                  </Td>
-                  <Td>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      href={`/sessions/${report.id}/report`}
-                    >
-                      Report
-                    </Button>
-                  </Td>
-                </Tr>
-              );
-            })}
-          </TBody>
-        </Table>
-      )}
+      <ReportsView reports={reports} learner={false} showLearner={showLearner} />
     </AppShell>
   );
 }

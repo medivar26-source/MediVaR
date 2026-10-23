@@ -49,8 +49,8 @@
   color: var(--text-muted);
   cursor: pointer;
   transition:
-    background-color var(--m-fast) ease,
-    color var(--m-fast) ease;
+    background-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out);
 }
 
 .close:hover {

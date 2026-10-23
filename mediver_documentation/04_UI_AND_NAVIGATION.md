@@ -72,7 +72,18 @@ often confused with:
 - **Primary Unit**: Programs (`/programs`). Learners navigate through their enrolled Programs rather than Cohorts.
 - **Contextual Cohort Metadata**: The associated cohort name (e.g., `Cohort: March 2026`) is displayed strictly as secondary, read-only contextual metadata inside the program listing (`/programs`), program detail (`/programs/[id]`), and main dashboard (`/`).
 - **No Cohort Administration**: Learners never see cohort-selection, cohort-switching, or administrative controls.
-- **Program Detail** (`/programs/[id]`): Shows the learner's own curriculum cases, readiness, session history, and assessment records. Excludes instructor cohort analytics (cohort mean, below pass, other learners, hotspots).
+- **Program Detail** (`/programs/[id]`): Shows the learner's own cases, readiness, session history, and assessment records. Excludes instructor cohort analytics (cohort mean, below pass, other learners, hotspots).
+- **Headings and subtext (Learner Mode review, 2026-10-20)**: Headings carry no "Curriculum" or "Pathways" wording and no eyebrow line, because the navigation already provides context. Subtext is one line of guidance ("Open a program to see its cases and start planning."). `/programs` shows the enrolled count as a small circular badge beside the title (`PageHeader count`) instead of a stat card.
+- **Case cards on Program Detail**: A card shows the title, the best score (only once attempted), a one-paragraph summary and the attempt count. Pathology, side and difficulty are not shown as tags there (they stay in the data and are shown as labelled fields on Procedures). Each card has one action, **Open case →**; the former "Not attempted", "Unattempted" and "Plan case" labels all led to the same page and are removed.
+- **Sessions** (`/sessions`): the learner view uses the same compact heading (no eyebrow) and a single-band totals strip (`StatStrip`) instead of four stat cards. The "Preview data" banner names which figures are sample data and which are live (see `DemoDataNote`).
+- **Case page, learner view** (`/cases/[id]`): one column in a fixed order: case name and one-paragraph description; the case's metadata as labelled fields (Pathology, Side, Difficulty, Cohort), not tags; Patient snapshot; Scans; Scoring; then Plans & attempts (the journey strip, a compact totals strip, the learner's plans, the attempt history). Learning objectives are kept in the case data (and in instructor authoring) but are no longer displayed to learners. Attempt rows carry Session and Report buttons; the instructor case view is unchanged.
+- **Sessions and reports**: a learner has one session list, used by every screen; sample sessions are labelled "Sample" and are visible only to the sample accounts that own them. Session, Case and Report are separate buttons, and the Session page keeps a finished session on the session (with Back to case, Open plan, View report, All sessions).
+- **Procedures** (`/content?tab=procedures`): one list of procedures, each expandable. An expanded procedure shows its cases as cards, then its workflow steps (P0–P11) under "Workflow and steps". The first published procedure that has cases opens by default. A card shows the case title, a short description and four labelled fields: Pathology, Side, Difficulty and, for a learner, Attempts (for an instructor, Version and a Published/Draft badge). A field the record does not have reads **Not recorded**; a default is never shown. The whole card opens the case. Cases that match no listed procedure are kept under "Other cases". There is no separate Cases tab or "View cases" button; `?tab=cases` still redirects to the Case Library, which stays in the side navigation and keeps instructor case management.
+- **Add case (Procedures)**: an **Add case** button in the Procedures header opens the existing case-creation workflow for the signed-in role in a dialog, instead of navigating to a separate page. Instructors and administrators get the institutional wizard (the same steps, validation, uploads and publishing as `/cases/new`, with the programs and skills it needs); learners get the personal-case wizard (as `/personal-cases/new`). The dialog is the platform `<dialog>` (focus trapped, Escape closes it, backdrop click closes it). Its form is created on first open and kept, so closing the dialog by accident does not lose what was typed. When a case is saved or published the dialog closes, the Procedures list refreshes so the new case appears, and a "Case saved. Open the case" link is shown; the user stays on Procedures. `/cases/new` and `/personal-cases/new` still work and behave as before. The API enforces who may create what; the button only chooses the matching workflow.
+- **Missing case metadata and planning**: a case detail page shows **Not recorded** for a pathology or side the record does not have; nothing is defaulted. Pathology is display-only. The **operative side** is required to plan: with no recorded side, Start/Resume planning is disabled with the reason, no plan is created on the fly (`/plan/<case id>`), a plan that already exists shows a notice instead of the planner pages, and a plan cannot be sealed for the headset. A plan already sealed keeps the side in its VR payload. When editing a case that records no side, the wizard does not preselect one: the author must choose Left or Right before saving or publishing.
+- **Pre-op Plans, planning mode** (`/plans`): a compact totals strip, then a case list on the left and the selected case on the right (`?case=<id>`; default is the case worked on most recently). The right side shows the case's description and labelled fields, Start/Resume planning, the learner's plans on it, and its sessions and reports with Session / Case / Report buttons. Cases listed are the Case Library as the learner sees it plus their own cases. Below, "All your plans" keeps the state filter, the full plans table and the PIN note exactly as before.
+- **Help article "Pre-operative planning"** (`/library/preoperative-planning`): describes the four V1 planning pages (measurements, points, definitions, fit thresholds, what unlocks the next page) from the V1 specification. The P0–P11 operative sequence is the separate "TKR walkthrough" article.
+- **Planning workflow wording**: wherever the planning steps are named for a learner they are the four V1 pages: Assessment → Tibial Planning → Femoral Planning → Review & Send to VR (`V1_TKR_STEPS`, source: *Mediver User Planning Workflow V1.pdf*). A draft plan on the case page reads "Step 2 of 4 · Tibial Planning" (`planStepLabel`). The P0–P11 operative sequence shown on Procedures is the headset sequence and is a separate list.
 
 ### Learner Training Dashboard (`/`)
 The learner dashboard is structured as an action-first personal training cockpit answering: *"What do I do next, and where am I weak?"*.
@@ -97,6 +108,25 @@ The learner dashboard is structured as an action-first personal training cockpit
 - **Account Details**: Editable profile settings (display name, training level, default difficulty).
 - **Security & Password Management**: Dedicated password change section. Learners can update their temporary credentials to a private personal password. Verifies current password before applying changes.
 - **Administered Metadata**: Displays learner account identity, including permanent Learner ID (`MVR-XXXXXX`), enrolled cohort, role, and account creation timestamp.
+
+### Learner navigation and Progress (Learner Mode review, 2026-10-20)
+
+```text
+Sidebar (learner)                           Where each old address goes
+  Dashboard  (logo)  /
+  Training            Your Programs  /programs        /performance            -> /progress
+                      Sessions       /sessions        /performance?tab=<t>    -> /progress?tab=<t>
+  Content Library     Procedures     /content?tab=procedures   (cases live here, with Add case)
+                      Case Library   /cases           /activity               -> /progress?tab=activity
+                      Pre-op plans   /plans           /reports                -> /progress?tab=reports
+                      My Cases       /personal-cases  /performance/<skill>    unchanged (opened from By skill)
+  Progress            Progress       /progress  tabs: Overview | Activity | Reports | By skill | Trends | History
+```
+
+- **Progress** (`/progress`, learners): one page with six tabs. Overview, Activity and Reports were separate pages, By skill was a group of seven sidebar links, and Trends and History were tabs of Performance. The tabs reuse the same view components as before (`app/performance/PerformanceViews.tsx`, `app/activity/ActivityView.tsx`, `app/reports/ReportsView.tsx`), so a figure reads the same wherever it appears, and report links, session links and the permission scope are unchanged. The selected tab is in the URL (`?tab=`); only that tab's data is read. The old learner addresses redirect to it, keeping the tab. **Instructors and administrators keep their own Performance, Activity and Reports pages and the "Insights" section**; `/progress` redirects them to `/performance`.
+- **By skill**: grouped by procedure (`getSkillGroups`). A group appears for each published procedure the learner has a scored session on, listing the report categories averaged over those sessions; a category opens its scene breakdown (`/performance/<skill>`). Only total knee replacement has a scoring model today, so it is the only group that has categories; a procedure without one says so rather than showing invented categories.
+- **Navigation chrome**: the sidebar and top bar are drawn once, in the root layout (`components/shell/AppFrame.tsx`), and stay mounted between pages; see `05_SYSTEM_ARCHITECTURE.md`. A thin progress bar under the top edge shows while a page is being fetched. There are no route-level loading skeletons.
+- **Planner** (`/plan/[id]/*`): the four step buttons share the header row with the back link and title; the title and its one-line guidance share a line and carry the "deferred to VR" note; the patient bar sits at the top of the card. The window never scrolls. Measured at 1366×768, the space above the scan went from 251 px to 170 px and the scan area from 409 px to 516 px (1280×720: 468 px; 1920×1080: 828 px). Measurement, fit, validation and step gating are unchanged.
 
 ## Dashboard example data
 
@@ -123,7 +153,7 @@ Arun Kumar:
 
 ## UI behavior
 
-Every data screen supports loading, empty, error, unauthorized and not-found states.
+Every data screen supports loading, empty, error, unauthorized and not-found states. Loading is shown as a progress bar under the top edge from the click until the page arrives (there are no per-route skeletons; see `05_SYSTEM_ARCHITECTURE.md`).
 
 Deep links should resolve directly and browser back/forward should work.
 

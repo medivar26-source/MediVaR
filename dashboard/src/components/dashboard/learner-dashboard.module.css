@@ -100,7 +100,9 @@
   background: var(--surface);
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color var(--m-fast) var(--ease-out),
+    box-shadow var(--m-fast) var(--ease-out);
 }
 
 .programCard:hover {
@@ -172,7 +174,9 @@
   background: var(--surface);
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color var(--m-fast) var(--ease-out),
+    box-shadow var(--m-fast) var(--ease-out);
 }
 
 .caseCard:hover {
@@ -291,6 +295,14 @@
   font-size: var(--t-h2);
   font-weight: var(--fw-bold);
   color: var(--warn);
+}
+
+/* Phone width: the score and its button go under the text instead of squeezing it. */
+@media (max-width: 767px) {
+  .focusCard {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 /* ---- Deep Analytics Drawer ---- */
