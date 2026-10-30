@@ -13,6 +13,7 @@ import { ConfigurePanel } from "../ConfigurePanel";
 import s from "../case.module.css";
 import p from "@/app/panels.module.css";
 import { pathologyText, procedureText, sideText } from "@/lib/case-meta";
+import { MEASURE_INFO, MEASURE_ORDER, formatMeasure, storedMeasure } from "@/lib/data/assessment_geometry";
 
 export const CASE_TABS = [
   { value: "details", label: "Details" },
@@ -316,14 +317,11 @@ export async function InstructorCaseView({
 
 function ReferencePlan({ plan }: { plan: NonNullable<CaseDetail["reference_plan"]> }) {
   const a = plan.assessment;
-  const measures: [string, string][] = [
-    ["MAD", `${a?.MAD_mm ?? "—"} mm`],
-    ["AMA", `${a?.AMA_deg ?? "—"}°`],
-    ["mHKA", `${a?.mHKA_deg ?? "—"}°`],
-    ["MPTA", `${a?.MPTA_deg ?? "—"}°`],
-    ["LDFA", `${a?.LDFA_deg ?? "—"}°`],
-    ["PTS", `${a?.PTS_deg ?? "—"}°`],
-  ];
+  // No MAD side here: an authored reference's varus/valgus is set by the case wizard, not measured.
+  const measures: [string, string][] = MEASURE_ORDER.map((key) => {
+    const value = storedMeasure(a, key);
+    return [MEASURE_INFO[key].short, value === undefined ? "Not recorded" : formatMeasure(key, value)];
+  });
   const tile = { padding: "var(--s-3)", background: "var(--surface-sunken)", border: "var(--bw) solid var(--border)", borderRadius: "var(--r-sm)" } as const;
   const heading = { margin: "0 0 var(--s-2)", fontSize: "var(--t-label)", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" } as const;
 

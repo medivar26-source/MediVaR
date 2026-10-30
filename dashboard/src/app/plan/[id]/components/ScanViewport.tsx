@@ -4,6 +4,13 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 const DicomViewer = dynamic(() => import("@/components/cases/DicomViewer"), { ssr: false });
 
+/**
+ * Zoom range, relative to the image fitted in the viewport. A full-length leg film fits at about a fifth of
+ * its size, so the knee needs far more than 5x to be worked on comfortably.
+ */
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 12;
+
 export interface ViewportContext {
   zoom: number;
   pan: { x: number; y: number };
@@ -36,7 +43,8 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
   const stageRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
+  // The size is tagged with the image it was read from, so nothing uses one scan's size for the next scan.
+  const [naturalSize, setNaturalSize] = useState<{ width: number; height: number; src: string } | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({
     width: 0,
     height: 0,
@@ -59,7 +67,7 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
     setPan({ x: 0, y: 0 });
     const img = imgRef.current;
     if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
-      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight, src });
     } else {
       setNaturalSize(null);
     }
@@ -70,10 +78,11 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
   // Wheel zoom and drag are the user's; a focus request only runs when its nonce is new.
   useEffect(() => {
     if (!focus || appliedFocus.current === focus.nonce) return;
-    if (!naturalSize || containerSize.width <= 0 || containerSize.height <= 0) return;
+    // Wait for this scan's own size: right after a switch the previous scan's size is still in state.
+    if (!naturalSize || naturalSize.src !== src || containerSize.width <= 0 || containerSize.height <= 0) return;
     appliedFocus.current = focus.nonce;
     const fitScale = Math.min(containerSize.width / naturalSize.width, containerSize.height / naturalSize.height);
-    const zoomTo = Math.max(0.5, Math.min(5, (0.5 * Math.min(containerSize.width, containerSize.height)) / (Math.max(focus.spanPx, 1) * fitScale)));
+    const zoomTo = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, (0.5 * Math.min(containerSize.width, containerSize.height)) / (Math.max(focus.spanPx, 1) * fitScale)));
     const dx = (focus.x - naturalSize.width / 2) * fitScale;
     const dy = (focus.y - naturalSize.height / 2) * fitScale;
     // A one-off move of the view, asked for from outside: there is nothing to derive it from during render.
@@ -81,7 +90,7 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
     setZoom(zoomTo);
     setPan({ x: -zoomTo * dx, y: -zoomTo * dy });
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [focus, naturalSize, containerSize]);
+  }, [focus, naturalSize, containerSize, src]);
 
   // Monitor container dimensions with ResizeObserver
   useEffect(() => {
@@ -103,13 +112,13 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
     if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight, src });
     }
   };
 
   const handleDicomLoad = (size: { naturalWidth: number; naturalHeight: number }) => {
     if (size.naturalWidth > 0 && size.naturalHeight > 0) {
-      setNaturalSize({ width: size.naturalWidth, height: size.naturalHeight });
+      setNaturalSize({ width: size.naturalWidth, height: size.naturalHeight, src });
     }
   };
 
@@ -138,7 +147,7 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
       if ((e.target as Element | null)?.closest("[data-no-wheel]")) return;
       e.preventDefault();
       const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-      const newZoom = Math.max(0.5, Math.min(5.0, zoom * zoomFactor));
+      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * zoomFactor));
 
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
@@ -164,9 +173,11 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
     return () => el.removeEventListener("wheel", handleWheel);
   }, [handleWheel]);
 
-  // Background drag-to-pan
+  // Left-drag moves the scan, anywhere on it, including while a point is being placed (points are placed with
+  // the right button, so the two never compete). The right button does not pan.
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    // If pointer hit a landmark or button, do not start canvas pan
+    if (e.button !== 0) return;
+    // If pointer hit a landmark handle or button, do not start canvas pan
     const target = e.target as HTMLElement;
     if (target.closest("[data-landmark]") || target.closest("button")) {
       return;
@@ -206,12 +217,12 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
   // Zoom button actions
   const handleZoomIn = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setZoom((prev) => Math.min(5.0, Number((prev * 1.25).toFixed(2))));
+    setZoom((prev) => Math.min(MAX_ZOOM, Number((prev * 1.25).toFixed(2))));
   };
 
   const handleZoomOut = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setZoom((prev) => Math.max(0.5, Number((prev / 1.25).toFixed(2))));
+    setZoom((prev) => Math.max(MIN_ZOOM, Number((prev / 1.25).toFixed(2))));
   };
 
   const handleResetZoom = (e: React.MouseEvent) => {
@@ -236,7 +247,7 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
         userSelect: "none",
         touchAction: "none",
         overscrollBehavior: "contain",
-        cursor: isPanning ? "grabbing" : zoom > 1 ? "grab" : "default",
+        cursor: isPanning ? "grabbing" : "grab",
       }}
     >
       {/* Floating Zoom & Pan HUD Toolbar */}
@@ -350,7 +361,7 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
           borderRadius: "4px",
         }}
       >
-        Scroll to zoom • Drag background to pan
+        Scroll to zoom • Left-drag to move the scan • Right-click to place a point
       </div>
 
       {/* Aspect-Ratio-Locked Image & Overlay Stage */}

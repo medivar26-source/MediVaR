@@ -1,9 +1,10 @@
 "use client";
 
+import { levelFor, levelKeyFor } from "@/lib/data/overlay_geometry";
 import { useState, useTransition } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui";
-import { getFemoralTemplate, type FemoralFitResult } from "@/lib/data/tkr_templates";
+import { FEMORAL_NOTCH_LIMIT_MM, getFemoralTemplate, notchingLikely, type FemoralFitResult } from "@/lib/data/tkr_templates";
 import {
   MARKER_KEYS,
   allMarkersPlaced,
@@ -43,7 +44,7 @@ interface FemoralControlsPanelProps {
   plan: PlanDetail;
 }
 
-type Axis = "x_offset_mm" | "y_offset_mm" | "rotation_deg" | "flexion_deg" | "level_offset_mm";
+type Axis = "x_offset_mm" | "y_offset_mm" | "rotation_deg" | "flexion_deg" | "level_offset_mm" | "level_offset_klat_mm";
 type Step = 1 | 2 | 3 | 4;
 
 export function FemoralControlsPanel({
@@ -95,8 +96,8 @@ export function FemoralControlsPanel({
     if (isReadOnly) return;
     setFemoralComponent((prev) => ({
       ...prev,
-      ...(key === "level_offset_mm"
-        ? { level_offset_mm: Number(((prev.level_offset_mm ?? 0) + delta).toFixed(1)) }
+      ...(key === "level_offset_mm" || key === "level_offset_klat_mm"
+        ? { [key]: Number(((prev[key] ?? 0) + delta).toFixed(1)) }
         : {
             position_2d: {
               ...prev.position_2d,
@@ -121,7 +122,7 @@ export function FemoralControlsPanel({
     const move = screenMoveToOffsets(session.viewMode, axis === "horizontal" ? delta : 0, axis === "vertical" ? delta : 0, bone.anteriorImageSign);
     if (move.x) handleOffsetChange("x_offset_mm", move.x);
     if (move.y) handleOffsetChange("y_offset_mm", move.y);
-    if (move.level) handleOffsetChange("level_offset_mm", move.level);
+    if (move.level) handleOffsetChange(levelKeyFor(session.viewMode), move.level);
   };
 
   useNudgeKeys(!isReadOnly, handleKey);
@@ -201,7 +202,7 @@ export function FemoralControlsPanel({
   const rows = ranking.rows.map((r) => ({
     size: r.size,
     tone: r.result.worstTone,
-    summary: `Depth ${r.result.apCoveragePct.toFixed(0)}% · width ${r.result.mlCoveragePct.toFixed(0)}%${r.result.notchingRiskMm > 0.5 ? ` · gap ${r.result.notchingRiskMm.toFixed(1)}` : ""}`,
+    summary: `Depth ${r.result.apCoveragePct.toFixed(0)}% · width ${r.result.mlCoveragePct.toFixed(0)}%${notchingLikely(r.result.notchingRiskMm) ? ` · gap ${r.result.notchingRiskMm.toFixed(1)}` : ""}`,
   }));
 
   const verdictIsPoor = fitResult?.worstTone === "fail";
@@ -223,11 +224,17 @@ export function FemoralControlsPanel({
           { label: "AP Coverage", value: `${fitResult.apCoveragePct.toFixed(1)}%`, tone: fitResult.apCoverageTone, note: "from the lateral scan · project limit 90%", group: "v1" },
           { label: "ML Coverage", value: `${fitResult.mlCoveragePct.toFixed(1)}%`, tone: fitResult.mlCoverageTone, note: "from the AP scan · project limit 90%", group: "v1" },
           {
-            label: "Anterior Notching Risk",
+            label: "Anterior clearance",
             value: fitResult.notchingRiskMm === 0 ? (fitResult.anteriorProudMm > 0 ? `${fitResult.anteriorProudMm.toFixed(1)} mm proud` : "0.0 mm (flush)") : `${fitResult.notchingRiskMm.toFixed(1)} mm gap`,
             tone: fitResult.notchTone,
-            note: "V1 example: 0.0 mm flush · project limit 0.5 mm",
+            note: `front flange to the anterior cortex · V1 example: 0.0 mm flush · project limit ${FEMORAL_NOTCH_LIMIT_MM} mm`,
             group: "v1",
+          },
+          {
+            label: "Potential notching",
+            value: notchingLikely(fitResult.notchingRiskMm) ? "Yes" : "No",
+            note: `yes when the flange sits more than ${FEMORAL_NOTCH_LIMIT_MM} mm short of the cortex`,
+            group: "project",
           },
           {
             label: "Tilt (AP scan)",
@@ -245,7 +252,7 @@ export function FemoralControlsPanel({
         ]
       : [];
 
-  const level = femoralComponent.level_offset_mm ?? 0;
+  const level = levelFor(femoralComponent, session.viewMode);
 
   return (
     <div
@@ -285,6 +292,7 @@ export function FemoralControlsPanel({
             compact
           />
           <MarkerChecklist
+            kind="femoral"
             markers={markers}
             bone={bone}
             placing={session.placing}
@@ -394,13 +402,13 @@ export function FemoralControlsPanel({
                 />
                 <p className={c.hint}>Positive flexion tips the front of the component forward, away from the front of the bone. Turn keys act on the scan on show.</p>
                 <NudgeRow
-                  label="Height on scan"
+                  label={`Height on ${session.viewMode === "FLAP" ? "AP" : "lateral"} scan`}
                   valueText={`${Math.abs(level).toFixed(1)} mm ${level === 0 ? "at the marked level" : level > 0 ? "lower" : "higher"}`}
                   step={0.5}
                   unit="mm"
                   disabled={isReadOnly}
-                  onDecrease={() => handleOffsetChange("level_offset_mm", -0.5)}
-                  onIncrease={() => handleOffsetChange("level_offset_mm", 0.5)}
+                  onDecrease={() => handleOffsetChange(levelKeyFor(session.viewMode), -0.5)}
+                  onIncrease={() => handleOffsetChange(levelKeyFor(session.viewMode), 0.5)}
                 />
                 <p className={c.hint}>Height only moves the drawing up or down the scan. It does not change the fit numbers.</p>
                 <KeyboardHint />

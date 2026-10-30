@@ -119,7 +119,7 @@ export function useScanCalibration({
       setCalibrating(null);
       setError(null);
       if (/\.(dcm|dcim)$/i.test(src.split("?")[0])) {
-        setDetection({ view, status: "unavailable", message: "Automatic search is not available for DICOM files. Set the scale by clicking the two sides of the marker." });
+        setDetection({ view, status: "unavailable", message: "Automatic search is not available for DICOM files. Set the scale by right-clicking the two sides of the marker." });
         return;
       }
       setDetection({ view, status: "searching" });
@@ -149,12 +149,12 @@ export function useScanCalibration({
           const c = r.candidate;
           setDetection({ view, status: "found", candidate: { ...c, cx: c.cx / k, cy: c.cy / k, diameterPx: Number((c.diameterPx / k).toFixed(2)) } });
         } else if (r.status === "ambiguous") {
-          setDetection({ view, status: "ambiguous", message: "More than one round bright object looks like a marker. Set the scale by clicking the two sides of the marker." });
+          setDetection({ view, status: "ambiguous", message: "More than one round bright object looks like a marker. Set the scale by right-clicking the two sides of the marker." });
         } else {
-          setDetection({ view, status: "none", message: "No marker was found on this scan. Set the scale by clicking the two sides of the marker." });
+          setDetection({ view, status: "none", message: "No marker was found on this scan. Set the scale by right-clicking the two sides of the marker." });
         }
       } catch {
-        setDetection({ view, status: "unavailable", message: "This scan could not be searched here. Set the scale by clicking the two sides of the marker." });
+        setDetection({ view, status: "unavailable", message: "This scan could not be searched here. Set the scale by right-clicking the two sides of the marker." });
       }
     },
     [scales],

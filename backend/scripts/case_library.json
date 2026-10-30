@@ -1,0 +1,1569 @@
+{
+  "about": "The public case library. Written by dashboard/scripts/case-library/make_case_library.ts; read by backend/scripts/seed_case_library.py. Do not edit by hand: change cases.ts and run the generator.",
+  "images_are_synthetic": true,
+  "cases": [
+    {
+      "key": "moderate_varus_right",
+      "case_id": "a0736360-9738-4e42-b7e1-295ea360e78b",
+      "version_id": "2d95a411-a7b6-4e00-a6c2-d916af992f86",
+      "title": "Medial osteoarthritis with moderate varus (right knee)",
+      "difficulty": "beginner",
+      "side": "right",
+      "pathology": "osteoarthritis",
+      "pathology_label": "Medial osteoarthritis, moderate varus",
+      "description": "63-year-old woman with medial right knee pain. The standing film shows a bow-legged knee with the medial joint space almost gone.",
+      "learning_objective": "Learn the whole planning workflow on a clear, single-plane varus deformity.",
+      "patient": {
+        "patient_id": "SYN-TKA-101",
+        "age": 63,
+        "gender": "Female",
+        "bmi": 28.1,
+        "occupation": "Primary school teacher",
+        "walking_distance_m": 800,
+        "rom": "5–115°",
+        "fixed_flexion_deg": 5,
+        "deformity": "Varus, passively correctable",
+        "complaint": "Medial right knee pain on walking and stairs, worse at the end of the day.",
+        "clinical_notes": "Medial joint line tenderness, varus that corrects on valgus stress, stable ligaments. Kellgren-Lawrence grade 4 medially.",
+        "history": "Four years of gradually worsening pain; now limits her to about 800 m.",
+        "past_management": "Weight loss programme, physiotherapy, two steroid injections (the last one 9 months ago, little effect)."
+      },
+      "objectives": [
+        "Place the hip, knee and ankle centres and read mHKA and MAD from the full-length film.",
+        "Work out whether the varus comes from the tibia, the femur or the worn joint (MPTA, mLDFA and the joint space).",
+        "Mark the cortical rim of the plateau and of the condyles, not the small osteophyte, before sizing.",
+        "Size the tibial tray and the femoral component and get an acceptable fit on both films."
+      ],
+      "notes": "Reference: varus mHKA 8.0°, MAD 27.7 mm medial, mLDFA 89.2°, MPTA 85.2°, AMA 6.0°, PTS 7.0°; tibia size 3, femur size 3. Mechanical alignment target: neutral (0° ± 3°). Tibial cut perpendicular to the tibial mechanical axis; expect more bone off the lateral plateau than the worn medial side.",
+      "scans": {
+        "FLAP": {
+          "file": "scans/moderate_varus_right_flap.jpg",
+          "width_px": 932,
+          "height_px": 3211,
+          "mm_per_px": 0.31,
+          "marker_mm": 25,
+          "marker_px": 80.645,
+          "calibration": {
+            "marker_type": "sphere_25mm",
+            "physical_marker_diameter_mm": 25,
+            "detected_marker_pixel_diameter": 80.645,
+            "calculated_scale_mm_per_px": 0.31,
+            "unit": "mm/px",
+            "method": "radio_opaque_marker",
+            "version": "1.0.0",
+            "is_valid": true,
+            "validation_error": null,
+            "image_width_px": 932,
+            "image_height_px": 3211,
+            "marker_centre_px": [
+              706.6,
+              1729.3
+            ],
+            "source": "marker_in_image",
+            "basis": "Synthetic full-length AP film drawn at 0.31 mm/px; the 25 mm sphere is 80.65 px across.",
+            "verification": {
+              "planner_detector_px": 80.47,
+              "edge_measurement_px": 80.31
+            }
+          }
+        },
+        "KLAT": {
+          "file": "scans/moderate_varus_right_klat.jpg",
+          "width_px": 1265,
+          "height_px": 2086,
+          "mm_per_px": 0.155,
+          "marker_mm": 25,
+          "marker_px": 161.29,
+          "calibration": {
+            "marker_type": "sphere_25mm",
+            "physical_marker_diameter_mm": 25,
+            "detected_marker_pixel_diameter": 161.29,
+            "calculated_scale_mm_per_px": 0.155,
+            "unit": "mm/px",
+            "method": "radio_opaque_marker",
+            "version": "1.0.0",
+            "is_valid": true,
+            "validation_error": null,
+            "image_width_px": 1265,
+            "image_height_px": 2086,
+            "marker_centre_px": [
+              1148.9,
+              1712.3
+            ],
+            "source": "marker_in_image",
+            "basis": "Synthetic knee lateral film drawn at 0.155 mm/px; the 25 mm sphere is 161.29 px across.",
+            "verification": {
+              "planner_detector_px": 160.84,
+              "edge_measurement_px": 160.79
+            }
+          }
+        }
+      },
+      "reference": {
+        "assessment": {
+          "MAD_mm": 27.7,
+          "AMA_deg": 6,
+          "mHKA_deg": 8,
+          "MPTA_deg": 85.2,
+          "LDFA_deg": 89.2,
+          "PTS_deg": 7,
+          "alignment_type": "VARUS",
+          "scale_estimated": false,
+          "patient_tibial_ml_mm": 68.9,
+          "patient_tibial_ap_mm": 43.1,
+          "patient_femoral_ml_mm": 63.4,
+          "patient_femoral_ap_mm": 56.6
+        },
+        "mad_direction": "medial",
+        "tibial_component": {
+          "implant_size": 3,
+          "position_2d": {
+            "x_offset_mm": 0,
+            "y_offset_mm": 0,
+            "rotation_deg": -5.9
+          },
+          "ap_dimension_mm": 42.5,
+          "ml_dimension_mm": 68.2,
+          "cortical_coverage_pct": 94.5,
+          "medial_overhang_mm": 0,
+          "lateral_overhang_mm": 0,
+          "anterior_overhang_mm": 0,
+          "posterior_overhang_mm": 0,
+          "fit_status": "ACCEPTABLE FIT",
+          "is_confirmed": true,
+          "fit_markers": {
+            "medial": {
+              "x": 51.5734,
+              "y": 51.2809
+            },
+            "lateral": {
+              "x": 27.7342,
+              "y": 51.4717
+            },
+            "anterior": {
+              "x": 62.0298,
+              "y": 48.1551
+            },
+            "posterior": {
+              "x": 40.0485,
+              "y": 48.1551
+            },
+            "confirmed": true
+          },
+          "bone_ml_mm": 68.9,
+          "bone_ap_mm": 43.1,
+          "scale_estimated": false,
+          "scales": {
+            "FLAP": 0.31,
+            "KLAT": 0.155
+          }
+        },
+        "femoral_component": {
+          "implant_size": 3,
+          "position_2d": {
+            "x_offset_mm": 0,
+            "y_offset_mm": -0.2,
+            "rotation_deg": 2.1,
+            "flexion_deg": 0
+          },
+          "ap_dimension_mm": 56.2,
+          "ml_dimension_mm": 62,
+          "ap_coverage_pct": 99.2,
+          "ml_coverage_pct": 97.8,
+          "notching_risk_mm": 0,
+          "medial_overhang_mm": 0,
+          "lateral_overhang_mm": 0,
+          "posterior_overhang_mm": 0,
+          "fit_status": "ACCEPTABLE FIT",
+          "is_confirmed": true,
+          "fit_markers": {
+            "medial": {
+              "x": 50.7808,
+              "y": 50.0201
+            },
+            "lateral": {
+              "x": 28.8493,
+              "y": 49.9
+            },
+            "anterior": {
+              "x": 67.7655,
+              "y": 41.0199
+            },
+            "posterior": {
+              "x": 38.8745,
+              "y": 39.981
+            },
+            "confirmed": true
+          },
+          "bone_ml_mm": 63.4,
+          "bone_ap_mm": 56.6,
+          "scale_estimated": false,
+          "scales": {
+            "FLAP": 0.31,
+            "KLAT": 0.155
+          }
+        }
+      },
+      "sizes": {
+        "tibial_size": 3,
+        "femoral_size": 3
+      },
+      "landmarks": {
+        "hipCenter": {
+          "x": 45.236,
+          "y": 7.0323
+        },
+        "kneeCenter": {
+          "x": 39.6296,
+          "y": 51.0041
+        },
+        "ankleCenter": {
+          "x": 52.4667,
+          "y": 87.1797
+        },
+        "femurDistalLateral": {
+          "x": 33.6727,
+          "y": 50.7948
+        },
+        "femurDistalMedial": {
+          "x": 45.629,
+          "y": 50.9718
+        },
+        "tibiaProximalLateral": {
+          "x": 27.7302,
+          "y": 51.4114
+        },
+        "tibiaProximalMedial": {
+          "x": 51.5734,
+          "y": 51.2809
+        },
+        "femurCanalProximal": {
+          "x": 33.2685,
+          "y": 23.7855
+        },
+        "femurCanalDistal": {
+          "x": 36.5516,
+          "y": 37.8338
+        },
+        "tibiaPlateauAnterior": {
+          "x": 62.0298,
+          "y": 48.1551
+        },
+        "tibiaPlateauPosterior": {
+          "x": 40.0485,
+          "y": 48.1551
+        },
+        "tibiaShaftProximal": {
+          "x": 48.0072,
+          "y": 68.9321
+        },
+        "tibiaShaftDistal": {
+          "x": 43.0349,
+          "y": 93.4902
+        }
+      }
+    },
+    {
+      "key": "severe_varus_left",
+      "case_id": "ac4f672d-6495-4804-ac4b-ac04aa7eee33",
+      "version_id": "e4bcca88-5c00-4e58-9b4d-9e4c026e82c0",
+      "title": "Severe varus osteoarthritis (left knee)",
+      "difficulty": "intermediate",
+      "side": "left",
+      "pathology": "osteoarthritis",
+      "pathology_label": "Tricompartmental osteoarthritis, severe varus",
+      "description": "71-year-old man with a markedly bowed left leg. Bone-on-bone medial compartment, large medial osteophytes and a tibia that slopes into varus.",
+      "learning_objective": "Plan a large varus correction where both the tibia and the worn joint contribute.",
+      "patient": {
+        "patient_id": "SYN-TKA-202",
+        "age": 71,
+        "gender": "Male",
+        "bmi": 30.4,
+        "occupation": "Retired builder",
+        "walking_distance_m": 300,
+        "rom": "8–105°",
+        "fixed_flexion_deg": 8,
+        "deformity": "Severe varus, only partly correctable",
+        "complaint": "Constant left knee pain, night pain, and the leg 'bending outwards' when he walks.",
+        "clinical_notes": "Varus thrust on walking. Large palpable medial osteophytes. Ahlbäck grade IV.",
+        "history": "Pain for eight years; walking distance down to about 300 m with a stick.",
+        "past_management": "Analgesia, an unloader brace (not tolerated), physiotherapy."
+      },
+      "objectives": [
+        "Measure a large varus deformity and its MAD on the full-length film.",
+        "Separate the bony deformity (MPTA, mLDFA) from the collapse of the medial joint space.",
+        "Ignore the medial osteophytes when you mark the plateau and condyle edges.",
+        "Size the tibia and femur with no medial overhang beyond 1 mm."
+      ],
+      "notes": "Reference: varus mHKA 15.4°, MAD 56.7 mm medial, mLDFA 91.4°, MPTA 82.2°, AMA 6.5°, PTS 9.0°; tibia size 4, femur size 5. Medial release likely needed to balance. Cut the tibia perpendicular to its mechanical axis: the low MPTA means a lateral-heavy resection.",
+      "scans": {
+        "FLAP": {
+          "file": "scans/severe_varus_left_flap.jpg",
+          "width_px": 859,
+          "height_px": 3259,
+          "mm_per_px": 0.32,
+          "marker_mm": 25,
+          "marker_px": 78.125,
+          "calibration": {
+            "marker_type": "sphere_25mm",
+            "physical_marker_diameter_mm": 25,
+            "detected_marker_pixel_diameter": 78.125,
+            "calculated_scale_mm_per_px": 0.32,
+            "unit": "mm/px",
+            "method": "radio_opaque_marker",
+            "version": "1.0.0",
+            "is_valid": true,
+            "validation_error": null,
+            "image_width_px": 859,
+            "image_height_px": 3259,
+            "marker_centre_px": [
+              218.3,
+              1744.9
+            ],
+            "source": "marker_in_image",
+            "basis": "Synthetic full-length AP film drawn at 0.32 mm/px; the 25 mm sphere is 78.13 px across.",
+            "verification": {
+              "planner_detector_px": 77.96,
+              "edge_measurement_px": 77.76
+            }
+          }
+        },
+        "KLAT": {
+          "file": "scans/severe_varus_left_klat.jpg",
+          "width_px": 1225,
+          "height_px": 2021,
+          "mm_per_px": 0.16,
+          "marker_mm": 25,
+          "marker_px": 156.25,
+          "calibration": {
+            "marker_type": "sphere_25mm",
+            "physical_marker_diameter_mm": 25,
+            "detected_marker_pixel_diameter": 156.25,
+            "calculated_scale_mm_per_px": 0.16,
+            "unit": "mm/px",
+            "method": "radio_opaque_marker",
+            "version": "1.0.0",
+            "is_valid": true,
+            "validation_error": null,
+            "image_width_px": 1225,
+            "image_height_px": 2021,
+            "marker_centre_px": [
+              112.5,
+              1658.7
+            ],
+            "source": "marker_in_image",
+            "basis": "Synthetic knee lateral film drawn at 0.16 mm/px; the 25 mm sphere is 156.25 px across.",
+            "verification": {
+              "planner_detector_px": 155.89,
+              "edge_measurement_px": 155.78
+            }
+          }
+        }
+      },
+      "reference": {
+        "assessment": {
+          "MAD_mm": 56.7,
+          "AMA_deg": 6.5,
+          "mHKA_deg": 15.4,
+          "MPTA_deg": 82.2,
+          "LDFA_deg": 91.4,
+          "PTS_deg": 9,
+          "alignment_type": "VARUS",
+          "scale_estimated": false,
+          "patient_tibial_ml_mm": 73,
+          "patient_tibial_ap_mm": 45.7,
+          "patient_femoral_ml_mm": 67.8,
+          "patient_femoral_ap_mm": 61.4
+        },
+        "mad_direction": "medial",
+        "tibial_component": {
+          "implant_size": 4,
+          "position_2d": {
+            "x_offset_mm": 0,
+            "y_offset_mm": 0,
+            "rotation_deg": 9.9
+          },
+          "ap_dimension_mm": 45,
+          "ml_dimension_mm": 72,
+          "cortical_coverage_pct": 93.9,
+          "medial_overhang_mm": 0,
+          "lateral_overhang_mm": 0,
+          "anterior_overhang_mm": 0,
+          "posterior_overhang_mm": 0,
+          "fit_status": "ACCEPTABLE FIT",
+          "is_confirmed": true,
+          "fit_markers": {
+            "medial": {
+              "x": 51.7778,
+              "y": 51.594
+            },
+            "lateral": {
+              "x": 78.3445,
+              "y": 51.9137
+            },
+            "anterior": {
+              "x": 37.3214,
+              "y": 48.1507
+            },
+            "posterior": {
+              "x": 60.6378,
+              "y": 48.1507
+            },
+            "confirmed": true
+          },
+          "bone_ml_mm": 73,
+          "bone_ap_mm": 45.7,
+          "scale_estimated": false,
+          "scales": {
+            "FLAP": 0.32,
+            "KLAT": 0.16
+          }
+        },
+        "femoral_component": {
+          "implant_size": 5,
+          "position_2d": {
+            "x_offset_mm": 0,
+            "y_offset_mm": -0.2,
+            "rotation_deg": -5.5,
+            "flexion_deg": 0
+          },
+          "ap_dimension_mm": 61,
+          "ml_dimension_mm": 67,
+          "ap_coverage_pct": 99.3,
+          "ml_coverage_pct": 98.6,
+          "notching_risk_mm": 0,
+          "medial_overhang_mm": 0,
+          "lateral_overhang_mm": 0,
+          "posterior_overhang_mm": 0,
+          "fit_status": "ACCEPTABLE FIT",
+          "is_confirmed": true,
+          "fit_markers": {
+            "medial": {
+              "x": 52.483,
+              "y": 50.427
+            },
+            "lateral": {
+              "x": 77.1574,
+              "y": 50.1775
+            },
+            "anterior": {
+              "x": 30.7985,
+              "y": 40.6682
+            },
+            "posterior": {
+              "x": 62.1311,
+              "y": 39.5712
+            },
+            "confirmed": true
+          },
+          "bone_ml_mm": 67.8,
+          "bone_ap_mm": 61.4,
+          "scale_estimated": false,
+          "scales": {
+            "FLAP": 0.32,
+            "KLAT": 0.16
+          }
+        }
+      },
+      "sizes": {
+        "tibial_size": 4,
+        "femoral_size": 5
+      },
+      "landmarks": {
+        "hipCenter": {
+          "x": 48.9248,
+          "y": 6.7122
+        },
+        "kneeCenter": {
+          "x": 65.1136,
+          "y": 51.3846
+        },
+        "ankleCenter": {
+          "x": 40.8648,
+          "y": 87.8415
+        },
+        "femurDistalLateral": {
+          "x": 71.8001,
+          "y": 51.1294
+        },
+        "femurDistalMedial": {
+          "x": 58.3574,
+          "y": 51.3807
+        },
+        "tibiaProximalLateral": {
+          "x": 78.3527,
+          "y": 51.8562
+        },
+        "tibiaProximalMedial": {
+          "x": 51.7778,
+          "y": 51.594
+        },
+        "femurCanalProximal": {
+          "x": 67.0365,
+          "y": 23.5663
+        },
+        "femurCanalDistal": {
+          "x": 66.0441,
+          "y": 37.9241
+        },
+        "tibiaPlateauAnterior": {
+          "x": 37.3214,
+          "y": 48.1507
+        },
+        "tibiaPlateauPosterior": {
+          "x": 60.6378,
+          "y": 48.1507
+        },
+        "tibiaShaftProximal": {
+          "x": 53.1676,
+          "y": 68.8206
+        },
+        "tibiaShaftDistal": {
+          "x": 59.5526,
+          "y": 93.2562
+        }
+      }
+    },
+    {
+      "key": "moderate_valgus_right",
+      "case_id": "87c3a6c2-3f8c-42c9-8d0d-271414f23ac7",
+      "version_id": "3f1922f0-64eb-4099-b1b8-2dc41324af1b",
+      "title": "Lateral osteoarthritis with moderate valgus (right knee)",
+      "difficulty": "intermediate",
+      "side": "right",
+      "pathology": "osteoarthritis",
+      "pathology_label": "Lateral osteoarthritis, moderate valgus",
+      "description": "66-year-old woman with a knock-kneed right leg. The lateral compartment is worn and the distal lateral femur looks short.",
+      "learning_objective": "Recognise a femoral-driven valgus knee and plan it without over-cutting the lateral femur.",
+      "patient": {
+        "patient_id": "SYN-TKA-303",
+        "age": 66,
+        "gender": "Female",
+        "bmi": 24.6,
+        "occupation": "Accountant",
+        "walking_distance_m": 1000,
+        "rom": "0–120°",
+        "fixed_flexion_deg": 0,
+        "deformity": "Valgus, passively correctable",
+        "complaint": "Lateral right knee pain and a feeling that the knee 'knocks inwards'.",
+        "clinical_notes": "Correctable valgus, intact medial collateral ligament, lateral joint line tenderness.",
+        "history": "Five years of lateral pain, worse in the last year.",
+        "past_management": "Physiotherapy, NSAIDs, a hyaluronic acid injection."
+      },
+      "objectives": [
+        "Measure the valgus deformity and note which side of the knee centre the mechanical axis passes.",
+        "Find where the deformity comes from: compare mLDFA and MPTA with their normal ranges.",
+        "Size the small femur and tibia without notching the anterior femoral cortex."
+      ],
+      "notes": "Reference: valgus mHKA 9.0°, MAD 30.1 mm lateral, mLDFA 83.6°, MPTA 89.4°, AMA 5.5°, PTS 5.0°; tibia size 2, femur size 2. Distal femoral cut perpendicular to the femoral mechanical axis: little bone comes off the hypoplastic lateral condyle.",
+      "scans": {
+        "FLAP": {
+          "file": "scans/moderate_valgus_right_flap.jpg",
+          "width_px": 1098,
+          "height_px": 3237,
+          "mm_per_px": 0.3,
+          "marker_mm": 25,
+          "marker_px": 83.333,
+          "calibration": {
+            "marker_type": "sphere_25mm",
+            "physical_marker_diameter_mm": 25,
+            "detected_marker_pixel_diameter": 83.333,
+            "calculated_scale_mm_per_px": 0.3,
+            "unit": "mm/px",
+            "method": "radio_opaque_marker",
+            "version": "1.0.0",
+            "is_valid": true,
+            "validation_error": null,
+            "image_width_px": 1098,
+            "image_height_px": 3237,
+            "marker_centre_px": [
+              864.5,
+              1787.4
+            ],
+            "source": "marker_in_image",
+            "basis": "Synthetic full-length AP film drawn at 0.3 mm/px; the 25 mm sphere is 83.33 px across.",
+            "verification": {
+              "planner_detector_px": 83.13,
+              "edge_measurement_px": 82.97
+            }
+          }
+        },
+        "KLAT": {
+          "file": "scans/moderate_valgus_right_klat.jpg",
+          "width_px": 1307,
+          "height_px": 2156,
+          "mm_per_px": 0.15,
+          "marker_mm": 25,
+          "marker_px": 166.667,
+          "calibration": {
+            "marker_type": "sphere_25mm",
+            "physical_marker_diameter_mm": 25,
+            "detected_marker_pixel_diameter": 166.667,
+            "calculated_scale_mm_per_px": 0.15,
+            "unit": "mm/px",
+            "method": "radio_opaque_marker",
+            "version": "1.0.0",
+            "is_valid": true,
+            "validation_error": null,
+            "image_width_px": 1307,
+            "image_height_px": 2156,
+            "marker_centre_px": [
+              1187,
+              1769.3
+            ],
+            "source": "marker_in_image",
+            "basis": "Synthetic knee lateral film drawn at 0.15 mm/px; the 25 mm sphere is 166.67 px across.",
+            "verification": {
+              "planner_detector_px": 166.12,
+              "edge_measurement_px": 166.15
+            }
+          }
+        }
+      },
+      "reference": {
+        "assessment": {
+          "MAD_mm": 30.1,
+          "AMA_deg": 5.5,
+          "mHKA_deg": 9,
+          "MPTA_deg": 89.4,
+          "LDFA_deg": 83.6,
+          "PTS_deg": 5,
+          "alignment_type": "VALGUS",
+          "scale_estimated": false,
+          "patient_tibial_ml_mm": 64.9,
+          "patient_tibial_ap_mm": 40.6,
+          "patient_femoral_ml_mm": 60.9,
+          "patient_femoral_ap_mm": 54.4
+        },
+        "mad_direction": "lateral",
+        "tibial_component": {
+          "implant_size": 2,
+          "position_2d": {
+            "x_offset_mm": 0,
+            "y_offset_mm": 0,
+            "rotation_deg": 3.4
+          },
+          "ap_dimension_mm": 40,
+          "ml_dimension_mm": 64.5,
+          "cortical_coverage_pct": 94.8,
+          "medial_overhang_mm": 0,
+          "lateral_overhang_mm": 0,
+          "anterior_overhang_mm": 0,
+          "posterior_overhang_mm": 0,
+          "fit_status": "ACCEPTABLE FIT",
+          "is_confirmed": true,
+          "fit_markers": {
+            "medial": {
+              "x": 59.2671,
+              "y": 51.4359
+            },
+            "lateral": {
+              "x": 39.5704,
+              "y": 51.0258
+            },
+            "anterior": {
+              "x": 61.3874,
+              "y": 48.1447
+            },
+            "posterior": {
+              "x": 40.6784,
+              "y": 48.1447
+            },
+            "confirmed": true
+          },
+          "bone_ml_mm": 64.9,
+          "bone_ap_mm": 40.6,
+          "scale_estimated": false,
+          "scales": {
+            "FLAP": 0.3,
+            "KLAT": 0.15
+          }
+        },
+        "femoral_component": {
+          "implant_size": 2,
+          "position_2d": {
+            "x_offset_mm": 0,
+            "y_offset_mm": -0.2,
+            "rotation_deg": -5.6,
+            "flexion_deg": 0
+          },
+          "ap_dimension_mm": 54,
+          "ml_dimension_mm": 60,
+          "ap_coverage_pct": 99.2,
+          "ml_coverage_pct": 98.3,
+          "notching_risk_mm": 0,
+          "medial_overhang_mm": 0,
+          "lateral_overhang_mm": 0,
+          "posterior_overhang_mm": 0,
+          "fit_status": "ACCEPTABLE FIT",
+          "is_confirmed": true,
+          "fit_markers": {
+            "medial": {
+              "x": 58.7809,
+              "y": 49.9024
+            },
+            "lateral": {
+              "x": 40.2947,
+              "y": 49.8103
+            },
+            "anterior": {
+              "x": 67.1644,
+              "y": 41.5966
+            },
+            "posterior": {
+              "x": 39.393,
+              "y": 40.3017
+            },
+            "confirmed": true
+          },
+          "bone_ml_mm": 60.9,
+          "bone_ap_mm": 54.4,
+          "scale_estimated": false,
+          "scales": {
+            "FLAP": 0.3,
+            "KLAT": 0.15
+          }
+        }
+      },
+      "sizes": {
+        "tibial_size": 2,
+        "femoral_size": 2
+      },
+      "landmarks": {
+        "hipCenter": {
+          "x": 36.9674,
+          "y": 7.2083
+        },
+        "kneeCenter": {
+          "x": 49.4939,
+          "y": 50.8698
+        },
+        "ankleCenter": {
+          "x": 43.1154,
+          "y": 86.8464
+        },
+        "femurDistalLateral": {
+          "x": 44.4557,
+          "y": 50.7403
+        },
+        "femurDistalMedial": {
+          "x": 54.5412,
+          "y": 50.7905
+        },
+        "tibiaProximalLateral": {
+          "x": 39.5833,
+          "y": 50.9641
+        },
+        "tibiaProximalMedial": {
+          "x": 59.2671,
+          "y": 51.4359
+        },
+        "femurCanalProximal": {
+          "x": 34.1143,
+          "y": 24.1768
+        },
+        "femurCanalDistal": {
+          "x": 42.0522,
+          "y": 37.9539
+        },
+        "tibiaPlateauAnterior": {
+          "x": 61.3874,
+          "y": 48.1447
+        },
+        "tibiaPlateauPosterior": {
+          "x": 40.6784,
+          "y": 48.1447
+        },
+        "tibiaShaftProximal": {
+          "x": 49.1635,
+          "y": 68.9962
+        },
+        "tibiaShaftDistal": {
+          "x": 45.6071,
+          "y": 93.6392
+        }
+      }
+    },
+    {
+      "key": "severe_valgus_left",
+      "case_id": "18a4076f-76ce-4374-bdd8-5e82e01314b7",
+      "version_id": "dfa3c127-9727-4908-a9c7-da1f42d78c4d",
+      "title": "Severe valgus deformity (left knee)",
+      "difficulty": "expert",
+      "side": "left",
+      "pathology": "osteoarthritis",
+      "pathology_label": "Lateral osteoarthritis, severe valgus",
+      "description": "74-year-old woman with a severe knock-knee on the left. Bone-on-bone lateral compartment and a very short lateral femoral condyle.",
+      "learning_objective": "Plan a severe valgus knee: alignment, small sizes, and where the deformity lives.",
+      "patient": {
+        "patient_id": "SYN-TKA-404",
+        "age": 74,
+        "gender": "Female",
+        "bmi": 23.2,
+        "occupation": "Retired seamstress",
+        "walking_distance_m": 200,
+        "rom": "5–110°",
+        "fixed_flexion_deg": 5,
+        "deformity": "Severe valgus, only partly correctable",
+        "complaint": "Left knee pain and the knee collapsing inwards when she stands.",
+        "clinical_notes": "Stretched medial collateral ligament. Lateral osteophytes.",
+        "history": "Ten years of pain; now walks about 200 m with a frame.",
+        "past_management": "Physiotherapy, bracing, injections; declined surgery twice."
+      },
+      "objectives": [
+        "Measure a severe valgus deformity and its MAD.",
+        "Quantify the femoral deformity (mLDFA) and how far the joint lines converge.",
+        "Choose the smallest sizes that fit and check overhang on both films."
+      ],
+      "notes": "Reference: valgus mHKA 15.0°, MAD 49.1 mm lateral, mLDFA 80.2°, MPTA 90.6°, AMA 5.0°, PTS 4.0°; tibia size 1, femur size 1. Consider a constrained insert if the medial side cannot be balanced. Femoral cut perpendicular to the mechanical axis.",
+      "scans": {
+        "FLAP": {
+          "file": "scans/severe_valgus_left_flap.jpg",
+          "width_px": 1127,
+          "height_px": 3169,
+          "mm_per_px": 0.3,
+          "marker_mm": 25,
+          "marker_px": 83.333,
+          "calibration": {
+            "marker_type": "sphere_25mm",
+            "physical_marker_diameter_mm": 25,
+            "detected_marker_pixel_diameter": 83.333,
+            "calculated_scale_mm_per_px": 0.3,
+            "unit": "mm/px",
+            "method": "radio_opaque_marker",
+            "version": "1.0.0",
+            "is_valid": true,
+            "validation_error": null,
+            "image_width_px": 1127,
+            "image_height_px": 3169,
+            "marker_centre_px": [
+              233.7,
+              1767.9
+            ],
+            "source": "marker_in_image",
+            "basis": "Synthetic full-length AP film drawn at 0.3 mm/px; the 25 mm sphere is 83.33 px across.",
+            "verification": {
+              "planner_detector_px": 83.06,
+              "edge_measurement_px": 82.92
+            }
+          }
+        },
+        "KLAT": {
+          "file": "scans/severe_valgus_left_klat.jpg",
+          "width_px": 1307,
+          "height_px": 2156,
+          "mm_per_px": 0.15,
+          "marker_mm": 25,
+          "marker_px": 166.667,
+          "calibration": {
+            "marker_type": "sphere_25mm",
+            "physical_marker_diameter_mm": 25,
+            "detected_marker_pixel_diameter": 166.667,
+            "calculated_scale_mm_per_px": 0.15,
+            "unit": "mm/px",
+            "method": "radio_opaque_marker",
+            "version": "1.0.0",
+            "is_valid": true,
+            "validation_error": null,
+            "image_width_px": 1307,
+            "image_height_px": 2156,
+            "marker_centre_px": [
+              120,
+              1769.3
+            ],
+            "source": "marker_in_image",
+            "basis": "Synthetic knee lateral film drawn at 0.15 mm/px; the 25 mm sphere is 166.67 px across.",
+            "verification": {
+              "planner_detector_px": 166.27,
+              "edge_measurement_px": 166.17
+            }
+          }
+        }
+      },
+      "reference": {
+        "assessment": {
+          "MAD_mm": 49.1,
+          "AMA_deg": 5,
+          "mHKA_deg": 15,
+          "MPTA_deg": 90.6,
+          "LDFA_deg": 80.2,
+          "PTS_deg": 4,
+          "alignment_type": "VALGUS",
+          "scale_estimated": false,
+          "patient_tibial_ml_mm": 61.4,
+          "patient_tibial_ap_mm": 38.4,
+          "patient_femoral_ml_mm": 58.9,
+          "patient_femoral_ap_mm": 52.5
+        },
+        "mad_direction": "lateral",
+        "tibial_component": {
+          "implant_size": 1,
+          "position_2d": {
+            "x_offset_mm": 0,
+            "y_offset_mm": 0,
+            "rotation_deg": -6.8
+          },
+          "ap_dimension_mm": 38,
+          "ml_dimension_mm": 61,
+          "cortical_coverage_pct": 95.1,
+          "medial_overhang_mm": 0,
+          "lateral_overhang_mm": 0,
+          "anterior_overhang_mm": 0,
+          "posterior_overhang_mm": 0,
+          "fit_status": "ACCEPTABLE FIT",
+          "is_confirmed": true,
+          "fit_markers": {
+            "medial": {
+              "x": 38.8212,
+              "y": 51.5524
+            },
+            "lateral": {
+              "x": 56.9909,
+              "y": 51.358
+            },
+            "anterior": {
+              "x": 39.1737,
+              "y": 48.1447
+            },
+            "posterior": {
+              "x": 58.7605,
+              "y": 48.1447
+            },
+            "confirmed": true
+          },
+          "bone_ml_mm": 61.4,
+          "bone_ap_mm": 38.4,
+          "scale_estimated": false,
+          "scales": {
+            "FLAP": 0.3,
+            "KLAT": 0.15
+          }
+        },
+        "femoral_component": {
+          "implant_size": 1,
+          "position_2d": {
+            "x_offset_mm": 0,
+            "y_offset_mm": -0.4,
+            "rotation_deg": 8.2,
+            "flexion_deg": 0
+          },
+          "ap_dimension_mm": 52,
+          "ml_dimension_mm": 58,
+          "ap_coverage_pct": 98.7,
+          "ml_coverage_pct": 98,
+          "notching_risk_mm": 0,
+          "medial_overhang_mm": 0,
+          "lateral_overhang_mm": 0,
+          "posterior_overhang_mm": 0,
+          "fit_status": "ACCEPTABLE FIT",
+          "is_confirmed": true,
+          "fit_markers": {
+            "medial": {
+              "x": 38.9941,
+              "y": 49.8654
+            },
+            "lateral": {
+              "x": 56.41,
+              "y": 49.7966
+            },
+            "anterior": {
+              "x": 33.3793,
+              "y": 41.5986
+            },
+            "posterior": {
+              "x": 60.175,
+              "y": 40.4835
+            },
+            "confirmed": true
+          },
+          "bone_ml_mm": 58.9,
+          "bone_ap_mm": 52.5,
+          "scale_estimated": false,
+          "scales": {
+            "FLAP": 0.3,
+            "KLAT": 0.15
+          }
+        }
+      },
+      "sizes": {
+        "tibial_size": 1,
+        "femoral_size": 1
+      },
+      "landmarks": {
+        "hipCenter": {
+          "x": 65.5099,
+          "y": 7.363
+        },
+        "kneeCenter": {
+          "x": 47.7787,
+          "y": 50.8761
+        },
+        "ankleCenter": {
+          "x": 59.6755,
+          "y": 86.5999
+        },
+        "femurDistalLateral": {
+          "x": 52.5215,
+          "y": 50.7308
+        },
+        "femurDistalMedial": {
+          "x": 43.0207,
+          "y": 50.8225
+        },
+        "tibiaProximalLateral": {
+          "x": 56.9357,
+          "y": 50.8577
+        },
+        "tibiaProximalMedial": {
+          "x": 38.8212,
+          "y": 51.5524
+        },
+        "femurCanalProximal": {
+          "x": 65.3418,
+          "y": 24.3414
+        },
+        "femurCanalDistal": {
+          "x": 56.277,
+          "y": 38.0367
+        },
+        "tibiaPlateauAnterior": {
+          "x": 39.1737,
+          "y": 48.1447
+        },
+        "tibiaPlateauPosterior": {
+          "x": 58.7605,
+          "y": 48.1447
+        },
+        "tibiaShaftProximal": {
+          "x": 50.2826,
+          "y": 69.0258
+        },
+        "tibiaShaftDistal": {
+          "x": 53.129,
+          "y": 93.7027
+        }
+      }
+    },
+    {
+      "key": "varus_steep_slope_right",
+      "case_id": "9ea7b7aa-dfa4-4e34-ae55-d82d55d6591b",
+      "version_id": "5d798741-2e3c-4213-9e82-8fd9f6a7052a",
+      "title": "Varus knee with a steep posterior slope (right knee)",
+      "difficulty": "intermediate",
+      "side": "right",
+      "pathology": "osteoarthritis",
+      "pathology_label": "Medial osteoarthritis, varus with a steep tibial slope",
+      "description": "64-year-old man with a varus right knee that will not straighten fully. The lateral film shows a steeply sloping tibial plateau.",
+      "learning_objective": "Measure the posterior tibial slope on the lateral film and plan a large knee.",
+      "patient": {
+        "patient_id": "SYN-TKA-505",
+        "age": 64,
+        "gender": "Male",
+        "bmi": 31.8,
+        "occupation": "Truck driver",
+        "walking_distance_m": 500,
+        "rom": "10–110°",
+        "fixed_flexion_deg": 10,
+        "deformity": "Varus with a fixed flexion deformity",
+        "complaint": "Right knee pain and stiffness; cannot fully straighten the knee.",
+        "clinical_notes": "Fixed flexion deformity, medial joint line tenderness, posterior osteophytes.",
+        "history": "Six years of pain; stiffness worse over the last two years.",
+        "past_management": "Physiotherapy, analgesia, one arthroscopic washout (no lasting benefit)."
+      },
+      "objectives": [
+        "Measure PTS from the plateau line and the proximal tibial shaft axis on the lateral film.",
+        "Measure the varus deformity on the full-length film.",
+        "Size the large femur and tibia and check the anterior flange sits flush."
+      ],
+      "notes": "Reference: varus mHKA 9.5°, MAD 35.5 mm medial, mLDFA 88.6°, MPTA 84.1°, AMA 6.0°, PTS 14.0°; tibia size 5, femur size 6. Reduce the slope to the implant's design slope with the tibial cut and clear posterior osteophytes to correct the flexion contracture.",
+      "scans": {
+        "FLAP": {
+          "file": "scans/varus_steep_slope_right_flap.jpg",
+          "width_px": 926,
+          "height_px": 3313,
+          "mm_per_px": 0.32,
+          "marker_mm": 25,
+          "marker_px": 78.125,
+          "calibration": {
+            "marker_type": "sphere_25mm",
+            "physical_marker_diameter_mm": 25,
+            "detected_marker_pixel_diameter": 78.125,
+            "calculated_scale_mm_per_px": 0.32,
+            "unit": "mm/px",
+            "method": "radio_opaque_marker",
+            "version": "1.0.0",
+            "is_valid": true,
+            "validation_error": null,
+            "image_width_px": 926,
+            "image_height_px": 3313,
+            "marker_centre_px": [
+              707.1,
+              1783
+            ],
+            "source": "marker_in_image",
+            "basis": "Synthetic full-length AP film drawn at 0.32 mm/px; the 25 mm sphere is 78.13 px across.",
+            "verification": {
+              "planner_detector_px": 77.97,
+              "edge_measurement_px": 77.79
+            }
+          }
+        },
+        "KLAT": {
+          "file": "scans/varus_steep_slope_right_klat.jpg",
+          "width_px": 1225,
+          "height_px": 2021,
+          "mm_per_px": 0.16,
+          "marker_mm": 25,
+          "marker_px": 156.25,
+          "calibration": {
+            "marker_type": "sphere_25mm",
+            "physical_marker_diameter_mm": 25,
+            "detected_marker_pixel_diameter": 156.25,
+            "calculated_scale_mm_per_px": 0.16,
+            "unit": "mm/px",
+            "method": "radio_opaque_marker",
+            "version": "1.0.0",
+            "is_valid": true,
+            "validation_error": null,
+            "image_width_px": 1225,
+            "image_height_px": 2021,
+            "marker_centre_px": [
+              1112.5,
+              1658.7
+            ],
+            "source": "marker_in_image",
+            "basis": "Synthetic knee lateral film drawn at 0.16 mm/px; the 25 mm sphere is 156.25 px across.",
+            "verification": {
+              "planner_detector_px": 155.79,
+              "edge_measurement_px": 155.77
+            }
+          }
+        }
+      },
+      "reference": {
+        "assessment": {
+          "MAD_mm": 35.5,
+          "AMA_deg": 6,
+          "mHKA_deg": 9.5,
+          "MPTA_deg": 84.1,
+          "LDFA_deg": 88.6,
+          "PTS_deg": 14,
+          "alignment_type": "VARUS",
+          "scale_estimated": false,
+          "patient_tibial_ml_mm": 77.4,
+          "patient_tibial_ap_mm": 48.6,
+          "patient_femoral_ml_mm": 70.8,
+          "patient_femoral_ap_mm": 63.9
+        },
+        "mad_direction": "medial",
+        "tibial_component": {
+          "implant_size": 5,
+          "position_2d": {
+            "x_offset_mm": 0,
+            "y_offset_mm": 0,
+            "rotation_deg": -6.7
+          },
+          "ap_dimension_mm": 48,
+          "ml_dimension_mm": 76.5,
+          "cortical_coverage_pct": 94.5,
+          "medial_overhang_mm": 0,
+          "lateral_overhang_mm": 0,
+          "anterior_overhang_mm": 0,
+          "posterior_overhang_mm": 0,
+          "fit_status": "ACCEPTABLE FIT",
+          "is_confirmed": true,
+          "fit_markers": {
+            "medial": {
+              "x": 51.2402,
+              "y": 51.543
+            },
+            "lateral": {
+              "x": 25.1252,
+              "y": 51.7017
+            },
+            "anterior": {
+              "x": 63.4184,
+              "y": 48.1507
+            },
+            "posterior": {
+              "x": 38.6224,
+              "y": 48.1507
+            },
+            "confirmed": true
+          },
+          "bone_ml_mm": 77.4,
+          "bone_ap_mm": 48.6,
+          "scale_estimated": false,
+          "scales": {
+            "FLAP": 0.32,
+            "KLAT": 0.16
+          }
+        },
+        "femoral_component": {
+          "implant_size": 6,
+          "position_2d": {
+            "x_offset_mm": 0,
+            "y_offset_mm": -0.2,
+            "rotation_deg": 2.8,
+            "flexion_deg": 0
+          },
+          "ap_dimension_mm": 63.5,
+          "ml_dimension_mm": 70,
+          "ap_coverage_pct": 99.3,
+          "ml_coverage_pct": 98.8,
+          "notching_risk_mm": 0,
+          "medial_overhang_mm": 0,
+          "lateral_overhang_mm": 0,
+          "posterior_overhang_mm": 0,
+          "fit_status": "ACCEPTABLE FIT",
+          "is_confirmed": true,
+          "fit_markers": {
+            "medial": {
+              "x": 50.4051,
+              "y": 50.2948
+            },
+            "lateral": {
+              "x": 26.5072,
+              "y": 50.0211
+            },
+            "anterior": {
+              "x": 69.9157,
+              "y": 40.6656
+            },
+            "posterior": {
+              "x": 37.2981,
+              "y": 39.2835
+            },
+            "confirmed": true
+          },
+          "bone_ml_mm": 70.8,
+          "bone_ap_mm": 63.9,
+          "scale_estimated": false,
+          "scales": {
+            "FLAP": 0.32,
+            "KLAT": 0.16
+          }
+        }
+      },
+      "sizes": {
+        "tibial_size": 5,
+        "femoral_size": 6
+      },
+      "landmarks": {
+        "hipCenter": {
+          "x": 45.9765,
+          "y": 6.6028
+        },
+        "kneeCenter": {
+          "x": 38.1646,
+          "y": 51.2597
+        },
+        "ankleCenter": {
+          "x": 53.6007,
+          "y": 87.9826
+        },
+        "femurDistalLateral": {
+          "x": 31.6885,
+          "y": 50.9995
+        },
+        "femurDistalMedial": {
+          "x": 44.7071,
+          "y": 51.2667
+        },
+        "tibiaProximalLateral": {
+          "x": 25.1224,
+          "y": 51.6451
+        },
+        "tibiaProximalMedial": {
+          "x": 51.2402,
+          "y": 51.543
+        },
+        "femurCanalProximal": {
+          "x": 32.627,
+          "y": 23.5826
+        },
+        "femurCanalDistal": {
+          "x": 35.4851,
+          "y": 37.8675
+        },
+        "tibiaPlateauAnterior": {
+          "x": 63.4184,
+          "y": 48.1507
+        },
+        "tibiaPlateauPosterior": {
+          "x": 38.6224,
+          "y": 48.1507
+        },
+        "tibiaShaftProximal": {
+          "x": 43.8681,
+          "y": 68.4441
+        },
+        "tibiaShaftDistal": {
+          "x": 33.9937,
+          "y": 92.4494
+        }
+      }
+    },
+    {
+      "key": "post_traumatic_varus_left",
+      "case_id": "e067953e-4a77-4a6c-8346-61a64f5f9825",
+      "version_id": "54da424a-00b1-498e-9ad7-3e14d68ca912",
+      "title": "Post-traumatic varus from a tibial malunion (left knee)",
+      "difficulty": "expert",
+      "side": "left",
+      "pathology": "post_traumatic",
+      "pathology_label": "Post-traumatic osteoarthritis, tibial shaft malunion",
+      "description": "58-year-old man whose left tibial shaft fracture healed bent 20 years ago. The leg is bowed below the knee and the medial compartment has worn out.",
+      "learning_objective": "Tell an extra-articular deformity from an intra-articular one and see how it changes the plan.",
+      "patient": {
+        "patient_id": "SYN-TKA-606",
+        "age": 58,
+        "gender": "Male",
+        "bmi": 27.3,
+        "occupation": "Farmer",
+        "walking_distance_m": 600,
+        "rom": "3–115°",
+        "fixed_flexion_deg": 3,
+        "deformity": "Varus, bowing below the knee",
+        "complaint": "Left knee pain and a visibly bowed shin.",
+        "clinical_notes": "Healed angulated mid-shaft tibial fracture with a bony bump at the old fracture site. Medial knee pain, stable ligaments.",
+        "history": "Tibial shaft fracture treated in a cast at 38; knee pain for the last five years.",
+        "past_management": "Analgesia, physiotherapy, lateral wedge insoles."
+      },
+      "objectives": [
+        "Find the healed fracture and the bend in the tibial shaft on the full-length film.",
+        "Measure the mechanical MPTA against the knee-to-ankle line, not the bent upper shaft.",
+        "Measure the overall varus and decide whether the knee replacement alone can correct it.",
+        "Size the large tibia and femur."
+      ],
+      "notes": "Reference: varus mHKA 8.6°, MAD 32.4 mm medial, mLDFA 87.4°, MPTA 81.2°, AMA 6.0°, PTS 8.0°; tibia size 6, femur size 7. The deformity is mostly below the joint. A tibial cut square to the mechanical axis removes an uneven wedge; consider whether a corrective osteotomy is needed first.",
+      "scans": {
+        "FLAP": {
+          "file": "scans/post_traumatic_varus_left_flap.jpg",
+          "width_px": 926,
+          "height_px": 3329,
+          "mm_per_px": 0.32,
+          "marker_mm": 25,
+          "marker_px": 78.125,
+          "calibration": {
+            "marker_type": "sphere_25mm",
+            "physical_marker_diameter_mm": 25,
+            "detected_marker_pixel_diameter": 78.125,
+            "calculated_scale_mm_per_px": 0.32,
+            "unit": "mm/px",
+            "method": "radio_opaque_marker",
+            "version": "1.0.0",
+            "is_valid": true,
+            "validation_error": null,
+            "image_width_px": 926,
+            "image_height_px": 3329,
+            "marker_centre_px": [
+              219.1,
+              1828.5
+            ],
+            "source": "marker_in_image",
+            "basis": "Synthetic full-length AP film drawn at 0.32 mm/px; the 25 mm sphere is 78.13 px across.",
+            "verification": {
+              "planner_detector_px": 77.94,
+              "edge_measurement_px": 77.79
+            }
+          }
+        },
+        "KLAT": {
+          "file": "scans/post_traumatic_varus_left_klat.jpg",
+          "width_px": 1188,
+          "height_px": 1960,
+          "mm_per_px": 0.165,
+          "marker_mm": 25,
+          "marker_px": 151.515,
+          "calibration": {
+            "marker_type": "sphere_25mm",
+            "physical_marker_diameter_mm": 25,
+            "detected_marker_pixel_diameter": 151.515,
+            "calculated_scale_mm_per_px": 0.165,
+            "unit": "mm/px",
+            "method": "radio_opaque_marker",
+            "version": "1.0.0",
+            "is_valid": true,
+            "validation_error": null,
+            "image_width_px": 1188,
+            "image_height_px": 1960,
+            "marker_centre_px": [
+              109.1,
+              1608.5
+            ],
+            "source": "marker_in_image",
+            "basis": "Synthetic knee lateral film drawn at 0.165 mm/px; the 25 mm sphere is 151.52 px across.",
+            "verification": {
+              "planner_detector_px": 151.09,
+              "edge_measurement_px": 151
+            }
+          }
+        }
+      },
+      "reference": {
+        "assessment": {
+          "MAD_mm": 32.4,
+          "AMA_deg": 6,
+          "mHKA_deg": 8.6,
+          "MPTA_deg": 81.2,
+          "LDFA_deg": 87.4,
+          "PTS_deg": 8,
+          "alignment_type": "VARUS",
+          "scale_estimated": false,
+          "patient_tibial_ml_mm": 80.5,
+          "patient_tibial_ap_mm": 50.6,
+          "patient_femoral_ml_mm": 73.8,
+          "patient_femoral_ap_mm": 66.8
+        },
+        "mad_direction": "medial",
+        "tibial_component": {
+          "implant_size": 6,
+          "position_2d": {
+            "x_offset_mm": 0,
+            "y_offset_mm": 0,
+            "rotation_deg": 6.2
+          },
+          "ap_dimension_mm": 51,
+          "ml_dimension_mm": 81,
+          "cortical_coverage_pct": 97.8,
+          "medial_overhang_mm": 0.5,
+          "lateral_overhang_mm": 0.3,
+          "anterior_overhang_mm": 0.2,
+          "posterior_overhang_mm": 0.2,
+          "fit_status": "ACCEPTABLE FIT",
+          "is_confirmed": true,
+          "fit_markers": {
+            "medial": {
+              "x": 47.0783,
+              "y": 51.8758
+            },
+            "lateral": {
+              "x": 74.26,
+              "y": 51.5908
+            },
+            "anterior": {
+              "x": 36.0677,
+              "y": 48.1447
+            },
+            "posterior": {
+              "x": 61.8814,
+              "y": 48.1447
+            },
+            "confirmed": true
+          },
+          "bone_ml_mm": 80.5,
+          "bone_ap_mm": 50.6,
+          "scale_estimated": false,
+          "scales": {
+            "FLAP": 0.32,
+            "KLAT": 0.165
+          }
+        },
+        "femoral_component": {
+          "implant_size": 7,
+          "position_2d": {
+            "x_offset_mm": 0,
+            "y_offset_mm": -0.2,
+            "rotation_deg": -2.4,
+            "flexion_deg": 0
+          },
+          "ap_dimension_mm": 66.5,
+          "ml_dimension_mm": 73,
+          "ap_coverage_pct": 99.4,
+          "ml_coverage_pct": 98.9,
+          "notching_risk_mm": 0,
+          "medial_overhang_mm": 0,
+          "lateral_overhang_mm": 0,
+          "posterior_overhang_mm": 0,
+          "fit_status": "ACCEPTABLE FIT",
+          "is_confirmed": true,
+          "fit_markers": {
+            "medial": {
+              "x": 47.8183,
+              "y": 50.3756
+            },
+            "lateral": {
+              "x": 72.7119,
+              "y": 50.105
+            },
+            "anterior": {
+              "x": 29.2134,
+              "y": 40.6536
+            },
+            "posterior": {
+              "x": 63.3101,
+              "y": 38.959
+            },
+            "confirmed": true
+          },
+          "bone_ml_mm": 73.8,
+          "bone_ap_mm": 66.8,
+          "scale_estimated": false,
+          "scales": {
+            "FLAP": 0.32,
+            "KLAT": 0.165
+          }
+        }
+      },
+      "sizes": {
+        "tibial_size": 6,
+        "femoral_size": 7
+      },
+      "landmarks": {
+        "hipCenter": {
+          "x": 53.902,
+          "y": 6.571
+        },
+        "kneeCenter": {
+          "x": 60.6155,
+          "y": 51.403
+        },
+        "ankleCenter": {
+          "x": 46.2138,
+          "y": 88.2401
+        },
+        "femurDistalLateral": {
+          "x": 67.3628,
+          "y": 51.1429
+        },
+        "femurDistalMedial": {
+          "x": 53.8083,
+          "y": 51.4718
+        },
+        "tibiaProximalLateral": {
+          "x": 74.2509,
+          "y": 51.5346
+        },
+        "tibiaProximalMedial": {
+          "x": 47.0783,
+          "y": 51.8758
+        },
+        "femurCanalProximal": {
+          "x": 66.9212,
+          "y": 23.6384
+        },
+        "femurCanalDistal": {
+          "x": 63.6666,
+          "y": 37.9685
+        },
+        "tibiaPlateauAnterior": {
+          "x": 36.0677,
+          "y": 48.1447
+        },
+        "tibiaPlateauPosterior": {
+          "x": 61.8814,
+          "y": 48.1447
+        },
+        "tibiaShaftProximal": {
+          "x": 52.3957,
+          "y": 68.8679
+        },
+        "tibiaShaftDistal": {
+          "x": 58.0757,
+          "y": 93.3643
+        }
+      }
+    }
+  ]
+}

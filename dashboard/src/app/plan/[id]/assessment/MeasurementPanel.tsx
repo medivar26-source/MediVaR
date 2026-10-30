@@ -9,6 +9,12 @@ import { LANDMARK_GUIDE, LANDMARK_INFO, LANDMARK_ORDER } from "@/lib/data/landma
 import {
   MEASURE_INFO,
   MEASURE_ORDER,
+  RANGE_TIER_INFO,
+  formatMeasure,
+  madSideFromAlignment,
+  normalRangeText,
+  rangeTier,
+  storedMeasure,
   type AssessmentReading,
   type MeasureKey,
 } from "@/lib/data/assessment_geometry";
@@ -40,15 +46,6 @@ interface MeasurementPanelProps {
   /** Saves the assessment; resolves to whether the server accepted it. */
   onAccept: () => Promise<boolean>;
 }
-
-const STORED_VALUE: Record<MeasureKey, (a: V1Assessment) => number> = {
-  mad: (a) => a.MAD_mm,
-  mhka: (a) => a.mHKA_deg,
-  mpta: (a) => a.MPTA_deg,
-  ldfa: (a) => a.LDFA_deg,
-  ama: (a) => a.AMA_deg,
-  pts: (a) => a.PTS_deg,
-};
 
 const POINT_WORD = (n: number) => (n === 1 ? "1 point" : `${n} points`);
 
@@ -139,19 +136,10 @@ export function MeasurementPanel({
     };
   }
 
-  const measureText = (key: MeasureKey): string | null => {
-    const info = MEASURE_INFO[key];
-    if (stored) {
-      const v = STORED_VALUE[key](stored);
-      return `${v.toFixed(1)}${info.unit === "mm" ? " mm" : "°"}`;
-    }
-    const v = reading.measures[key].value;
-    if (v === undefined) return null;
-    if (key === "mad") {
-      return `${v.toFixed(1)} mm${reading.mad_direction ? ` ${reading.mad_direction}` : ""}${reading.scale_estimated ? " (est.)" : ""}`;
-    }
-    return `${v.toFixed(1)}°`;
-  };
+  // Saved values carry the varus/valgus designation, which gives MAD's side.
+  const madSide = stored ? madSideFromAlignment(stored.alignment_type) : reading.mad_direction;
+  const scaleEstimated = stored ? Boolean(stored.scale_estimated) : reading.scale_estimated;
+  const valueOf = (key: MeasureKey) => (stored ? storedMeasure(stored, key) : reading.measures[key].value);
 
   const alignment = stored ? stored.alignment_type : reading.alignment_type;
   const hka = stored ? stored.mHKA_deg : reading.measures.mhka.value;
@@ -202,7 +190,8 @@ export function MeasurementPanel({
         <ul className={c.resultList}>
           {MEASURE_ORDER.map((key) => {
             const info = MEASURE_INFO[key];
-            const text = measureText(key);
+            const value = valueOf(key);
+            const tier = value === undefined ? undefined : RANGE_TIER_INFO[rangeTier(key, value, madSide)];
             const m = reading.measures[key];
             return (
               <li key={key} className={c.resultRow} title={info.plain}>
@@ -211,10 +200,12 @@ export function MeasurementPanel({
                   <span>{info.name}</span>
                 </span>
                 <span className={c.resultValue}>
-                  {text ? (
+                  {value !== undefined && tier ? (
                     <>
-                      <strong>{text}</strong>
-                      <small>usual: {info.usual}</small>
+                      <strong>{formatMeasure(key, value, { madSide, scaleEstimated })}</strong>
+                      <small>
+                        <span className={c[`tone-${tier.tone}`]}>{tier.label}</span> · normal {normalRangeText(key)}
+                      </small>
                     </>
                   ) : (
                     <>
@@ -285,7 +276,7 @@ export function MeasurementPanel({
                         {!isAccepted && (
                           <button type="button" className={c.markerBtn} aria-pressed={placing === l.key} onClick={() => onStartPlacing(l.key as Key)}>
                             <Crosshair size={13} aria-hidden="true" />
-                            {placing === l.key ? "Click the scan…" : isPlaced ? "Move" : "Place"}
+                            {placing === l.key ? "Right-click the scan…" : isPlaced ? "Move" : "Place"}
                           </button>
                         )}
                       </li>

@@ -7,7 +7,7 @@ import type { V1FitMarkers } from "@/lib/plan";
 import type { FitTone } from "@/lib/data/tkr_templates";
 import {
   MARKER_KEYS,
-  MARKER_LABEL,
+  markerLabel,
   MARKER_VIEW,
   markerHint,
   modelXToImage,
@@ -16,10 +16,11 @@ import {
 } from "@/lib/data/fit_markers";
 import type { BoneModel, ComponentKind, MarkerKey, ScanView } from "@/lib/data/fit_markers";
 import type { FitExtents } from "@/lib/data/tkr_templates";
+import { GAP_GREEN, GUIDE_YELLOW, LABEL_BG, LABEL_EDGE } from "./overlayStyle";
 
-const MARKER_COLOUR = "#facc15";
+const MARKER_COLOUR = GUIDE_YELLOW;
 const TONE_COLOUR: Record<FitTone | "info", string> = {
-  pass: "#22c55e",
+  pass: GAP_GREEN,
   warn: "#f59e0b",
   fail: "#ef4444",
   info: "#e2e8f0",
@@ -64,7 +65,7 @@ function toPercent(stage: HTMLDivElement | null, clientX: number, clientY: numbe
 
 /**
  * The bone-edge markers for one scan. Each is a draggable handle, the lateral and AP scans carry two
- * each. While a marker is being placed, a click anywhere on the scan puts it there.
+ * each. While a marker is being placed, a right-click anywhere on the scan puts it there (left-drag moves the scan).
  */
 export function FitMarkerLayer({
   kind,
@@ -125,7 +126,7 @@ export function FitMarkerLayer({
             key={key}
             data-landmark={key}
             role="slider"
-            aria-label={`${MARKER_LABEL[key]} marker`}
+            aria-label={`${markerLabel(kind, key)} marker`}
             aria-valuetext={`${point.x.toFixed(1)}% across, ${point.y.toFixed(1)}% down`}
             tabIndex={readOnly ? -1 : 0}
             onPointerDown={(e) => down(key, e)}
@@ -139,7 +140,7 @@ export function FitMarkerLayer({
               transform: `translate(-50%, -50%) scale(${1 / zoom})`,
               zIndex: 60,
               touchAction: "none",
-              // While an edge is being placed, a click always places it, even on top of another marker.
+              // While an edge is being placed, a right-click always places it, even on top of another marker.
               pointerEvents: placingHere ? "none" : "auto",
               cursor: readOnly ? "default" : dragging === key ? "grabbing" : "grab",
             }}
@@ -147,12 +148,11 @@ export function FitMarkerLayer({
             <span
               style={{
                 display: "block",
-                width: 18,
-                height: 18,
+                width: 12,
+                height: 12,
                 borderRadius: "50%",
-                border: `2px solid ${MARKER_COLOUR}`,
-                background: "rgba(0,0,0,0.35)",
-                boxShadow: "0 0 0 1px rgba(0,0,0,0.6)",
+                border: `1.5px solid ${MARKER_COLOUR}`,
+                background: "rgba(15,23,42,0.25)",
               }}
             >
               <span
@@ -160,10 +160,10 @@ export function FitMarkerLayer({
                   position: "absolute",
                   left: "50%",
                   top: "50%",
-                  width: 4,
-                  height: 4,
-                  marginLeft: -2,
-                  marginTop: -2,
+                  width: 3,
+                  height: 3,
+                  marginLeft: -1.5,
+                  marginTop: -1.5,
                   borderRadius: "50%",
                   background: MARKER_COLOUR,
                 }}
@@ -173,19 +173,22 @@ export function FitMarkerLayer({
               style={{
                 position: "absolute",
                 left: "50%",
-                top: 22,
+                top: 16,
                 transform: "translateX(-50%)",
-                padding: "1px 6px",
-                borderRadius: 4,
-                background: "rgba(15,23,42,0.85)",
+                padding: "0 5px",
+                borderRadius: 3,
+                background: LABEL_BG,
                 color: MARKER_COLOUR,
-                fontSize: 11,
-                fontWeight: 700,
-                whiteSpace: "nowrap",
+                fontSize: 10.5,
+                fontWeight: 600,
+                width: "max-content",
+                maxWidth: 120,
+                textAlign: "center",
+                lineHeight: 1.25,
                 pointerEvents: "none",
               }}
             >
-              {MARKER_LABEL[key].replace(" edge", "")}
+              {markerLabel(kind, key)}
             </span>
           </div>
         );
@@ -194,8 +197,9 @@ export function FitMarkerLayer({
       {placingHere && !readOnly && (
         <>
           <div
-            data-landmark="placing"
-            onClick={(e) => {
+            data-place-layer="placing"
+            onContextMenu={(e) => {
+              e.preventDefault();
               const p = toPercent(stageRef.current, e.clientX, e.clientY);
               if (p) onPlace(placingHere, p);
             }}
@@ -215,8 +219,8 @@ export function FitMarkerLayer({
               gap: 10,
               padding: "6px 12px",
               borderRadius: 8,
-              background: "rgba(15,23,42,0.92)",
-              border: `1px solid ${MARKER_COLOUR}`,
+              background: LABEL_BG,
+              border: `1px solid ${LABEL_EDGE}`,
               color: "#fff",
               fontSize: 13,
               fontWeight: 600,
@@ -272,22 +276,22 @@ export function EdgeGap({
   const lo = Math.min(x1, x2);
   const hi = Math.max(x1, x2);
   const mid = (lo + hi) / 2;
-  const tick = fontPx * 0.6;
+  const tick = fontPx * 0.45;
   const tx = anchor === "start" ? hi + fontPx * 0.4 : anchor === "end" ? lo - fontPx * 0.4 : mid;
   return (
     <g pointerEvents="none">
-      <line x1={lo} y1={y} x2={hi} y2={y} stroke={colour} strokeWidth={fontPx * 0.14} />
-      <line x1={lo} y1={y - tick} x2={lo} y2={y + tick} stroke={colour} strokeWidth={fontPx * 0.14} />
-      <line x1={hi} y1={y - tick} x2={hi} y2={y + tick} stroke={colour} strokeWidth={fontPx * 0.14} />
+      <line x1={lo} y1={y} x2={hi} y2={y} stroke={colour} strokeWidth={fontPx * 0.09} />
+      <line x1={lo} y1={y - tick} x2={lo} y2={y + tick} stroke={colour} strokeWidth={fontPx * 0.09} />
+      <line x1={hi} y1={y - tick} x2={hi} y2={y + tick} stroke={colour} strokeWidth={fontPx * 0.09} />
       <text
         x={tx}
         y={y - tick * 1.4}
         textAnchor={anchor}
         fontSize={fontPx}
-        fontWeight={700}
+        fontWeight={600}
         fill={colour}
-        stroke="rgba(0,0,0,0.75)"
-        strokeWidth={fontPx * 0.2}
+        stroke="rgba(15,23,42,0.7)"
+        strokeWidth={fontPx * 0.14}
         paintOrder="stroke"
       >
         {label}
@@ -374,7 +378,7 @@ export function EdgeGapOverlay({
               : "flush";
         const outward = markerX >= (widthPx - 0) / 2 ? "start" : "end";
         const colour = TONE_COLOUR[verdict.tone];
-        const reach = 12 / mmPerPx;
+        const reach = 8 / mmPerPx;
         const bracketY = Math.min(heightPx - fontPx, Math.max(fontPx * 2, y)) - fontPx * 0.8;
         return (
           <g key={key}>
@@ -385,9 +389,9 @@ export function EdgeGapOverlay({
               x2={markerX}
               y2={heightPx}
               stroke={MARKER_COLOUR}
-              strokeWidth={fontPx * 0.08}
+              strokeWidth={fontPx * 0.06}
               strokeDasharray={`${fontPx * 0.7} ${fontPx * 0.5}`}
-              opacity={0.55}
+              opacity={0.5}
               pointerEvents="none"
             />
             {/* The implant's own edge, in the colour of how it sits against that bone edge. */}
@@ -397,8 +401,7 @@ export function EdgeGapOverlay({
               x2={implantX}
               y2={bracketY + reach}
               stroke={colour}
-              strokeWidth={fontPx * 0.2}
-              strokeLinecap="round"
+              strokeWidth={fontPx * 0.09}
               pointerEvents="none"
             />
             <EdgeGap
@@ -461,8 +464,7 @@ export function CalibrationLayer({
         preserveAspectRatio="none"
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 55, pointerEvents: "none", overflow: "visible" }}
       >
-        <circle cx={candidate.cx} cy={candidate.cy} r={candidate.diameterPx / 2} fill="none" stroke={MARKER_COLOUR} strokeWidth={2.5} strokeDasharray="6 4" vectorEffect="non-scaling-stroke" />
-        <circle cx={candidate.cx} cy={candidate.cy} r={candidate.diameterPx / 2 + 6} fill="none" stroke="#0f172a" strokeWidth={1} vectorEffect="non-scaling-stroke" opacity={0.6} />
+        <circle cx={candidate.cx} cy={candidate.cy} r={candidate.diameterPx / 2} fill="none" stroke={MARKER_COLOUR} strokeWidth={1.5} strokeDasharray="6 4" vectorEffect="non-scaling-stroke" />
       </svg>
     ) : null;
 
@@ -485,8 +487,11 @@ export function CalibrationLayer({
     <>
       {ring}
       <div
-        data-landmark="calibrating"
-        onClick={(e) => click(e.clientX, e.clientY)}
+        data-place-layer="calibrating"
+        onContextMenu={(e) => {
+          e.preventDefault();
+          click(e.clientX, e.clientY);
+        }}
         style={{ position: "absolute", inset: 0, zIndex: 56, cursor: "crosshair" }}
       />
       {points.length === 2 && (
@@ -495,7 +500,7 @@ export function CalibrationLayer({
           preserveAspectRatio="none"
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 57, pointerEvents: "none" }}
         >
-          <line x1={points[0].x} y1={points[0].y} x2={points[1].x} y2={points[1].y} stroke={MARKER_COLOUR} strokeWidth={2} vectorEffect="non-scaling-stroke" />
+          <line x1={points[0].x} y1={points[0].y} x2={points[1].x} y2={points[1].y} stroke={MARKER_COLOUR} strokeWidth={1.25} vectorEffect="non-scaling-stroke" />
         </svg>
       )}
       {points.map((p, i) => (
@@ -505,11 +510,11 @@ export function CalibrationLayer({
             position: "absolute",
             left: `${p.x}%`,
             top: `${p.y}%`,
-            width: 12,
-            height: 12,
+            width: 10,
+            height: 10,
             borderRadius: "50%",
-            border: `2px solid ${MARKER_COLOUR}`,
-            background: "rgba(0,0,0,0.5)",
+            border: `1.5px solid ${MARKER_COLOUR}`,
+            background: "rgba(15,23,42,0.25)",
             transform: `translate(-50%, -50%) scale(${1 / zoom})`,
             zIndex: 58,
             pointerEvents: "none",
@@ -530,8 +535,8 @@ export function CalibrationLayer({
           gap: 10,
           padding: "6px 12px",
           borderRadius: 8,
-          background: "rgba(15,23,42,0.92)",
-          border: `1px solid ${MARKER_COLOUR}`,
+          background: LABEL_BG,
+          border: `1px solid ${LABEL_EDGE}`,
           color: "#fff",
           fontSize: 13,
           fontWeight: 600,
@@ -540,8 +545,8 @@ export function CalibrationLayer({
       >
         <span>
           {points.length === 0
-            ? `Click one edge of the ${knownMm} mm marker, then the opposite edge.`
-            : "Now click the opposite edge."}
+            ? `Right-click one edge of the ${knownMm} mm marker, then the opposite edge.`
+            : "Now right-click the opposite edge."}
         </span>
         <button
           type="button"
@@ -574,10 +579,9 @@ export function ScaleBar({
   const x = widthPx * 0.04;
   const y = heightPx * 0.94;
   const colour = calibrated ? "#e2e8f0" : "#f59e0b";
-  const stroke = fontPx * 0.18;
+  const stroke = fontPx * 0.1;
   return (
     <g pointerEvents="none">
-      <line x1={x} y1={y} x2={x + barPx} y2={y} stroke="rgba(0,0,0,0.7)" strokeWidth={stroke * 2.2} />
       <line x1={x} y1={y} x2={x + barPx} y2={y} stroke={colour} strokeWidth={stroke} />
       <line x1={x} y1={y - fontPx * 0.5} x2={x} y2={y + fontPx * 0.5} stroke={colour} strokeWidth={stroke} />
       <line x1={x + barPx} y1={y - fontPx * 0.5} x2={x + barPx} y2={y + fontPx * 0.5} stroke={colour} strokeWidth={stroke} />

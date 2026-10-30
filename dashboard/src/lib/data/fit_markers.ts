@@ -41,26 +41,39 @@ export const MARKER_VIEW: Record<MarkerKey, ScanView> = {
   posterior: "KLAT",
 };
 
-export const MARKER_LABEL: Record<MarkerKey, string> = {
-  medial: "Medial edge",
-  lateral: "Lateral edge",
-  anterior: "Anterior edge",
-  posterior: "Posterior edge",
+/**
+ * What each edge is called on the scan and in the checklist. The medial and lateral edges reuse the names
+ * of the matching assessment landmarks; the front and back edges are the reference points of that bone.
+ */
+const MARKER_LABELS: Record<ComponentKind, Record<MarkerKey, string>> = {
+  tibial: {
+    medial: "Medial Proximal tibial plateau",
+    lateral: "Lateral Proximal tibial plateau",
+    anterior: "Anterior Tibial Plateau Reference",
+    posterior: "Posterior Tibial Plateau Reference",
+  },
+  femoral: {
+    medial: "Medial Distal femoral condyle",
+    lateral: "Lateral Distal femoral condyle",
+    anterior: "Anterior Femoral Condyle Reference",
+    posterior: "Posterior Femoral Condyle Reference",
+  },
 };
 
-const BONE_NAME: Record<ComponentKind, string> = {
-  tibial: "tibial plateau at the cut level",
-  femoral: "distal femur",
-};
+export const markerLabel = (kind: ComponentKind, key: MarkerKey): string => MARKER_LABELS[kind][key];
 
 /** One line telling the surgeon where to click. */
 export function markerHint(kind: ComponentKind, key: MarkerKey): string {
-  const bone = BONE_NAME[kind];
   const view = MARKER_VIEW[key] === "FLAP" ? "AP (front) scan" : "lateral (side) scan";
-  return `Click the outer ${MARKER_LABEL[key].toLowerCase()} of the ${bone} on the ${view}.`;
+  return `Right-click the ${markerLabel(kind, key)} on the ${view}. Drag to move the scan.`;
 }
 
-/** The assessment landmarks that give a first guess for each marker. */
+/**
+ * The assessment landmarks that give a first guess for each marker. Only the tibia has them: its joint-line
+ * points sit on the plateau rim, which is the edge being marked. The femur's distal points are the bottoms
+ * of the condyles, not their widest points, so as a guess they gave a bone barely half as wide as it is
+ * (with a range warning on arrival); the femoral edges are marked fresh instead.
+ */
 const SEED_KEYS: Record<ComponentKind, Partial<Record<MarkerKey, string>>> = {
   tibial: {
     medial: "tibiaProximalMedial",
@@ -68,10 +81,7 @@ const SEED_KEYS: Record<ComponentKind, Partial<Record<MarkerKey, string>>> = {
     anterior: "tibiaPlateauAnterior",
     posterior: "tibiaPlateauPosterior",
   },
-  femoral: {
-    medial: "femurDistalMedial",
-    lateral: "femurDistalLateral",
-  },
+  femoral: {},
 };
 
 /**

@@ -310,6 +310,9 @@ export type FemoralFitResult = {
 
 export const FEMORAL_NOTCH_LIMIT_MM = 0.5;
 
+/** Whether a flange this far short of the anterior cortex would likely notch it: the "potential notching" yes/no. */
+export const notchingLikely = (notchingRiskMm: number) => notchingRiskMm > FEMORAL_NOTCH_LIMIT_MM;
+
 /** Where the femoral template sits once placed: the same extents the fit is measured on. */
 export function femoralExtents(size: number, xOffsetMm: number, yOffsetMm: number, rotationDeg = 0, flexionDeg = 0): FitExtents {
   const tpl = getFemoralImplant(size);
@@ -378,7 +381,7 @@ export function evaluateFemoralFit(
 
   const apCoverageTone = coverageTone(apCoveragePct);
   const mlCoverageTone = coverageTone(mlCoveragePct);
-  const notchTone: FitTone = notchingRiskMm > FEMORAL_NOTCH_LIMIT_MM ? "warn" : "pass";
+  const notchTone: FitTone = notchingLikely(notchingRiskMm) ? "warn" : "pass";
   const worst = worstTone([apCoverageTone, mlCoverageTone, notchTone]);
 
   let fitStatus: FemoralFitResult["fitStatus"] = "ACCEPTABLE FIT";

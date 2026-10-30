@@ -49,6 +49,48 @@ test("Navigation persona separation & approved hierarchy", async (t) => {
     assert.ok(!all.some((i) => i.href === "/simulations" || i.href === "/setup"));
   });
 
+  await t.test("learner: only Training is a dropdown; Content Library and Progress are plain links", () => {
+    const learner = sectionsForPersona("learner", {
+      counts: {},
+      pinned: [{ label: "Last case", href: "/cases/x" }],
+    } as never);
+    assert.deepEqual(
+      learner.map((s) => [s.label, Boolean(s.flat)]),
+      [
+        ["Training", false],
+        ["Content Library", true],
+        ["Progress", true],
+      ],
+    );
+    // Training lists programs and sessions and carries no highlight or dot of its own.
+    assert.equal(learner[0].quiet, true);
+    assert.equal(learner[1].href, "/content?tab=procedures");
+    // Progress is just Progress: nothing pinned under it.
+    assert.deepEqual(learner[2].groups.map((g) => g.label), [undefined]);
+  });
+
+  await t.test("instructor: only Programs is a dropdown; Content Library and Insights are plain links", () => {
+    const instructor = sectionsForPersona("instructor", {
+      counts: {},
+      pinned: [{ label: "Last report", href: "/reports/x" }],
+    } as never);
+    assert.deepEqual(
+      instructor.map((s) => [s.label, Boolean(s.flat)]),
+      [
+        ["Programs", false],
+        ["Content Library", true],
+        ["Insights", true],
+      ],
+    );
+    const programs = instructor[0];
+    assert.equal(programs.quiet, true);
+    // Programs lists All Programs (Cohorts nested under it) and Sessions, nothing else.
+    assert.deepEqual(programs.groups.flatMap((g) => g.items.map((i) => i.href)), ["/programs", "/sessions"]);
+    assert.deepEqual(programs.groups[0].items[0].children?.map((c) => c.href), ["/programs?tab=cohorts"]);
+    // Nothing is pinned under the plain links.
+    assert.ok(instructor.every((s) => s.groups.every((g) => g.label === undefined)));
+  });
+
   await t.test("instructor persona should follow approved hierarchy: Programs, Content Library, Reports", () => {
     const instructorSections = sectionsForPersona("instructor");
 

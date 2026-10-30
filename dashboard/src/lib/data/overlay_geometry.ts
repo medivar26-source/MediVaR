@@ -13,6 +13,16 @@ import type { ImplantTemplate } from "./implant_templates";
 import { extentsOf, rotateAbout } from "./implant_templates";
 import { modelXToImage, modelYToImageX, type Origin } from "./fit_markers";
 
+/**
+ * The drawing's height on each scan is its own number: the AP scan uses `level_offset_mm`, the lateral scan
+ * `level_offset_klat_mm`. They are separate on purpose, so moving the component up or down on one scan never
+ * moves it on the other. (Sideways position is already separate: medial/lateral is x, front/back is y.)
+ */
+export type LevelKey = "level_offset_mm" | "level_offset_klat_mm";
+export const levelKeyFor = (view: "FLAP" | "KLAT"): LevelKey => (view === "FLAP" ? "level_offset_mm" : "level_offset_klat_mm");
+export const levelFor = (c: { level_offset_mm?: number; level_offset_klat_mm?: number }, view: "FLAP" | "KLAT"): number =>
+  c[levelKeyFor(view)] ?? 0;
+
 export type OverlayPlacement = {
   /** Image-pixel position of the template's local origin (the centre handle / rotation pivot). */
   cx: number;

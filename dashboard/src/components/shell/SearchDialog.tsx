@@ -57,12 +57,20 @@ function Palette({
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   // Records found by name for the query that produced them.
   const [found, setFound] = useState<{ q: string; hits: SearchHit[] }>({ q: "", hits: [] });
 
-  // Moving focus is not state, so this stays a legitimate effect.
+  // Opening the modal and moving focus are not state, so this stays a legitimate effect. Closing it on
+  // cleanup hands focus back to whatever opened the palette.
   useEffect(() => {
+    const node = dialogRef.current;
+    if (!node) return;
+    if (!node.open) node.showModal();
     inputRef.current?.focus();
+    return () => {
+      if (node.open) node.close();
+    };
   }, []);
 
   const entries = useMemo<SearchEntry[]>(() => {
@@ -139,10 +147,7 @@ function Palette({
   };
 
   const onKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      onClose();
-    } else if (event.key === "ArrowDown") {
+    if (event.key === "ArrowDown") {
       event.preventDefault();
       setCursor(Math.min(active + 1, results.length - 1));
     } else if (event.key === "ArrowUp") {
@@ -155,19 +160,22 @@ function Palette({
   };
 
   return (
-    <div
-      className={s.backdrop}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+    <dialog
+      ref={dialogRef}
+      className={s.dialog}
+      aria-label="Search"
+      onKeyDown={onKeyDown}
+      // Escape: let the owner decide, so its state and the dialog never disagree.
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      // A click on the backdrop lands on the dialog element itself, not on its content.
+      onClick={(event) => {
+        if (event.target === dialogRef.current) onClose();
       }}
     >
-      <div
-        className={s.dialog}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Search"
-        onKeyDown={onKeyDown}
-      >
+      <div className={s.frame}>
         <div className={s.field}>
           <Search className={s.icon} strokeWidth={2} aria-hidden="true" />
           <input
@@ -240,6 +248,6 @@ function Palette({
           </span>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

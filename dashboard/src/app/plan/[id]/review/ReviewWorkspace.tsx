@@ -9,6 +9,17 @@ import { sealTkrPlan } from "@/app/actions";
 import { Button } from "@/components/ui";
 import { planOperativeSide, type PlanDetail, type V1VrPayload } from "@/lib/plan";
 import { SCAN_VIEW_NAME, resolvePlanScales } from "@/lib/data/scan_scale";
+import {
+  MEASURE_INFO,
+  MEASURE_NEEDS,
+  MEASURE_ORDER,
+  RANGE_TIER_INFO,
+  formatMeasure,
+  madSideFromAlignment,
+  rangeTier,
+  storedMeasure,
+} from "@/lib/data/assessment_geometry";
+import { notchingLikely } from "@/lib/data/tkr_templates";
 
 function fitStatusColor(status?: string): string {
   if (!status) return "#f59e0b";
@@ -213,28 +224,34 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
             <>
               {(() => {
                 const dir = assessment.alignment_type === "VALGUS" ? "Valgus" : assessment.alignment_type === "VARUS" ? "Varus" : "";
-                const groups: { title: string; rows: { label: string; value: string }[] }[] = [
-                  {
-                    title: "FLAP",
-                    rows: [
-                      { label: "MAD", value: `${assessment.MAD_mm.toFixed(1)} mm${dir ? ` ${dir}` : ""}` },
-                      { label: "AMA", value: `${assessment.AMA_deg.toFixed(1)}°` },
-                      { label: "mHKA", value: `${assessment.mHKA_deg.toFixed(1)}°${dir ? ` ${dir}` : ""}` },
-                      { label: "MPTA", value: `${assessment.MPTA_deg.toFixed(1)}°` },
-                      { label: "LDFA", value: `${assessment.LDFA_deg.toFixed(1)}°` },
-                    ],
-                  },
-                  { title: "KLAT", rows: [{ label: "PTS", value: `${assessment.PTS_deg.toFixed(1)}°` }] },
-                ];
+                const madSide = madSideFromAlignment(assessment.alignment_type);
+                const groups = (["FLAP", "KLAT"] as const).map((view) => ({
+                  title: view,
+                  rows: MEASURE_ORDER.filter((key) => MEASURE_NEEDS[key].view === view).map((key) => {
+                    const value = storedMeasure(assessment, key);
+                    if (value === undefined) return { key, label: MEASURE_INFO[key].short, value: "Not recorded", tier: undefined };
+                    return {
+                      key,
+                      label: MEASURE_INFO[key].short,
+                      value: `${formatMeasure(key, value, { madSide })}${key === "mhka" && dir ? ` ${dir}` : ""}`,
+                      tier: RANGE_TIER_INFO[rangeTier(key, value, madSide)],
+                    };
+                  }),
+                }));
                 return (
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", fontSize: "0.875rem" }}>
                     {groups.map((g) => (
                       <div key={g.title} style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                         <span style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.06em", color: "var(--text-muted)" }}>{g.title}:</span>
                         {g.rows.map((row) => (
-                          <div key={row.label} style={{ display: "flex", justifyContent: "space-between" }}>
+                          <div key={row.key} style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}>
                             <span style={{ color: "var(--text-muted)" }}>• {row.label}</span>
-                            <strong style={{ fontFamily: "var(--font-mono)" }}>{row.value}</strong>
+                            <span style={{ display: "inline-flex", alignItems: "baseline", gap: "0.5rem" }}>
+                              <strong style={{ fontFamily: "var(--font-mono)" }}>{row.value}</strong>
+                              {row.tier && (
+                                <span style={{ fontSize: "0.75rem", fontWeight: 600, color: `var(--${row.tier.tone})` }}>{row.tier.label}</span>
+                              )}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -318,7 +335,10 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.25rem", fontSize: "0.75rem" }}>
                     <span>Depth covered: <strong>{femoral.ap_coverage_pct?.toFixed(1) ?? "--"}%</strong></span>
-                    <span>Gap at the front: <strong>{femoral.notching_risk_mm === 0 ? "0.0 mm (flush)" : `${femoral.notching_risk_mm} mm`}</strong></span>
+                    <span>
+                      Gap at the front: <strong>{femoral.notching_risk_mm === 0 ? "0.0 mm (flush)" : `${femoral.notching_risk_mm} mm`}</strong>
+                      {femoral.notching_risk_mm !== undefined && ` · potential notching: ${notchingLikely(femoral.notching_risk_mm) ? "yes" : "no"}`}
+                    </span>
                   </div>
                 </>
               ) : (

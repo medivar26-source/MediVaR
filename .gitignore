@@ -43,5 +43,8 @@ env/
 *.egg-info/
 .pytest_cache/
 
+# database backups written by backend/scripts (older ones already tracked stay tracked)
+backend/db_backup_*
+
 # documentation
 mediver_documentation/changes/

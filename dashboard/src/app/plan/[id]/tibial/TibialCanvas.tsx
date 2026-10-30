@@ -9,11 +9,13 @@ import { getTibialImplant } from "@/lib/data/implant_templates";
 import type { BoneModel, MarkerKey, ScanView } from "@/lib/data/fit_markers";
 import type { V1FitMarkers, V1TibialComponent } from "@/lib/plan";
 import { ImplantOverlay } from "../components/ImplantOverlay";
+import { levelFor, levelKeyFor } from "@/lib/data/overlay_geometry";
+import { GUIDE_YELLOW, LABEL_BG, LABEL_EDGE } from "../components/overlayStyle";
 
 interface TibialCanvasProps {
   viewMode: TibialViewMode;
   tibialComponent: V1TibialComponent;
-  onMove: (next: { x_offset_mm?: number; y_offset_mm?: number; level_offset_mm?: number }) => void;
+  onMove: (next: { x_offset_mm?: number; y_offset_mm?: number; level_offset_mm?: number; level_offset_klat_mm?: number }) => void;
   /** In-plane rotation of the AP overlay (V1: align with the MPTA axis line). */
   onRotate: (deg: number) => void;
   bone: BoneModel;
@@ -62,11 +64,14 @@ export function TibialCanvas({
 
   const template = getTibialImplant(tibialComponent.implant_size);
   const pos = tibialComponent.position_2d;
-  const level = tibialComponent.level_offset_mm ?? 0;
+  const level = levelFor(tibialComponent, viewMode);
   const origin = viewMode === "FLAP" ? bone.flapOrigin : bone.klatOrigin;
+  // Each scan opens zoomed in on the knee once its plateau edges are known: on a full-length film the knee is
+  // otherwise only a few dozen pixels wide. Asked once per scan; zooming out afterwards is left alone.
+  const focus = origin ? { x: origin.x, y: origin.y, spanPx: 110 / mmPerPx, nonce: `${viewMode}:knee` } : undefined;
 
   return (
-    <ScanViewport src={imgSrc} alt={`${viewMode} Scan`}>
+    <ScanViewport src={imgSrc} alt={`${viewMode} Scan`} focus={focus}>
       {(viewport) => {
         const { naturalWidth, naturalHeight, zoom, fitScale, stageRef } = viewport;
 
@@ -99,8 +104,8 @@ export function TibialCanvas({
                   y1={origin.y}
                   x2={((viewMode === "FLAP" ? markers.lateral?.x : markers.posterior?.x) ?? 0) / 100 * naturalWidth}
                   y2={origin.y}
-                  stroke="#facc15"
-                  strokeWidth={1.2 / (fitScale * zoom)}
+                  stroke={GUIDE_YELLOW}
+                  strokeWidth={1 / (fitScale * zoom)}
                   strokeDasharray={`${6 / (fitScale * zoom)},${4 / (fitScale * zoom)}`}
                   opacity={0.85}
                 />
@@ -164,11 +169,12 @@ export function TibialCanvas({
                   top: "50%",
                   transform: `translate(-50%, -50%) scale(${1 / zoom})`,
                   zIndex: 45,
+                  width: "max-content",
                   maxWidth: 340,
                   padding: "12px 16px",
                   borderRadius: 8,
-                  background: "rgba(15,23,42,0.9)",
-                  border: "1px solid #facc15",
+                  background: LABEL_BG,
+                  border: `1px solid ${LABEL_EDGE}`,
                   color: "#fff",
                   fontSize: 13,
                   textAlign: "center",
@@ -194,7 +200,9 @@ export function TibialCanvas({
                 busy={Boolean(placing) || Boolean(scale.calibrating)}
                 label={`Tibial Size ${template.size}`}
                 verdictColour={stroke}
-                onMove={onMove}
+                onMove={({ level_offset_mm, ...rest }) =>
+                  onMove({ ...rest, ...(level_offset_mm !== undefined ? { [levelKeyFor(viewMode)]: level_offset_mm } : {}) })
+                }
                 onRotate={onRotate}
               />
             )}

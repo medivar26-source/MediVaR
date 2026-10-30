@@ -11,7 +11,7 @@ export type LandmarkView = "FLAP" | "KLAT";
 export type LandmarkInfo = {
   key: string;
   view: LandmarkView;
-  /** Short tag shown beside the dot on the scan. */
+  /** Name shown beside the dot on the scan (the same as the full name). */
   tag: string;
   /** Full name used in the guide. */
   name: string;
@@ -63,28 +63,28 @@ export const LANDMARK_GUIDE: LandmarkInfo[] = [
   {
     key: "femurDistalLateral",
     view: "FLAP",
-    tag: "Femur outer",
-    name: "Femur, outer edge",
+    tag: "Lateral Distal femoral condyle",
+    name: "Lateral Distal femoral condyle",
     color: FEMUR,
     where: "The outer edge of the bottom of the thigh bone, on the side away from the other leg.",
-    feeds: "LDFA, and the femur's width (used to size the femoral component).",
+    feeds: "mLDFA, and the femur's width (used to size the femoral component).",
     pair: "femur-width",
   },
   {
     key: "femurDistalMedial",
     view: "FLAP",
-    tag: "Femur inner",
-    name: "Femur, inner edge",
+    tag: "Medial Distal femoral condyle",
+    name: "Medial Distal femoral condyle",
     color: FEMUR,
     where: "The inner edge of the bottom of the thigh bone, on the side facing the other leg.",
-    feeds: "LDFA, and the femur's width (used to size the femoral component).",
+    feeds: "mLDFA, and the femur's width (used to size the femoral component).",
     pair: "femur-width",
   },
   {
     key: "tibiaProximalLateral",
     view: "FLAP",
-    tag: "Tibia outer",
-    name: "Tibia, outer edge",
+    tag: "Lateral Proximal tibial plateau",
+    name: "Lateral Proximal tibial plateau",
     color: TIBIA_ML,
     where: "The outer edge of the flat top of the shin bone, on the side away from the other leg.",
     feeds: "MPTA, and the tibia's width (used to size the tibial component).",
@@ -93,8 +93,8 @@ export const LANDMARK_GUIDE: LandmarkInfo[] = [
   {
     key: "tibiaProximalMedial",
     view: "FLAP",
-    tag: "Tibia inner",
-    name: "Tibia, inner edge",
+    tag: "Medial Proximal tibial plateau",
+    name: "Medial Proximal tibial plateau",
     color: TIBIA_ML,
     where: "The inner edge of the flat top of the shin bone, on the side facing the other leg.",
     feeds: "MPTA, and the tibia's width (used to size the tibial component).",
@@ -103,8 +103,8 @@ export const LANDMARK_GUIDE: LandmarkInfo[] = [
   {
     key: "femurCanalProximal",
     view: "FLAP",
-    tag: "Canal top",
-    name: "Thigh-bone canal, upper point",
+    tag: "Proximal femoral shaft-axis point",
+    name: "Proximal femoral shaft-axis point",
     color: "#ec4899",
     where: "A point in the middle of the thigh bone's hollow channel, higher up the thigh.",
     feeds: "AMA, the angle between the bone's own axis and the mechanical axis.",
@@ -113,8 +113,8 @@ export const LANDMARK_GUIDE: LandmarkInfo[] = [
   {
     key: "femurCanalDistal",
     view: "FLAP",
-    tag: "Canal low",
-    name: "Thigh-bone canal, lower point",
+    tag: "Distal femoral shaft-axis point",
+    name: "Distal femoral shaft-axis point",
     color: "#ec4899",
     where: "A point in the middle of the same channel, closer to the knee.",
     feeds: "AMA, the angle between the bone's own axis and the mechanical axis.",
@@ -125,8 +125,8 @@ export const LANDMARK_GUIDE: LandmarkInfo[] = [
   {
     key: "tibiaPlateauAnterior",
     view: "KLAT",
-    tag: "Tibia front",
-    name: "Tibia, front edge",
+    tag: "Anterior Tibial Plateau Reference",
+    name: "Anterior Tibial Plateau Reference",
     color: TIBIA_AP,
     where: "The front edge of the flat top of the shin bone (towards the kneecap side).",
     feeds: "PTS, and the tibia's depth (used to size the tibial component).",
@@ -135,8 +135,8 @@ export const LANDMARK_GUIDE: LandmarkInfo[] = [
   {
     key: "tibiaPlateauPosterior",
     view: "KLAT",
-    tag: "Tibia back",
-    name: "Tibia, back edge",
+    tag: "Posterior Tibial Plateau Reference",
+    name: "Posterior Tibial Plateau Reference",
     color: TIBIA_AP,
     where: "The back edge of the flat top of the shin bone (towards the back of the knee).",
     feeds: "PTS, and the tibia's depth (used to size the tibial component).",
@@ -145,8 +145,8 @@ export const LANDMARK_GUIDE: LandmarkInfo[] = [
   {
     key: "tibiaShaftProximal",
     view: "KLAT",
-    tag: "Shin top",
-    name: "Shin shaft, upper point",
+    tag: "Proximal tibial shaft-axis point",
+    name: "Proximal tibial shaft-axis point",
     color: TIBIA_ML,
     where: "A point in the middle of the shin bone, just below the knee.",
     feeds: "PTS, the backwards slope of the top of the shin bone.",
@@ -155,8 +155,8 @@ export const LANDMARK_GUIDE: LandmarkInfo[] = [
   {
     key: "tibiaShaftDistal",
     view: "KLAT",
-    tag: "Shin low",
-    name: "Shin shaft, lower point",
+    tag: "Distal tibial shaft-axis point",
+    name: "Distal tibial shaft-axis point",
     color: TIBIA_ML,
     where: "A point in the middle of the same bone, further down the shin.",
     feeds: "PTS, the backwards slope of the top of the shin bone.",
@@ -191,9 +191,9 @@ export function landmarkGroups(view: LandmarkView): { pair: string; title: strin
     axis: "Leg axis",
     "femur-width": "Femur width",
     "tibia-width": "Tibia width",
-    canal: "Thigh-bone axis",
+    canal: "Femoral shaft axis",
     "tibia-depth": "Tibia depth",
-    shaft: "Shin axis",
+    shaft: "Tibial shaft axis",
   };
   const groups: { pair: string; title: string; items: LandmarkInfo[] }[] = [];
   for (const item of landmarksForView(view)) {

@@ -7,6 +7,7 @@ import {
   evaluateFemoralFit,
   evaluateTibialFit,
   femoralExtents,
+  notchingLikely,
   overhangCautionTag,
 } from "../data/tkr_templates";
 import { FEMORAL_SIZE_DIMENSIONS, TIBIAL_SIZE_DIMENSIONS } from "../data/implant_templates";
@@ -119,6 +120,15 @@ test("Femoral fit — AP coverage, ML coverage and anterior notching are read on
     assert.equal(gap.fitStatus, "CAUTION: Anterior Notch Risk");
     const small = evaluateFemoralFit(4, 0, 0.4, 58.4, 64.1);
     assert.equal(small.notchTone, "pass");
+  });
+
+  await t.test("the potential-notching yes/no and the caution use the same limit", () => {
+    assert.equal(notchingLikely(FEMORAL_NOTCH_LIMIT_MM), false, "at the limit is not yet notching");
+    assert.equal(notchingLikely(FEMORAL_NOTCH_LIMIT_MM + 0.1), true);
+    for (const y of [0, 0.4, 0.6, 1.2]) {
+      const r = evaluateFemoralFit(4, 0, y, 58.4, 64.1);
+      assert.equal(notchingLikely(r.notchingRiskMm), r.notchTone === "warn", `y ${y}`);
+    }
   });
 
   await t.test("the in-plane rotation only changes what the AP drawing shows", () => {

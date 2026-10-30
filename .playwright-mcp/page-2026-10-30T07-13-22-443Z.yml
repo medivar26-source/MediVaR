@@ -1,0 +1,123 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - banner [ref=f1e3]:
+      - link "Back to case" [ref=f1e4] [cursor=pointer]:
+        - /url: /cases/a0736360-9738-4e42-b7e1-295ea360e78b
+      - generic [ref=f1e8]:
+        - paragraph [ref=f1e9]: Pre-op plan · step 2 of 4
+        - paragraph [ref=f1e10]: Medial osteoarthritis with moderate varus (right knee)
+      - navigation "TKA Planning steps" [ref=f1e11]:
+        - link "Assessment Ready" [ref=f1e12] [cursor=pointer]:
+          - /url: /plan/dae86670-6147-41a5-a24f-7b1d38bebb11/assessment
+          - generic [aria-hidden] [ref=f1e13]: "1"
+          - generic [ref=f1e14]:
+            - generic [ref=f1e15]: Assessment
+            - generic [ref=f1e16]: Ready
+        - generic "Complete previous steps to unlock" [ref=f1e17]:
+          - generic [ref=f1e22]:
+            - generic [ref=f1e23]: Tibial Planning
+            - generic [ref=f1e24]: In progress
+        - generic "Complete previous steps to unlock" [ref=f1e25]:
+          - generic [ref=f1e30]:
+            - generic [ref=f1e31]: Femoral Planning
+            - generic [ref=f1e32]: Finish Tibial Planning first
+        - generic "Complete previous steps to unlock" [ref=f1e33]:
+          - generic [ref=f1e38]:
+            - generic [ref=f1e39]: Review & Send to VR
+            - generic [ref=f1e40]: Finish Femoral Planning first
+      - generic [ref=f1e41]: Draft
+    - main [ref=f1e42]:
+      - generic [ref=f1e43]:
+        - generic "Patient and plan" [ref=f1e44]:
+          - generic [ref=f1e45]:
+            - 'generic "Source: case record" [ref=f1e46]':
+              - term [ref=f1e47]: Patient ID
+              - definition [ref=f1e48]: SYN-TKA-101
+            - generic [ref=f1e49]:
+              - term [ref=f1e50]: Age
+              - definition [ref=f1e51]: 63 years
+            - generic [ref=f1e52]:
+              - term [ref=f1e53]: Sex
+              - definition [ref=f1e54]: Female
+            - generic "Hard-locked once the session starts" [ref=f1e55]:
+              - term [ref=f1e56]: Surgical side
+              - definition [ref=f1e57]: Right knee
+            - generic [ref=f1e58]:
+              - term [ref=f1e59]: Procedure
+              - definition [ref=f1e60]: Primary TKA
+          - generic [ref=f1e61]:
+            - generic [ref=f1e62]: Scale verified
+            - generic [ref=f1e63]: AP 0.310 · Lateral 0.155 mm/px
+        - generic [ref=f1e64]:
+          - generic [ref=f1e65]:
+            - heading "Tibial Component Planning" [level=1] [ref=f1e66]
+            - paragraph [ref=f1e67]: Step 2 of 4. Mark the bone, pick a tray size, and check it covers the bone without hanging over.
+          - paragraph [ref=f1e68]: All intraoperative cuts, resections, and gap adjustments are deferred to VR.
+        - generic [ref=f1e71]:
+          - group "Scan view" [ref=f1e73]:
+            - button "FLAP · AP view (width)" [pressed] [ref=f1e74] [cursor=pointer]
+            - button "KLAT · Lateral view (depth)" [ref=f1e75] [cursor=pointer]
+          - generic [ref=f1e76]:
+            - generic [ref=f1e78]:
+              - generic [ref=f1e79]:
+                - button "−" [ref=f1e80] [cursor=pointer]
+                - generic [ref=f1e81]: 100%
+                - button "+" [ref=f1e82] [cursor=pointer]
+                - button "Reset" [ref=f1e83] [cursor=pointer]
+              - generic: Scroll to zoom • Drag background to pan
+              - generic [ref=f1e84]:
+                - img "FLAP Scan"
+                - img:
+                  - generic: 50 mm
+                - status [ref=f1e85]: Mark the medial and lateral edges of the tibial plateau on this scan to see the tray against the bone.
+            - generic [ref=f1e86]:
+              - region "Fit map" [ref=f1e87]:
+                - heading "Fit map" [level=4] [ref=f1e89]
+                - paragraph [ref=f1e90]: Place all four bone edges to see the tray against the bone from above.
+              - generic [ref=f1e91]:
+                - generic [ref=f1e92]:
+                  - heading "Tibial tray" [level=3] [ref=f1e93]
+                  - status [ref=f1e95]: Not saved yet
+                - list "Steps" [ref=f1e105]:
+                  - listitem [ref=f1e106]:
+                    - button "Mark edges" [ref=f1e107] [cursor=pointer]:
+                      - generic [aria-hidden] [ref=f1e108]: "1"
+                  - listitem [ref=f1e110]:
+                    - button "Choose size" [disabled] [ref=f1e111]:
+                      - generic [aria-hidden] [ref=f1e112]: "2"
+                  - listitem [ref=f1e114]:
+                    - button "Position" [disabled] [ref=f1e115]:
+                      - generic [aria-hidden] [ref=f1e116]: "3"
+                  - listitem [ref=f1e118]:
+                    - button "Confirm" [disabled] [ref=f1e119]:
+                      - generic [aria-hidden] [ref=f1e120]: "4"
+                - status [ref=f1e122]:
+                  - generic [ref=f1e125]:
+                    - paragraph [ref=f1e126]: Start by marking the edges of the bone
+                    - paragraph [ref=f1e127]: 4 edges left to place. The implant is measured against these marks, so put each one on the outer edge of the bone.
+                - paragraph [ref=f1e128]: Scale verified · AP 0.310 · lateral 0.155 mm/px
+                - region "Bone edge markers" [ref=f1e132]:
+                  - heading "1 · Mark the bone edges" [level=4] [ref=f1e134]
+                  - list [ref=f1e135]:
+                    - listitem [ref=f1e136]:
+                      - generic [ref=f1e146]:
+                        - text: Medial edge
+                        - generic [ref=f1e147]: AP scan
+                      - button "Place" [ref=f1e148] [cursor=pointer]
+                    - listitem [ref=f1e151]:
+                      - generic [ref=f1e161]:
+                        - text: Lateral edge
+                        - generic [ref=f1e162]: AP scan
+                      - button "Place" [ref=f1e163] [cursor=pointer]
+                    - listitem [ref=f1e166]:
+                      - generic [ref=f1e176]:
+                        - text: Anterior edge
+                        - generic [ref=f1e177]: Lateral scan
+                      - button "Place" [ref=f1e178] [cursor=pointer]
+                    - listitem [ref=f1e181]:
+                      - generic [ref=f1e191]:
+                        - text: Posterior edge
+                        - generic [ref=f1e192]: Lateral scan
+                      - button "Place" [ref=f1e193] [cursor=pointer]
+                  - button "Place all four edges first" [disabled] [ref=f1e196]
+  - button "Open Next.js Dev Tools" [ref=f1e203] [cursor=pointer]

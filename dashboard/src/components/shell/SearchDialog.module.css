@@ -1,22 +1,26 @@
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-modal);
-  display: flex;
-  justify-content: center;
-  padding: 12vh var(--s-5) var(--s-5);
+/* A modal `<dialog>` sits in the top layer, so it needs no z-index. The global reset removes the browser's
+   `margin: auto`; only the top margin is set, so the palette hangs near the top and stays centred across. */
+.dialog {
+  margin: 12vh auto 0;
+  width: min(620px, calc(100vw - 2 * var(--s-5)));
+  max-height: 70vh;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  color: var(--text);
+  overflow: hidden;
+}
+
+.dialog::backdrop {
   background: var(--scrim);
 }
 
-.dialog {
-  width: 100%;
-  max-width: 620px;
-  max-height: 70vh;
+/* `dialog` is display:none when closed; the frame lays out only when it is open. */
+.frame {
   display: flex;
   flex-direction: column;
-  border-radius: var(--r-xl);
-  background: var(--surface);
-  overflow: hidden;
+  max-height: 70vh;
 }
 
 .field {

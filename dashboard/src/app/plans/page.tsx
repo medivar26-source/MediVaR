@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ClipboardList } from "lucide-react";
+import { LibraryNav } from "@/components/cases/LibraryNav";
 import { AppShell, PageHeader, SectionHeader } from "@/components/shell";
 import {
   Badge,
@@ -24,6 +25,7 @@ import { getPlans } from "@/lib/data/plans";
 import { cx } from "@/lib/cx";
 import type { PlanState } from "@/lib/plan";
 import { longDuration, relativeTime, titleCase } from "@/lib/format";
+import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import { CasePlansPanel, type PlanningCase } from "./CasePlansPanel";
 import { PlanFilters } from "./PlanFilters";
@@ -115,6 +117,7 @@ export default async function PlansPage({
           </>
         }
       />
+      {personaFor(user.role) === "learner" && <LibraryNav current={null} />}
       <DemoDataNote />
 
 

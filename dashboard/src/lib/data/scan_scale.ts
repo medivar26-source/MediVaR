@@ -95,7 +95,7 @@ export function scaleFromTwoPoints(
   method: V1ScanCalibration["method"] = "two_point",
 ): { ok: true; calibration: V1ScanCalibration } | { ok: false; error: string } {
   if (!(knownMm > 0)) return { ok: false, error: "Enter the real size of the marker in millimetres." };
-  if (!(measuredPx >= 4)) return { ok: false, error: "The two points are too close together. Click the two opposite sides of the marker." };
+  if (!(measuredPx >= 4)) return { ok: false, error: "The two points are too close together. Right-click the two opposite sides of the marker." };
   const mmPerPx = knownMm / measuredPx;
   const [lo, hi] = REALISTIC_SCALE_MM_PER_PX;
   if (mmPerPx < lo || mmPerPx > hi) {

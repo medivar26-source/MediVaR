@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FolderOpen, Plus } from "lucide-react";
+import { LibraryNav } from "@/components/cases/LibraryNav";
 import { AppShell, Breadcrumbs, PageHeader } from "@/components/shell";
 import { Button, Card, Chip, EmptyState } from "@/components/ui";
 import { listPersonalCases } from "@/lib/data/personal-cases";
 import { titleCase } from "@/lib/format";
+import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import s from "../cases/cases.module.css";
 
@@ -32,6 +34,8 @@ export default async function PersonalCasesPage() {
           </Button>
         }
       />
+
+      {personaFor(user.role) === "learner" && <LibraryNav current="personal" />}
 
       {cases.length === 0 ? (
         <EmptyState

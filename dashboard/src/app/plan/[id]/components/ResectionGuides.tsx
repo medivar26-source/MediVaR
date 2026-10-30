@@ -2,9 +2,10 @@
 
 import React from "react";
 import type { CutLine, LegAxes } from "@/lib/data/resection_geometry";
+import { GAP_GREEN, LABEL_BG } from "./overlayStyle";
 
 export const CUT_COLOUR = "#fb923c";
-const AXIS_COLOUR = "#22c55e";
+const AXIS_COLOUR = GAP_GREEN;
 const CANAL_COLOUR = "#ec4899";
 
 interface Props {
@@ -54,8 +55,7 @@ export function ResectionGuides({ view, lines, axes, naturalWidth, naturalHeight
       >
         {view === "FLAP" && axes && axisEnd && (
           <>
-            <line x1={axes.hip.x} y1={axes.hip.y} x2={axisEnd.x} y2={axisEnd.y} stroke="rgba(2,6,23,0.75)" strokeWidth={4} vectorEffect="non-scaling-stroke" />
-            <line x1={axes.hip.x} y1={axes.hip.y} x2={axisEnd.x} y2={axisEnd.y} stroke={AXIS_COLOUR} strokeWidth={1.6} strokeDasharray="7 4" vectorEffect="non-scaling-stroke" />
+            <line x1={axes.hip.x} y1={axes.hip.y} x2={axisEnd.x} y2={axisEnd.y} stroke={AXIS_COLOUR} strokeWidth={1.1} strokeDasharray="7 4" vectorEffect="non-scaling-stroke" />
             {axes.canal && (
               <line
                 x1={axes.canal.proximal.x}
@@ -63,9 +63,9 @@ export function ResectionGuides({ view, lines, axes, naturalWidth, naturalHeight
                 x2={axes.canal.distal.x}
                 y2={axes.canal.distal.y}
                 stroke={CANAL_COLOUR}
-                strokeWidth={1.2}
+                strokeWidth={1}
                 strokeDasharray="3 3"
-                strokeOpacity={0.9}
+                strokeOpacity={0.85}
                 vectorEffect="non-scaling-stroke"
               />
             )}
@@ -76,14 +76,13 @@ export function ResectionGuides({ view, lines, axes, naturalWidth, naturalHeight
           const heavy = l.id === "distal" || l.id === "anterior" || l.id === "posterior";
           return (
             <g key={l.id}>
-              <line x1={l.a.x} y1={l.a.y} x2={l.b.x} y2={l.b.y} stroke="rgba(2,6,23,0.8)" strokeWidth={hot ? 6 : heavy ? 5 : 4} strokeLinecap="round" vectorEffect="non-scaling-stroke" />
               <line
                 x1={l.a.x}
                 y1={l.a.y}
                 x2={l.b.x}
                 y2={l.b.y}
                 stroke={CUT_COLOUR}
-                strokeWidth={hot ? 3 : heavy ? 2.2 : 1.8}
+                strokeWidth={hot ? 2 : heavy ? 1.4 : 1.1}
                 strokeDasharray={heavy ? "9 5" : "5 4"}
                 strokeLinecap="round"
                 vectorEffect="non-scaling-stroke"
@@ -111,17 +110,15 @@ export function ResectionGuides({ view, lines, axes, naturalWidth, naturalHeight
         >
           <span
             style={{
-              width: 18,
-              height: 18,
+              width: 15,
+              height: 15,
               borderRadius: "50%",
               background: CUT_COLOUR,
               color: "#111827",
-              fontSize: 11,
-              fontWeight: 800,
+              fontSize: 10,
+              fontWeight: 700,
               display: "grid",
               placeItems: "center",
-              border: "1.5px solid #fff",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.6)",
             }}
           >
             {l.sequence}
@@ -131,7 +128,7 @@ export function ResectionGuides({ view, lines, axes, naturalWidth, naturalHeight
               style={{
                 padding: "1px 6px",
                 borderRadius: 4,
-                background: "rgba(15,23,42,0.9)",
+                background: LABEL_BG,
                 color: "#fed7aa",
                 fontSize: 11,
                 fontWeight: 700,
@@ -157,7 +154,7 @@ export function ResectionGuides({ view, lines, axes, naturalWidth, naturalHeight
             pointerEvents: "none",
             padding: "1px 6px",
             borderRadius: 4,
-            background: "rgba(15,23,42,0.9)",
+            background: LABEL_BG,
             color: AXIS_COLOUR,
             fontSize: 11,
             fontWeight: 700,

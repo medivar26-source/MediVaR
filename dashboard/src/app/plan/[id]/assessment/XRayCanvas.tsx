@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { LandmarkState, Point2D, ViewMode } from "./AssessmentWorkspace";
 import { ScanViewport } from "../components/ScanViewport";
 import { Loupe } from "../components/Loupe";
@@ -19,11 +19,15 @@ const Reporter = ({ naturalWidth, naturalHeight, viewMode, onDimsLoaded }: any) 
 
 type Key = keyof LandmarkState;
 
+/** Points placed at the knee, and along the femoral canal: the view zooms to each group when its turn comes. */
+const KNEE_POINTS: Key[] = ["femurDistalLateral", "femurDistalMedial", "tibiaProximalLateral", "tibiaProximalMedial"];
+const CANAL_POINTS: Key[] = ["femurCanalProximal", "femurCanalDistal"];
+
 interface XRayCanvasProps {
   viewMode: ViewMode;
   landmarks: LandmarkState;
   isAccepted: boolean;
-  /** The point being placed: a click anywhere on the scan puts it there. */
+  /** The point being placed: a right-click anywhere on the scan puts it there (left-drag moves the scan). */
   placing: Key | null;
   onPlace: (key: Key, pos: Point2D) => void;
   onCancelPlace: () => void;
@@ -37,6 +41,14 @@ interface XRayCanvasProps {
 export function XRayCanvas({ viewMode, landmarks, isAccepted, placing, onPlace, onCancelPlace, onLandmarkMove, onDimsLoaded, src, mmPerPx, scale }: XRayCanvasProps) {
   const [draggingKey, setDraggingKey] = useState<keyof LandmarkState | null>(null);
   const [hoveredKey, setHoveredKey] = useState<keyof LandmarkState | null>(null);
+  const [dims, setDims] = useState<{ width: number; height: number } | null>(null);
+  const reportDims = useCallback(
+    (view: ViewMode, d: { width: number; height: number }) => {
+      setDims((prev) => (prev && prev.width === d.width && prev.height === d.height ? prev : d));
+      onDimsLoaded?.(view, d);
+    },
+    [onDimsLoaded],
+  );
 
   const defaultImgSrc = viewMode === "FLAP" ? "/flap.jpg" : "/klat.jpg";
   const imgSrc = src || defaultImgSrc;
@@ -125,7 +137,10 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, placing, onPlace, 
   const placingHere = placing && LANDMARK_INFO[placing].view === viewMode && !isAccepted ? placing : null;
   const placedCount = (LANDMARK_ORDER as Key[]).filter((k) => landmarks[k]).length;
 
-  // Lives outside the zoomed stage (ScanViewport `overlay`), so it stays readable at any zoom or pan.
+  // Lives outside the zoomed stage (ScanViewport `overlay`), so it stays readable at any zoom or pan. It sits in
+  // the top-left corner, not the top middle: on a full-length film the hip centre is right at the top middle, and
+  // a banner there covered the very point it asked for. Only its Stop button takes clicks; the rest lets a click
+  // through to the scan.
   const hint = placingHere ? (
     <div
       style={{
@@ -135,15 +150,14 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, placing, onPlace, 
         right: 210, // clear of the zoom toolbar
         zIndex: 60,
         display: "flex",
-        justifyContent: "center",
+        justifyContent: "flex-start",
         pointerEvents: "none",
       }}
     >
       <div
         role="status"
-        onPointerDown={(e) => e.stopPropagation()}
         style={{
-          pointerEvents: "auto",
+          pointerEvents: "none",
           display: "flex",
           alignItems: "center",
           gap: 10,
@@ -154,16 +168,17 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, placing, onPlace, 
           color: "#fff",
           fontSize: 13,
           fontWeight: 600,
-          maxWidth: 420,
+          maxWidth: 300,
         }}
       >
         <span>
-          Point {placedCount + (landmarks[placingHere] ? 0 : 1)} of {LANDMARK_ORDER.length}: click the {LANDMARK_INFO[placingHere].name.toLowerCase()}.
+          Point {placedCount + (landmarks[placingHere] ? 0 : 1)} of {LANDMARK_ORDER.length}: right-click the {LANDMARK_INFO[placingHere].name.toLowerCase()}. Drag to move the scan.
         </span>
         <button
           type="button"
           onClick={onCancelPlace}
-          style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.3)", background: "transparent", color: "#e2e8f0", fontSize: 12, cursor: "pointer" }}
+          onPointerDown={(e) => e.stopPropagation()}
+          style={{ pointerEvents: "auto", padding: "2px 8px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.3)", background: "transparent", color: "#e2e8f0", fontSize: 12, cursor: "pointer" }}
         >
           Stop
         </button>
@@ -171,16 +186,32 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, placing, onPlace, 
     </div>
   ) : null;
 
+  // On the full-length film the knee is tiny. When the next points are around the knee (the two joint lines)
+  // or along the femoral shaft (the canal), zoom there once, using the points already placed. Each group asks
+  // once, so zooming out by hand is respected.
+  const { hipCenter, kneeCenter } = landmarks;
+  let focus: { x: number; y: number; spanPx: number; nonce: string } | undefined;
+  if (dims && placingHere && viewMode === "FLAP" && mmPerPx > 0) {
+    const toPx = (p: Point2D) => ({ x: (p.x / 100) * dims.width, y: (p.y / 100) * dims.height });
+    if (KNEE_POINTS.includes(placingHere) && kneeCenter) {
+      focus = { ...toPx(kneeCenter), spanPx: 120 / mmPerPx, nonce: "knee" };
+    } else if (CANAL_POINTS.includes(placingHere) && hipCenter && kneeCenter) {
+      const mid = toPx({ x: (hipCenter.x + kneeCenter.x) / 2, y: (hipCenter.y + kneeCenter.y) / 2 });
+      const length = Math.hypot(((hipCenter.x - kneeCenter.x) / 100) * dims.width, ((hipCenter.y - kneeCenter.y) / 100) * dims.height);
+      focus = { ...mid, spanPx: length * 0.75, nonce: "femur" };
+    }
+  }
+
   return (
-    <ScanViewport src={imgSrc} alt={`${viewMode} Scan`} overlay={placingHere ? hint : null}>
+    <ScanViewport src={imgSrc} alt={`${viewMode} Scan`} overlay={placingHere ? hint : null} focus={focus}>
       {({ zoom, stageRef, naturalWidth, naturalHeight, fitScale }) => {
         return (
         <>
-          <Reporter 
-            naturalWidth={naturalWidth} 
-            naturalHeight={naturalHeight} 
-            viewMode={viewMode} 
-            onDimsLoaded={onDimsLoaded} 
+          <Reporter
+            naturalWidth={naturalWidth}
+            naturalHeight={naturalHeight}
+            viewMode={viewMode}
+            onDimsLoaded={reportDims}
           />
           {viewMode === "FLAP" ? renderFlapLines() : renderKlatLines()}
           <Loupe
@@ -223,8 +254,9 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, placing, onPlace, 
           {placingHere && (
             <>
               <div
-                data-landmark="placing"
-                onClick={(e) => {
+                data-place-layer="placing"
+                onContextMenu={(e) => {
+                  e.preventDefault();
                   const rect = stageRef.current?.getBoundingClientRect();
                   if (!rect || rect.width <= 0 || rect.height <= 0) return;
                   onPlace(placingHere, {
@@ -275,7 +307,7 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, placing, onPlace, 
                     : "0 0 4px rgba(0,0,0,0.7)",
                   zIndex: isBeingDragged ? 30 : showTag ? 20 : 10,
                   touchAction: "none",
-                  // While a point is being placed, a click always places it, even on top of another dot.
+                  // While a point is being placed, a right-click always places it, even on top of another dot.
                   pointerEvents: placingHere ? "none" : "auto",
                 }}
                 title={info ? `${info.name}. ${info.where}` : key}
@@ -293,7 +325,10 @@ export function XRayCanvas({ viewMode, landmarks, isAccepted, placing, onPlace, 
                       color,
                       fontSize: 11,
                       fontWeight: 700,
-                      whiteSpace: "nowrap",
+                      width: "max-content",
+                      maxWidth: 130,
+                      textAlign: "center",
+                      lineHeight: 1.25,
                       pointerEvents: "none",
                     }}
                   >

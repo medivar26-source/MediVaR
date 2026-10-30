@@ -1,10 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  MEASURE_INFO,
+  MEASURE_ORDER,
   REQUIRED_LANDMARKS,
+  formatMeasure,
+  madSideFromAlignment,
   measureAssessment,
+  normalRangeText,
   perpendicularDistance,
+  rangeTier,
   signedAngle,
+  storedMeasure,
   toV1Assessment,
   type LandmarkSet,
   type ScanGeometry,
@@ -149,17 +156,29 @@ test("Varus and valgus follow the lateral side the surgeon marked", async (t) =>
   // Knee displaced to the image right of the hip-ankle line.
   const bowRight: LandmarkSet = { ...straight, kneeCenter: { x: 56, y: 50 } };
 
-  await t.test("when the outer edge is on the right, a knee bowing right bows outward: varus", () => {
+  await t.test("when the outer edge is on the right, a knee bowing right bows outward: varus, with the axis medial", () => {
     const r = read({ ...bowRight, tibiaProximalLateral: { x: 65, y: 50 }, tibiaProximalMedial: { x: 45, y: 50 } });
     assert.equal(r.alignment_type, "VARUS");
-    assert.equal(r.mad_direction, "lateral");
+    assert.equal(r.mad_direction, "medial", "MAD is reported by where the hip-ankle line passes, as clinically");
     assert.equal(r.alignment_basis, "points");
   });
 
-  await t.test("when the outer edge is on the left, the same knee bows inward: valgus", () => {
+  await t.test("when the outer edge is on the left, the same knee bows inward: valgus, with the axis lateral", () => {
     const r = read({ ...bowRight, tibiaProximalLateral: { x: 45, y: 50 }, tibiaProximalMedial: { x: 65, y: 50 } });
     assert.equal(r.alignment_type, "VALGUS");
-    assert.equal(r.mad_direction, "medial");
+    assert.equal(r.mad_direction, "lateral");
+  });
+
+  await t.test("a left and a right knee bowing the same way on the picture get opposite sides", () => {
+    const axis = { hipCenter: bowRight.hipCenter, kneeCenter: bowRight.kneeCenter, ankleCenter: bowRight.ankleCenter };
+    assert.equal(read(axis, square, square, "RIGHT").mad_direction, "lateral");
+    assert.equal(read(axis, square, square, "LEFT").mad_direction, "medial");
+  });
+
+  await t.test("a knee on the line has no MAD side, and is still neutral", () => {
+    const r = read(straight);
+    assert.equal(r.mad_direction, undefined);
+    assert.equal(r.alignment_type, "NEUTRAL");
   });
 
   await t.test("the femur's marks decide when the tibia's are not placed", () => {
@@ -201,6 +220,88 @@ test("An assessment can only be saved when every number exists", async (t) => {
     for (const k of ["MAD_mm", "AMA_deg", "mHKA_deg", "MPTA_deg", "LDFA_deg", "PTS_deg"] as const) {
       assert.ok(Number.isFinite(a[k]), k);
     }
+  });
+});
+
+test("Reference ranges follow the testers' table", async (t) => {
+  await t.test("mLDFA and MPTA: 85–90 normal, 83–85 and 90–92 borderline, beyond that abnormal", () => {
+    for (const key of ["ldfa", "mpta"] as const) {
+      assert.equal(rangeTier(key, 85), "normal", key);
+      assert.equal(rangeTier(key, 90), "normal", key);
+      assert.equal(rangeTier(key, 84), "borderline", key);
+      assert.equal(rangeTier(key, 92), "borderline", key);
+      assert.equal(rangeTier(key, 82.9), "abnormal", key);
+      assert.equal(rangeTier(key, 92.1), "abnormal", key);
+    }
+  });
+
+  await t.test("mHKA: within 1.5° normal, up to 3° borderline", () => {
+    assert.equal(rangeTier("mhka", 1.5), "normal");
+    assert.equal(rangeTier("mhka", 3), "borderline");
+    assert.equal(rangeTier("mhka", 3.1), "abnormal");
+  });
+
+  await t.test("AMA and PTS", () => {
+    assert.equal(rangeTier("ama", 6), "normal");
+    assert.equal(rangeTier("ama", 7.5), "borderline");
+    assert.equal(rangeTier("ama", 8.5), "abnormal");
+    assert.equal(rangeTier("pts", 12), "normal");
+    assert.equal(rangeTier("pts", 4), "borderline");
+    assert.equal(rangeTier("pts", -1), "abnormal", "a plateau sloping forwards");
+  });
+
+  await t.test("MAD tolerates more medially than laterally, and an unknown side reads the stricter way", () => {
+    assert.equal(rangeTier("mad", 8, "medial"), "normal");
+    assert.equal(rangeTier("mad", 8, "lateral"), "normal");
+    assert.equal(rangeTier("mad", 12, "medial"), "borderline");
+    assert.equal(rangeTier("mad", 12, "lateral"), "abnormal");
+    assert.equal(rangeTier("mad", 16, "medial"), "abnormal");
+    assert.equal(rangeTier("mad", 12), "abnormal");
+  });
+
+  await t.test("the normal band reads the same way it is judged", () => {
+    assert.equal(normalRangeText("ldfa"), "85–90°");
+    assert.equal(normalRangeText("mhka"), "within ±1.5°");
+    assert.equal(normalRangeText("mad"), "within 10 mm");
+  });
+
+  await t.test("the testers' names and order", () => {
+    assert.equal(MEASURE_INFO.ldfa.short, "mLDFA");
+    assert.deepEqual(MEASURE_ORDER, ["mad", "mhka", "ldfa", "mpta", "ama", "pts"]);
+  });
+});
+
+test("A saved assessment still shows MAD's side", async (t) => {
+  await t.test("varus is medial, valgus lateral, neutral has none", () => {
+    assert.equal(madSideFromAlignment("VARUS"), "medial");
+    assert.equal(madSideFromAlignment("VALGUS"), "lateral");
+    assert.equal(madSideFromAlignment("NEUTRAL"), undefined);
+    assert.equal(madSideFromAlignment(undefined), undefined);
+  });
+
+  await t.test("the side worked out from a saved plan is the side that was measured", () => {
+    for (const lateralX of [65, 45]) {
+      const r = read({
+        ...straight,
+        kneeCenter: { x: 56, y: 50 },
+        tibiaProximalLateral: { x: lateralX, y: 50 },
+        tibiaProximalMedial: { x: 110 - lateralX, y: 50 },
+      });
+      assert.equal(madSideFromAlignment(toV1Assessment(r)!.alignment_type), r.mad_direction);
+    }
+  });
+
+  await t.test("a value that was never recorded stays unrecorded", () => {
+    assert.equal(storedMeasure({ MAD_mm: 12 }, "mad"), 12);
+    assert.equal(storedMeasure({ MAD_mm: 12 }, "pts"), undefined);
+    assert.equal(storedMeasure(undefined, "mad"), undefined);
+  });
+
+  await t.test("formatting: side only off the line, estimate flagged", () => {
+    assert.equal(formatMeasure("mad", 12, { madSide: "medial" }), "12.0 mm medial");
+    assert.equal(formatMeasure("mad", 0, { madSide: "medial" }), "0.0 mm");
+    assert.equal(formatMeasure("mad", 12, { scaleEstimated: true }), "12.0 mm (est.)");
+    assert.equal(formatMeasure("ldfa", 88), "88.0°");
   });
 });
 

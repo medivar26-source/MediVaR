@@ -49,11 +49,18 @@ export function Loupe({ active, stageRef, src, naturalWidth, naturalHeight, fitS
       });
     };
     const onLeave = () => setPointer(null);
+    // While the scan is being dragged, the viewport has captured the pointer, so the move never reaches the
+    // stage; hide the lens then instead of leaving it showing the spot the drag started on.
+    const onDocMove = (e: PointerEvent) => {
+      if (!stage.contains(e.target as Node)) setPointer(null);
+    };
     stage.addEventListener("pointermove", onMove);
     stage.addEventListener("pointerleave", onLeave);
+    document.addEventListener("pointermove", onDocMove);
     return () => {
       stage.removeEventListener("pointermove", onMove);
       stage.removeEventListener("pointerleave", onLeave);
+      document.removeEventListener("pointermove", onDocMove);
     };
   }, [active, drawable, stageRef, naturalWidth, naturalHeight]);
 

@@ -1,0 +1,32 @@
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-bottom: var(--s-6);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--h-md);
+  padding: 0 var(--s-5);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--t-label);
+  font-weight: var(--fw-semibold);
+  text-decoration: none;
+}
+
+.tab:hover {
+  background: var(--brand-surface);
+  border-color: var(--brand-border);
+}
+
+.tabOn,
+.tabOn:hover {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}

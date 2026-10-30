@@ -61,11 +61,18 @@ export type NavSection = {
   icon: LucideIcon;
   personas: Persona[];
   groups: PanelGroup[];
+  /** Personas for whom this section is one plain link (to `href`) with no dropdown. */
+  flatFor?: Persona[];
+  /** Set by `sectionsForPersona`: the section is a plain link for this persona. */
+  flat?: boolean;
+  /** Set by `sectionsForPersona`: the section's dropdown is never highlighted or badged, only its items. */
+  quiet?: boolean;
 };
 
 /**
- * Learner: Assigned Activities, Content Library, Performance.
- * Instructor: Programs, Content Library, Performance.
+ * Learner: Training (a dropdown of programs and sessions), Content Library and Progress (each one plain link).
+ * Instructor: Programs (a dropdown of All Programs, with Cohorts under it, and Sessions), Content Library and
+ * Insights (each one plain link).
  * Admin: Admin.
  *
  * The dashboard is not a section. It is its own page at `/`, reached from the logo at the top
@@ -123,6 +130,9 @@ export const SECTIONS: NavSection[] = [
     href: "/content?tab=procedures",
     icon: FolderOpen,
     personas: ["learner", "instructor"],
+    // A learner gets one link; the case library, pre-op plans and their own cases are reached from the page itself
+    // (see components/cases/LibraryNav). The items stay listed here so search can still find them.
+    flatFor: ["learner", "instructor"],
     groups: [
       {
         items: [
@@ -141,6 +151,7 @@ export const SECTIONS: NavSection[] = [
     href: "/performance",
     icon: Compass,
     personas: ["instructor"],
+    flatFor: ["instructor"],
     // Overview, Activity, Reports and By skill are tabs of this one page, as they are in a learner's Progress.
     groups: [
       {
@@ -154,6 +165,7 @@ export const SECTIONS: NavSection[] = [
     href: "/progress",
     icon: BookOpen,
     personas: ["learner"],
+    flatFor: ["learner"],
     // Overview, Activity, Reports and By skill are tabs of this one page.
     groups: [
       {
@@ -180,7 +192,7 @@ export const SECTIONS: NavSection[] = [
 
 /**
  * The panels this persona may see, with every `badgeKey` resolved against real
- * counts and the Pinned group built from the user's own recent rows.
+ * counts.
  */
 export function sectionsForPersona(
   persona: Persona,
@@ -209,12 +221,12 @@ export function sectionsForPersona(
         }))
         .filter((group) => group.items.length > 0);
 
-      // Pinned is the user's own last case and last report, or nothing.
-      if ((section.id === "overview" || section.id === "performance") && data?.pinned.length) {
-        groups.push({ label: "Pinned", items: data.pinned });
-      }
-
-      return { ...section, groups };
+      const flat = section.flatFor?.includes(persona) ?? false;
+      // The Training / Programs dropdown only lists; it carries no highlight or dot of its own.
+      const quiet =
+        (persona === "learner" && section.id === "assigned-activities") ||
+        (persona === "instructor" && section.id === "programs");
+      return { ...section, groups, flat, quiet };
     },
   );
 }

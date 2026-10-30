@@ -9,10 +9,11 @@ import { SCAN_VIEW_NAME, describeScale, type ScanScale, type ScanView } from "@/
 import type { ScanCalibration } from "./useScanCalibration";
 import {
   MARKER_KEYS,
-  MARKER_LABEL,
   MARKER_VIEW,
   allMarkersPlaced,
+  markerLabel,
   type BoneModel,
+  type ComponentKind,
   type MarkerKey,
 } from "@/lib/data/fit_markers";
 import c from "./planControls.module.css";
@@ -25,6 +26,7 @@ const TONE_WORD = { pass: "within target", warn: "borderline", fail: "outside ta
  * these, so the checklist says plainly what is missing and what the marks measure.
  */
 export function MarkerChecklist({
+  kind,
   markers,
   bone,
   placing,
@@ -32,6 +34,7 @@ export function MarkerChecklist({
   onPlace,
   onConfirm,
 }: {
+  kind: ComponentKind;
   markers: V1FitMarkers;
   bone: BoneModel;
   placing: MarkerKey | null;
@@ -61,7 +64,7 @@ export function MarkerChecklist({
                 <CircleDashed size={15} className={c.markerTodo} aria-hidden="true" />
               )}
               <span className={c.markerName}>
-                {MARKER_LABEL[key]}
+                {markerLabel(kind, key)}
                 <span className={c.markerView}>{MARKER_VIEW[key] === "FLAP" ? "AP scan" : "Lateral scan"}</span>
               </span>
               {!readOnly && (
@@ -72,7 +75,7 @@ export function MarkerChecklist({
                   onClick={() => onPlace(key)}
                 >
                   <Crosshair size={13} aria-hidden="true" />
-                  {active ? "Click the scan…" : placed ? "Move" : "Place"}
+                  {active ? "Right-click the scan…" : placed ? "Move" : "Place"}
                 </button>
               )}
             </li>
@@ -378,7 +381,7 @@ export function ScalePanel({
                   </button>
                   <button type="button" className={c.markerBtn} aria-pressed={on} onClick={() => calibration.startCalibrating(view)}>
                     <Crosshair size={13} aria-hidden="true" />
-                    {on ? "Click the scan…" : s.calibrated ? "Re-measure" : "Set scale"}
+                    {on ? "Right-click the scan…" : s.calibrated ? "Re-measure" : "Set scale"}
                   </button>
                 </span>
               )}

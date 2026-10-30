@@ -85,13 +85,14 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
   const ranking = useMemo(() => rankFemoralSizes(bone, pos.rotation_deg), [bone, pos.rotation_deg]);
 
   // Any move, from the scan, the map or the keys, goes through here and asks for a new confirmation.
-  const handleMove = (next: Partial<MapPosition> & { flexion_deg?: number; level_offset_mm?: number }) => {
+  const handleMove = (next: Partial<MapPosition> & { flexion_deg?: number; level_offset_mm?: number; level_offset_klat_mm?: number }) => {
     if (isReadOnly) return;
-    const { level_offset_mm, ...position } = next;
+    const { level_offset_mm, level_offset_klat_mm, ...position } = next;
     setFemoralComponent((prev) => ({
       ...prev,
       position_2d: { ...prev.position_2d, ...position },
       ...(level_offset_mm !== undefined ? { level_offset_mm } : {}),
+      ...(level_offset_klat_mm !== undefined ? { level_offset_klat_mm } : {}),
       is_confirmed: false,
     }));
   };
@@ -201,7 +202,7 @@ export function FemoralWorkspace({ plan }: { plan: PlanDetail }) {
               tone={fitResult?.worstTone}
               readOnly={isReadOnly}
               onChange={handleMove}
-              onCentre={() => handleMove({ x_offset_mm: 0, y_offset_mm: 0, rotation_deg: 0, flexion_deg: 0, level_offset_mm: 0 })}
+              onCentre={() => handleMove({ x_offset_mm: 0, y_offset_mm: 0, rotation_deg: 0, flexion_deg: 0, level_offset_mm: 0, level_offset_klat_mm: 0 })}
               onBest={bestPosition}
             />
             <FemoralControlsPanel

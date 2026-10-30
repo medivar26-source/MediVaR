@@ -1,5 +1,6 @@
 "use client";
 
+import { levelFor, levelKeyFor } from "@/lib/data/overlay_geometry";
 import { useState, useTransition } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui";
@@ -42,7 +43,7 @@ interface TibialControlsPanelProps {
   plan: PlanDetail;
 }
 
-type Axis = "x_offset_mm" | "y_offset_mm" | "rotation_deg" | "level_offset_mm";
+type Axis = "x_offset_mm" | "y_offset_mm" | "rotation_deg" | "level_offset_mm" | "level_offset_klat_mm";
 type Step = 1 | 2 | 3 | 4;
 
 export function TibialControlsPanel({
@@ -94,8 +95,8 @@ export function TibialControlsPanel({
     if (isReadOnly) return;
     setTibialComponent((prev) => ({
       ...prev,
-      ...(key === "level_offset_mm"
-        ? { level_offset_mm: Number(((prev.level_offset_mm ?? 0) + delta).toFixed(1)) }
+      ...(key === "level_offset_mm" || key === "level_offset_klat_mm"
+        ? { [key]: Number(((prev[key] ?? 0) + delta).toFixed(1)) }
         : {
             position_2d: {
               ...prev.position_2d,
@@ -116,7 +117,7 @@ export function TibialControlsPanel({
     const move = screenMoveToOffsets(session.viewMode, axis === "horizontal" ? delta : 0, axis === "vertical" ? delta : 0, bone.anteriorImageSign);
     if (move.x) handleOffsetChange("x_offset_mm", move.x);
     if (move.y) handleOffsetChange("y_offset_mm", move.y);
-    if (move.level) handleOffsetChange("level_offset_mm", move.level);
+    if (move.level) handleOffsetChange(levelKeyFor(session.viewMode), move.level);
   };
 
   useNudgeKeys(!isReadOnly, handleKey);
@@ -225,7 +226,7 @@ export function TibialControlsPanel({
         ]
       : [];
 
-  const level = tibialComponent.level_offset_mm ?? 0;
+  const level = levelFor(tibialComponent, session.viewMode);
 
   return (
     <div
@@ -265,6 +266,7 @@ export function TibialControlsPanel({
             compact
           />
           <MarkerChecklist
+            kind="tibial"
             markers={markers}
             bone={bone}
             placing={session.placing}
@@ -355,13 +357,13 @@ export function TibialControlsPanel({
                   </button>
                 )}
                 <NudgeRow
-                  label="Height on scan"
+                  label={`Height on ${session.viewMode === "FLAP" ? "AP" : "lateral"} scan`}
                   valueText={`${Math.abs(level).toFixed(1)} mm ${level === 0 ? "at the marked level" : level > 0 ? "lower" : "higher"}`}
                   step={0.5}
                   unit="mm"
                   disabled={isReadOnly}
-                  onDecrease={() => handleOffsetChange("level_offset_mm", -0.5)}
-                  onIncrease={() => handleOffsetChange("level_offset_mm", 0.5)}
+                  onDecrease={() => handleOffsetChange(levelKeyFor(session.viewMode), -0.5)}
+                  onIncrease={() => handleOffsetChange(levelKeyFor(session.viewMode), 0.5)}
                 />
                 <p className={c.hint}>Height only moves the drawing up or down the scan. It does not change the fit numbers.</p>
                 <KeyboardHint />

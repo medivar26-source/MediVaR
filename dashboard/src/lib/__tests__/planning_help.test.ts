@@ -19,7 +19,7 @@ describe("pre-operative planning help article", () => {
     const assessment = PLANNING_PAGES.find((p) => p.id === "assessment")!;
     assert.deepEqual(
       assessment.measurements.map((m) => m.abbreviation),
-      ["MAD", "AMA", "mHKA", "MPTA", "LDFA", "PTS"],
+      ["MAD", "AMA", "mHKA", "MPTA", "mLDFA", "PTS"],
     );
     assert.equal(assessment.measurements.filter((m) => m.view === "KLAT").length, 1);
   });

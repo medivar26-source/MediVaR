@@ -18,7 +18,7 @@ import { FEMORAL_SIZE_DIMENSIONS } from "./dimensions";
 import { arc, extentsOf, smoothCurve, superEllipse } from "./geometry_util";
 import type { ImplantTemplate, ResectionCut, TemplateLayer, ViewShape } from "./types";
 
-export const FEMORAL_GEOMETRY_VERSION = "1.1.0";
+export const FEMORAL_GEOMETRY_VERSION = "1.2.0";
 
 /** Component thickness at the distal cut, as a share of the AP dimension. */
 const DISTAL_THICKNESS = 0.15;
@@ -31,6 +31,12 @@ const shape = (layers: TemplateLayer[], silhouette: Point2D[], extra: Pick<ViewS
 });
 
 const shift = (pts: Point2D[], dy: number): Point2D[] => pts.map((p) => ({ x: p.x, y: p.y + dy }));
+
+/** A fixation peg standing on the cut at (x, baseY), `width` across and `length` tall, with a rounded tip. */
+function peg(x: number, baseY: number, width: number, length: number): Point2D[] {
+  const r = width / 2;
+  return [{ x: x - r, y: baseY }, ...arc(x, baseY - length + r, r, 180, 360, 8), { x: x + r, y: baseY }];
+}
 
 /** Move a whole view down by `dy` so the template's local origin sits where the surgeon's bone marks sit. */
 function reanchor(view: ViewShape, dy: number): ViewShape {
@@ -96,20 +102,24 @@ function apView(ml: number, ap: number): ViewShape {
   // Trochlear groove and the bone-facing box line, drawn as detail.
   const groove: Point2D[] = [{ x: 0, y: -ap * 0.57 }, { x: 0.015 * ml, y: -ap * 0.4 }, { x: 0, y: boxTop }];
 
-  const layers: TemplateLayer[] = [
-    { role: "flange", path: flange, fill: 0.4 },
-    { role: "condyle", path: medial, fill: 0.55 },
-    { role: "condyle", path: lateral, fill: 0.55 },
-    { role: "detail", open: true, fill: 0, path: groove },
-    { role: "box", open: true, fill: 0, path: [{ x: -nh, y: boxTop }, { x: nh, y: boxTop }] },
-  ];
-
   // The distal cut seen end-on: a straight line across both condyles, one component thickness above the
   // distal-most surface (the same thickness the lateral drawing uses). It is the line the surgeon's saw
   // follows, and the point the AP view turns about.
   const bottom = Math.max(...silhouette.map((p) => p.y));
   const thickness = ap * DISTAL_THICKNESS;
   const cutY = bottom - thickness;
+
+  const layers: TemplateLayer[] = [
+    { role: "flange", path: flange, fill: 0.4 },
+    { role: "condyle", path: medial, fill: 0.55 },
+    { role: "condyle", path: lateral, fill: 0.55 },
+    // Fixation pegs rising from the distal cut into the bone, one over each condyle. Drawing only: they sit
+    // inside the bone, so they are not part of the silhouette and never change the fit.
+    { role: "detail", fill: 0.5, path: peg(hw * 0.54, cutY, ml * 0.1, ap * 0.19) },
+    { role: "detail", fill: 0.5, path: peg(-hw * 0.54, cutY, ml * 0.1, ap * 0.19) },
+    { role: "detail", open: true, fill: 0, path: groove },
+    { role: "box", open: true, fill: 0, path: [{ x: -nh, y: boxTop }, { x: nh, y: boxTop }] },
+  ];
   const cuts: ResectionCut[] = [
     { id: "distal", label: "Distal cut", sequence: 1, a: { x: -hw, y: cutY }, b: { x: hw, y: cutY }, thicknessMm: thickness },
   ];
@@ -175,6 +185,8 @@ function lateralView(ml: number, ap: number): ViewShape {
 
   const silhouette = [...outer, ...inner];
   const layers: TemplateLayer[] = [
+    // The two condyles' pegs overlap on a lateral film: one peg rising from the distal cut. Drawing only.
+    { role: "detail", fill: 0.5, path: peg(ap * 0.02, yDC, ap * 0.11, ap * 0.19) },
     { role: "shell", path: silhouette, fill: 0.45 },
     // The bone-facing cut lines, drawn as a detail so the notching verification has a visible reference.
     { role: "box", open: true, fill: 0, path: inner },

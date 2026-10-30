@@ -16,6 +16,7 @@ import {
   modelYToImageX,
   rankFemoralSizes,
   rankTibialSizes,
+  screenMoveToOffsets,
   seedMarkers,
   sideGaps,
   type ViewScale,
@@ -188,6 +189,9 @@ test("Markers seed only from an accepted assessment, and are never pre-confirmed
   assert.deepEqual(seeded.medial, { x: 40, y: 50 });
   assert.equal(seeded.confirmed, undefined);
   assert.deepEqual(seedMarkers("femoral", { assessment_landmarks: landmarks, v1_assessment: {} }), {}, "femoral keys are separate");
+  // The condyle bottoms are not the femur's edges, so they are never offered as a first guess.
+  const distal = { femurDistalMedial: { x: 45, y: 50 }, femurDistalLateral: { x: 35, y: 50 } };
+  assert.deepEqual(seedMarkers("femoral", { assessment_landmarks: distal, v1_assessment: {} }), {});
 });
 
 test("Image and model axes line up in both views", () => {
@@ -261,4 +265,24 @@ test("Edge gaps are signed: positive is a gap, negative is overhang", () => {
   assert.equal(Number(gaps.lateral.toFixed(1)), 1);
   assert.equal(Number(gaps.anterior.toFixed(1)), 0);
   assert.equal(Number(gaps.posterior.toFixed(1)), -1);
+});
+
+test("Each scan keeps its own position: moving the drawing on one scan never moves it on the other", async (t) => {
+  const { levelFor, levelKeyFor } = await import("../data/overlay_geometry");
+
+  await t.test("the AP and lateral scans use different height fields", () => {
+    assert.notEqual(levelKeyFor("FLAP"), levelKeyFor("KLAT"));
+    const c = { level_offset_mm: 3.5 };
+    assert.equal(levelFor(c, "FLAP"), 3.5);
+    assert.equal(levelFor(c, "KLAT"), 0);
+    assert.equal(levelFor({ level_offset_mm: 3.5, level_offset_klat_mm: -2 }, "KLAT"), -2);
+  });
+
+  await t.test("a sideways drag only changes the offset that scan owns", () => {
+    // AP: medial/lateral (x). Lateral: front/back (y). Neither touches the other.
+    const ap = screenMoveToOffsets("FLAP", 4, 2, 1);
+    assert.deepEqual([ap.x !== 0, ap.y === 0], [true, true]);
+    const lat = screenMoveToOffsets("KLAT", 4, 2, 1);
+    assert.deepEqual([lat.x === 0, lat.y !== 0], [true, true]);
+  });
 });

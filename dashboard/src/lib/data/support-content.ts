@@ -246,7 +246,7 @@ export const PLANNING_PAGES: PlanningPageDoc[] = [
           "Medial angle (°) between the tibial plateau / joint line and the tibial mechanical axis defined by the two shaft points.",
       },
       {
-        abbreviation: "LDFA",
+        abbreviation: "mLDFA",
         name: "Lateral distal femoral angle",
         view: "FLAP",
         points: "Medial distal femoral point, lateral distal femoral point",

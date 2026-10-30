@@ -9,6 +9,8 @@ import { getFemoralImplant } from "@/lib/data/implant_templates";
 import type { BoneModel, MarkerKey, ScanView } from "@/lib/data/fit_markers";
 import type { V1FemoralComponent, V1FitMarkers } from "@/lib/plan";
 import { ImplantOverlay } from "../components/ImplantOverlay";
+import { levelFor, levelKeyFor } from "@/lib/data/overlay_geometry";
+import { LABEL_BG, LABEL_EDGE } from "../components/overlayStyle";
 import { ResectionGuides, CUT_COLOUR } from "../components/ResectionGuides";
 import { placeTemplateInImage } from "@/lib/data/overlay_geometry";
 import { cutPlan, femoralCutLines, legAxes, tiltFromSquareDeg } from "@/lib/data/resection_geometry";
@@ -16,7 +18,7 @@ import { cutPlan, femoralCutLines, legAxes, tiltFromSquareDeg } from "@/lib/data
 interface FemoralCanvasProps {
   viewMode: FemoralViewMode;
   femoralComponent: V1FemoralComponent;
-  onMove: (next: { x_offset_mm?: number; y_offset_mm?: number; level_offset_mm?: number }) => void;
+  onMove: (next: { x_offset_mm?: number; y_offset_mm?: number; level_offset_mm?: number; level_offset_klat_mm?: number }) => void;
   /** The turn for the scan on show: tilt on the AP scan, flexion on the lateral scan. */
   onRotate: (deg: number) => void;
   /** The assessment's landmarks (percent of the image), which give the mechanical axis. */
@@ -72,7 +74,7 @@ export function FemoralCanvas({
 
   const template = getFemoralImplant(femoralComponent.implant_size);
   const pos = femoralComponent.position_2d;
-  const level = femoralComponent.level_offset_mm ?? 0;
+  const level = levelFor(femoralComponent, viewMode);
   const origin = viewMode === "FLAP" ? bone.flapOrigin : bone.klatOrigin;
 
   const [showCuts, setShowCuts] = useState(true);
@@ -82,8 +84,11 @@ export function FemoralCanvas({
 
   // The AP scan's size, reported as it loads, turns the assessment's percentages into pixels for the mechanical axis.
   const [apDims, setApDims] = useState<{ width: number; height: number } | undefined>();
+  const [latDims, setLatDims] = useState<{ width: number; height: number } | undefined>();
   const reportDims = useCallback((view: ScanView, dims: { width: number; height: number }) => {
-    if (view === "FLAP") setApDims((prev) => (prev && prev.width === dims.width && prev.height === dims.height ? prev : dims));
+    const keep = (prev?: { width: number; height: number }) => (prev && prev.width === dims.width && prev.height === dims.height ? prev : dims);
+    if (view === "FLAP") setApDims(keep);
+    else setLatDims(keep);
     onDimsLoaded(view, dims);
   }, [onDimsLoaded]);
   const axes = apDims ? legAxes(landmarks, apDims.width, apDims.height) : undefined;
@@ -100,10 +105,25 @@ export function FemoralCanvas({
   // Once the edges are confirmed, each scan opens zoomed in on the knee (the whole leg is far too small to work
   // on), and the button does it again. A new key is a new request, so each scan asks once.
   const autoFocus = hasOrigin && markersConfirmed;
+  // Before this scan's edges are marked there is no component to centre on, so it opens on the knee from the
+  // assessment's own points: the knee centre on the AP scan, the plateau on the lateral scan.
+  let markingFocus: { x: number; y: number; spanPx: number; nonce: string } | undefined;
+  if (!origin && landmarks && mmPerPx > 0) {
+    const knee = landmarks.kneeCenter;
+    const front = landmarks.tibiaPlateauAnterior;
+    const back = landmarks.tibiaPlateauPosterior;
+    if (viewMode === "FLAP" && apDims && knee) {
+      markingFocus = { x: (knee.x / 100) * apDims.width, y: (knee.y / 100) * apDims.height, spanPx: focusSpanMm / mmPerPx, nonce: "FLAP:marking" };
+    } else if (viewMode === "KLAT" && latDims && front && back) {
+      // The femur sits just above the plateau: centre a little higher than the plateau line.
+      const y = (((front.y + back.y) / 2) / 100) * latDims.height - 15 / mmPerPx;
+      markingFocus = { x: (((front.x + back.x) / 2) / 100) * latDims.width, y, spanPx: focusSpanMm / mmPerPx, nonce: "KLAT:marking" };
+    }
+  }
   const focus =
     placement && (autoFocus || focusNonce > 0)
       ? { x: placement.pivotPx.x, y: placement.pivotPx.y, spanPx: focusSpanMm / mmPerPx, nonce: `${viewMode}:${autoFocus ? "auto" : "manual"}:${focusNonce}` }
-      : undefined;
+      : markingFocus;
 
   const hud = origin ? (
     <div
@@ -117,7 +137,7 @@ export function FemoralCanvas({
         width: 224,
         padding: "8px 10px",
         borderRadius: 8,
-        background: "rgba(15,23,42,0.9)",
+        background: LABEL_BG,
         border: "1px solid rgba(255,255,255,0.15)",
         color: "#e2e8f0",
         fontSize: 12,
@@ -260,11 +280,12 @@ export function FemoralCanvas({
                   top: "50%",
                   transform: `translate(-50%, -50%) scale(${1 / zoom})`,
                   zIndex: 45,
+                  width: "max-content",
                   maxWidth: 340,
                   padding: "12px 16px",
                   borderRadius: 8,
-                  background: "rgba(15,23,42,0.9)",
-                  border: "1px solid #facc15",
+                  background: LABEL_BG,
+                  border: `1px solid ${LABEL_EDGE}`,
                   color: "#fff",
                   fontSize: 13,
                   textAlign: "center",
@@ -290,7 +311,9 @@ export function FemoralCanvas({
                 busy={Boolean(placing) || Boolean(scale.calibrating)}
                 label={`Femoral Size ${template.size}`}
                 verdictColour={colour}
-                onMove={onMove}
+                onMove={({ level_offset_mm, ...rest }) =>
+                  onMove({ ...rest, ...(level_offset_mm !== undefined ? { [levelKeyFor(viewMode)]: level_offset_mm } : {}) })
+                }
                 onRotate={onRotate}
                 rotatable
               >

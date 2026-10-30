@@ -234,8 +234,23 @@ function SideNavContent({ persona, nav, drawer }: SideNavProps) {
           </Link>
 
           {sections.map((section) => {
-            const here = section.id === routeSection;
-            const hasBadge = section.groups.some((g) => g.items.some((i) => i.badge !== undefined));
+            const here = !section.quiet && section.id === routeSection;
+            const hasBadge = !section.quiet && section.groups.some((g) => g.items.some((i) => i.badge !== undefined));
+            if (section.flat) {
+              return (
+                <Link
+                  prefetch={false}
+                  key={section.id}
+                  href={section.href}
+                  className={cx(s.railBtn, here && s.railBtnHere)}
+                  aria-label={section.label}
+                  title={section.label}
+                  aria-current={here ? "page" : undefined}
+                >
+                  <section.icon className={s.railIcon} strokeWidth={1.75} aria-hidden="true" />
+                </Link>
+              );
+            }
             return (
               <button
                 key={section.id}
@@ -315,7 +330,24 @@ function SideNavContent({ persona, nav, drawer }: SideNavProps) {
           const isOpen = isCapsuleOpen(section.id);
           // The desktop sidebar stays in the page while the drawer is open, so the drawer's ids differ.
           const bodyId = `${drawer ? "drawer-" : ""}capsule-${section.id}`;
-          const here = section.id === routeSection;
+          const here = !section.quiet && section.id === routeSection;
+          if (section.flat) {
+            // One plain link, like the Dashboard: no dropdown.
+            return (
+              <div className={s.capsule} key={section.id}>
+                <Link
+                  prefetch={false}
+                  href={section.href}
+                  className={cx(s.capsuleBtn, here && s.capsuleBtnHere)}
+                  aria-current={here ? "page" : undefined}
+                  title={section.label}
+                >
+                  <section.icon className={s.capsuleIcon} strokeWidth={1.75} aria-hidden="true" />
+                  <span className={s.capsuleLabel}>{section.label}</span>
+                </Link>
+              </div>
+            );
+          }
           return (
             <div className={s.capsule} key={section.id}>
               <button

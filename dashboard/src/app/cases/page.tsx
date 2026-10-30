@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { FolderOpen, Plus } from "lucide-react";
+import { LibraryNav } from "@/components/cases/LibraryNav";
 import { AppShell, Breadcrumbs, PageHeader } from "@/components/shell";
 import { Badge, Button, Card, Chip, EmptyState, Skeleton } from "@/components/ui";
 import { listCases, type AttemptedFilter } from "@/lib/data/cases";
@@ -73,6 +74,8 @@ export default async function CasesPage({
           </div>
         }
       />
+
+      {!isInstructor && <LibraryNav current={null} />}
 
       {!isInstructor && (
         <nav className={p.tabs} aria-label="Case progress">

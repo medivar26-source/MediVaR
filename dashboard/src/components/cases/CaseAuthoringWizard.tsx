@@ -344,7 +344,7 @@ export function CaseAuthoringWizard({
         ok: [madMm, amaDeg, mhkaDeg, mptaDeg, ldfaDeg, ptsDeg].every(
           (v) => typeof v === "number" && !isNaN(v)
         ),
-        detail: `MAD ${madMm}mm · mHKA ${mhkaDeg}° · MPTA ${mptaDeg}° · LDFA ${ldfaDeg}°`,
+        detail: `MAD ${madMm}mm · mHKA ${mhkaDeg}° · MPTA ${mptaDeg}° · mLDFA ${ldfaDeg}°`,
       },
       {
         id: "sizing",
@@ -1254,7 +1254,7 @@ export function CaseAuthoringWizard({
                   required
                 />
                 <Input
-                  label="LDFA (Lateral Distal Femoral Angle)"
+                  label="mLDFA (Mechanical Lateral Distal Femoral Angle)"
                   type="number"
                   step="0.5"
                   value={ldfaDeg}

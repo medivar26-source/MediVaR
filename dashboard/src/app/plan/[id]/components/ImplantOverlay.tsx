@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import { RotateCw } from "lucide-react";
 import type { ImplantTemplate } from "@/lib/data/implant_templates";
 import { screenDeltaToImageDelta } from "@/lib/data/coordinates";
 import { screenMoveToOffsets, type Origin } from "@/lib/data/fit_markers";
@@ -8,9 +9,22 @@ import { placeTemplateInImage } from "@/lib/data/overlay_geometry";
 import { rotationFromPointer } from "@/lib/data/fit_map";
 import { FLEXION_LIMIT_DEG } from "@/lib/data/resection_geometry";
 import type { ViewportContext } from "./ScanViewport";
+import {
+  GUIDE_YELLOW,
+  IMPLANT_BLUE,
+  IMPLANT_FILL,
+  IMPLANT_FILL_INSERT,
+  IMPLANT_LINE,
+  IMPLANT_LINE_SOFT,
+  LABEL_BG,
+  LABEL_EDGE,
+  LINE_DETAIL,
+  LINE_GUIDE,
+  LINE_OUTLINE,
+} from "./overlayStyle";
 
 /** The planner's template colour: a semi-transparent blue vector graphic (V1 PDF, Page 2 Step 3). */
-export const TEMPLATE_BLUE = "#2563eb";
+export const TEMPLATE_BLUE = IMPLANT_BLUE;
 
 type View = "FLAP" | "KLAT";
 
@@ -148,6 +162,7 @@ export function ImplantOverlay({
   const handleSize = 1 / zoom;
 
   const toPoints = (pts: { x: number; y: number }[]) => pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ");
+  const active = dragging || turning;
 
   return (
     <>
@@ -160,37 +175,45 @@ export function ImplantOverlay({
         style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", overflow: "visible" }}
       >
         <g transform={`translate(${cx} ${cy}) scale(${flip * pxPerMm} ${pxPerMm}) rotate(${rotation} ${pivot.x} ${pivot.y})`}>
-          {shape.layers.map((layer, i) =>
-            layer.open ? (
-              <polyline
-                key={i}
-                points={toPoints(layer.path)}
-                fill="none"
-                stroke={TEMPLATE_BLUE}
-                strokeOpacity={0.75}
-                strokeWidth={1}
-                strokeDasharray={layer.role === "box" ? "4 3" : undefined}
-                vectorEffect="non-scaling-stroke"
-              />
-            ) : (
+          {/* One flat, see-through fill over the whole silhouette, so overlapping parts never darken each other. */}
+          <polygon points={toPoints(shape.silhouette)} fill={IMPLANT_FILL} stroke="none" />
+          {/* Quiet internal lines: only the geometry that helps read the fit (keel, pegs, insert, cut box). */}
+          {shape.layers.map((layer, i) => {
+            if (layer.open) {
+              const box = layer.role === "box";
+              return (
+                <polyline
+                  key={i}
+                  points={toPoints(layer.path)}
+                  fill="none"
+                  stroke={box ? GUIDE_YELLOW : IMPLANT_LINE_SOFT}
+                  strokeOpacity={box ? 0.75 : 1}
+                  strokeWidth={box ? LINE_GUIDE : LINE_DETAIL}
+                  strokeDasharray={box ? "5 4" : undefined}
+                  vectorEffect="non-scaling-stroke"
+                />
+              );
+            }
+            return (
               <polygon
                 key={i}
                 points={toPoints(layer.path)}
-                fill={TEMPLATE_BLUE}
-                fillOpacity={layer.fill * 0.55}
-                stroke={TEMPLATE_BLUE}
-                strokeOpacity={0.55}
-                strokeWidth={0.8}
+                fill={layer.role === "insert" ? IMPLANT_FILL_INSERT : "none"}
+                stroke={IMPLANT_LINE_SOFT}
+                // Parts that share the silhouette's edge stay faint, so the outline reads as one thin line.
+                strokeOpacity={layer.role === "detail" || layer.role === "insert" ? 0.8 : 0.3}
+                strokeWidth={LINE_DETAIL}
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
               />
-            ),
-          )}
+            );
+          })}
+          {/* The outline: one thin blue-white line, a touch brighter while it is being moved or turned. */}
           <polygon
             points={toPoints(shape.silhouette)}
             fill="none"
-            stroke={TEMPLATE_BLUE}
-            strokeWidth={1.8}
+            stroke={active ? "#ffffff" : IMPLANT_LINE}
+            strokeWidth={LINE_OUTLINE}
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
           />
@@ -233,12 +256,12 @@ export function ImplantOverlay({
           position: "absolute",
           left: `${(pivotPx.x / naturalWidth) * 100}%`,
           top: `${(pivotPx.y / naturalHeight) * 100}%`,
-          width: 14,
-          height: 14,
+          width: 12,
+          height: 12,
           borderRadius: "50%",
-          background: "#fff",
-          border: `2px solid ${TEMPLATE_BLUE}`,
-          boxShadow: "0 0 0 1px rgba(255,255,255,0.8), 0 1px 4px rgba(0,0,0,0.5)",
+          // A thin ring with a dot: the pivot point on the bone stays visible through it.
+          background: `radial-gradient(circle, ${IMPLANT_LINE} 0 1.5px, transparent 2px)`,
+          border: `1.5px solid ${IMPLANT_LINE}`,
           transform: `translate(-50%, -50%) scale(${handleSize})`,
           cursor: readOnly ? "default" : "move",
           zIndex: 36,
@@ -257,7 +280,7 @@ export function ImplantOverlay({
             preserveAspectRatio="none"
             style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", overflow: "visible", zIndex: 34 }}
           >
-            <line x1={pivotPx.x} y1={pivotPx.y} x2={handle.x} y2={handle.y} stroke={TEMPLATE_BLUE} strokeWidth={1.2} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+            <line x1={pivotPx.x} y1={pivotPx.y} x2={handle.x} y2={handle.y} stroke={IMPLANT_LINE} strokeOpacity={0.8} strokeWidth={LINE_DETAIL} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
           </svg>
           <div
             role="slider"
@@ -292,19 +315,23 @@ export function ImplantOverlay({
               position: "absolute",
               left: `${(handle.x / naturalWidth) * 100}%`,
               top: `${(handle.y / naturalHeight) * 100}%`,
-              width: 16,
-              height: 16,
+              width: 18,
+              height: 18,
               borderRadius: "50%",
-              background: TEMPLATE_BLUE,
-              border: "2px solid #fff",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.55)",
+              display: "grid",
+              placeItems: "center",
+              color: "#fff",
+              background: IMPLANT_BLUE,
+              border: `1.5px solid ${IMPLANT_LINE}`,
               transform: `translate(-50%, -50%) scale(${handleSize})`,
               cursor: turning ? "grabbing" : "grab",
               zIndex: 37,
               touchAction: "none",
               pointerEvents: busy ? "none" : "auto",
             }}
-          />
+          >
+            <RotateCw size={10} strokeWidth={2.5} aria-hidden="true" />
+          </div>
         </>
       )}
 
@@ -318,22 +345,29 @@ export function ImplantOverlay({
           transformOrigin: "bottom center",
           pointerEvents: "none",
           zIndex: 40,
-          marginTop: -6,
+          marginTop: -5,
         }}
       >
         <div
           style={{
-            background: "#0f172a",
-            border: `1.5px solid ${verdictColour}`,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: LABEL_BG,
+            border: `1px solid ${LABEL_EDGE}`,
             color: "white",
-            padding: "4px 10px",
-            fontSize: "0.8125rem",
-            fontWeight: 700,
-            borderRadius: 6,
+            padding: "2px 9px 2px 7px",
+            fontSize: "0.75rem",
+            fontWeight: 600,
+            borderRadius: 999,
             whiteSpace: "nowrap",
-            boxShadow: "0 3px 8px rgba(0,0,0,0.5)",
           }}
         >
+          {/* The fit verdict, as a coloured light: green fits, amber is borderline, red does not. */}
+          <span
+            aria-hidden="true"
+            style={{ width: 7, height: 7, borderRadius: "50%", background: verdictColour }}
+          />
           {label}
         </div>
       </div>

@@ -12,6 +12,8 @@
  *    85° and 95° are different answers instead of the same one.
  *  - Varus and valgus come from which way the knee bows relative to the lateral side the surgeon marked
  *    on the scan, so a left knee and a right knee both read correctly.
+ *  - MAD's side is the side of the knee centre the hip-ankle line passes, as it is reported clinically:
+ *    medial in a varus knee, lateral in a valgus one.
  */
 
 import type { V1Assessment } from "../plan";
@@ -33,7 +35,11 @@ export type ScanGeometry = { widthPx: number; heightPx: number; mmPerPx: number;
 
 export type MeasureKey = "mad" | "ama" | "mhka" | "mpta" | "ldfa" | "pts";
 
-export const MEASURE_ORDER: MeasureKey[] = ["mad", "mhka", "mpta", "ldfa", "ama", "pts"];
+/** In the order the senior testers' reference ("Planning mode details") lists them. */
+export const MEASURE_ORDER: MeasureKey[] = ["mad", "mhka", "ldfa", "mpta", "ama", "pts"];
+
+/** The side of the knee centre the mechanical axis (hip to ankle) passes. */
+export type MadSide = "medial" | "lateral";
 
 /** The points each measurement needs, and the scan they are on. */
 export const MEASURE_NEEDS: Record<MeasureKey, { view: "FLAP" | "KLAT"; keys: LandmarkKey[] }> = {
@@ -55,57 +61,137 @@ export const REQUIRED_LANDMARKS: LandmarkKey[] = [
   "tibiaShaftProximal", "tibiaShaftDistal",
 ];
 
-/**
- * What each measurement is, in plain words, and what is usual. "Usual" is the commonly published
- * range for a healthy knee; it is shown for orientation and never used to change a value.
- */
-export const MEASURE_INFO: Record<
-  MeasureKey,
-  { short: string; name: string; unit: "mm" | "°"; usual: string; plain: string }
-> = {
+/** What each measurement is, in plain words. */
+export const MEASURE_INFO: Record<MeasureKey, { short: string; name: string; unit: "mm" | "°"; plain: string }> = {
   mad: {
     short: "MAD",
     name: "Mechanical axis deviation",
     unit: "mm",
-    usual: "within 10 mm",
-    plain: "How far the knee centre sits from the straight line between the hip and the ankle.",
+    plain: "How far the straight line from the hip to the ankle passes from the knee centre: medial in a bow-legged (varus) knee.",
   },
   mhka: {
     short: "mHKA",
-    name: "Hip-knee-ankle angle",
+    name: "Mechanical hip-knee-ankle angle",
     unit: "°",
-    usual: "within 3° of straight",
     plain: "How much the leg bends at the knee, as seen from the front.",
   },
   mpta: {
     short: "MPTA",
     name: "Medial proximal tibial angle",
     unit: "°",
-    usual: "85–90°",
     plain: "The angle between the shin's axis and the top of the shin bone, on the inner side.",
   },
   ldfa: {
-    short: "LDFA",
-    name: "Lateral distal femoral angle",
+    short: "mLDFA",
+    name: "Mechanical lateral distal femoral angle",
     unit: "°",
-    usual: "85–90°",
     plain: "The angle between the thigh's axis and the bottom of the thigh bone, on the outer side.",
   },
   ama: {
     short: "AMA",
     name: "Anatomical-mechanical angle",
     unit: "°",
-    usual: "about 5–7°",
     plain: "The angle between the thigh bone's own axis and the leg's mechanical axis.",
   },
   pts: {
     short: "PTS",
     name: "Posterior tibial slope",
     unit: "°",
-    usual: "about 5–10°",
     plain: "How much the top of the shin bone slopes down towards the back of the knee.",
   },
 };
+
+export type RangeTier = "normal" | "borderline" | "abnormal";
+
+/** A value inside `normal` is normal; inside `borderline` but not `normal`, borderline; outside both, abnormal. */
+type Band = { normal: [number, number]; borderline: [number, number] };
+
+/**
+ * Reference bands from the senior testers' "Planning mode details". They are shown for orientation and never
+ * used to change or block a value. mHKA and MAD are deviations from straight, so their bands start at 0.
+ *
+ * MAD has a band per side because the reference tolerates more deviation medially (varus) than laterally
+ * (valgus). The reference calls 10–15 mm "borderline, medial or lateral" but also calls more than 10 mm
+ * lateral abnormal; the lateral band follows the stricter of the two.
+ */
+export const MEASURE_RANGES: { [K in Exclude<MeasureKey, "mad">]: Band } & { mad: Record<MadSide, Band> } = {
+  mad: {
+    medial: { normal: [0, 10], borderline: [0, 15] },
+    lateral: { normal: [0, 10], borderline: [0, 10] },
+  },
+  mhka: { normal: [0, 1.5], borderline: [0, 3] },
+  ldfa: { normal: [85, 90], borderline: [83, 92] },
+  mpta: { normal: [85, 90], borderline: [83, 92] },
+  ama: { normal: [5, 7], borderline: [4, 8] },
+  pts: { normal: [5, 12], borderline: [3, 15] },
+};
+
+export const RANGE_TIER_INFO: Record<RangeTier, { label: string; tone: "pass" | "warn" | "fail" }> = {
+  normal: { label: "Normal", tone: "pass" },
+  borderline: { label: "Borderline", tone: "warn" },
+  abnormal: { label: "Abnormal", tone: "fail" },
+};
+
+const TIER_SEVERITY: RangeTier[] = ["normal", "borderline", "abnormal"];
+
+const within = ([lo, hi]: [number, number], v: number) => v >= lo && v <= hi;
+const tierIn = (band: Band, v: number): RangeTier =>
+  within(band.normal, v) ? "normal" : within(band.borderline, v) ? "borderline" : "abnormal";
+
+/** Where a value sits in the reference bands. MAD needs its side; without one, the stricter reading is used. */
+export function rangeTier(key: MeasureKey, value: number, madSide?: MadSide): RangeTier {
+  if (key !== "mad") return tierIn(MEASURE_RANGES[key], value);
+  if (madSide) return tierIn(MEASURE_RANGES.mad[madSide], value);
+  const both = [tierIn(MEASURE_RANGES.mad.medial, value), tierIn(MEASURE_RANGES.mad.lateral, value)];
+  return both.reduce((a, b) => (TIER_SEVERITY.indexOf(b) > TIER_SEVERITY.indexOf(a) ? b : a));
+}
+
+/** The normal band in words, e.g. "85–90°", "within ±1.5°", "within 10 mm". */
+export function normalRangeText(key: MeasureKey): string {
+  if (key === "mad") {
+    const { medial, lateral } = MEASURE_RANGES.mad;
+    return medial.normal[1] === lateral.normal[1]
+      ? `within ${medial.normal[1]} mm`
+      : `within ${medial.normal[1]} mm medial, ${lateral.normal[1]} mm lateral`;
+  }
+  const [lo, hi] = MEASURE_RANGES[key].normal;
+  return lo === 0 ? `within ±${hi}°` : `${lo}–${hi}°`;
+}
+
+/** The saved field each measurement is kept in. */
+const STORED_FIELD: Record<MeasureKey, "MAD_mm" | "AMA_deg" | "mHKA_deg" | "MPTA_deg" | "LDFA_deg" | "PTS_deg"> = {
+  mad: "MAD_mm",
+  mhka: "mHKA_deg",
+  mpta: "MPTA_deg",
+  ldfa: "LDFA_deg",
+  ama: "AMA_deg",
+  pts: "PTS_deg",
+};
+
+/** A saved measurement, or undefined when it was never recorded. */
+export function storedMeasure(a: Partial<V1Assessment> | null | undefined, key: MeasureKey): number | undefined {
+  const v = a?.[STORED_FIELD[key]];
+  return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+}
+
+/**
+ * The MAD side a saved assessment implies. Saved plans keep the varus/valgus designation rather than the side,
+ * and `measureAssessment` makes varus exactly the medial side, so one gives the other. Neutral gives no side.
+ */
+export const madSideFromAlignment = (alignment?: V1Assessment["alignment_type"]): MadSide | undefined =>
+  alignment === "VARUS" ? "medial" : alignment === "VALGUS" ? "lateral" : undefined;
+
+/** A measurement as the planner shows it: "88.0°", "12.0 mm medial", "12.0 mm medial (est.)". */
+export function formatMeasure(
+  key: MeasureKey,
+  value: number,
+  { madSide, scaleEstimated }: { madSide?: MadSide; scaleEstimated?: boolean } = {},
+): string {
+  if (MEASURE_INFO[key].unit === "°") return `${value.toFixed(1)}°`;
+  // A knee exactly on the axis has no side.
+  const side = madSide && value > 0 ? ` ${madSide}` : "";
+  return `${value.toFixed(1)} mm${side}${scaleEstimated ? " (est.)" : ""}`;
+}
 
 /** A value outside these is far enough from any real knee that a point is probably misplaced. */
 const IMPLAUSIBLE: Record<MeasureKey, [number, number]> = {
@@ -152,8 +238,8 @@ export type Measure = {
 export type AssessmentReading = {
   measures: Record<MeasureKey, Measure>;
   alignment_type?: "VARUS" | "VALGUS" | "NEUTRAL";
-  /** Which way the knee sits from the hip-ankle line, for MAD. */
-  mad_direction?: "medial" | "lateral";
+  /** The side of the knee centre the hip-ankle line passes, for MAD; unset when the knee is on the line. */
+  mad_direction?: MadSide;
   /** "points" when the surgeon's own lateral/medial marks decided varus/valgus, "knee_side" when the case's side did. */
   alignment_basis?: "points" | "knee_side";
   /** MAD was converted to millimetres with a scale that is not verified. */
@@ -206,7 +292,8 @@ export function measureAssessment(
     const hka = round1(Math.abs(signedAngle(fma, tma)));
     measures.mhka.value = hka;
 
-    // Which way the knee bows. Offset is the knee's displacement from the hip-ankle line.
+    // Which way the knee bows. Offset is the knee's displacement from the hip-ankle line; the line passes on
+    // the other side of the knee, so a knee bowed outward (lateral) leaves the line medial: varus.
     const axis = sub(ankle, hip);
     const axisLen = mag(axis);
     if (axisLen > 0) {
@@ -217,18 +304,19 @@ export function measureAssessment(
       let lateral: Pt | undefined;
       if (lm.tibiaProximalLateral && lm.tibiaProximalMedial) lateral = sub(F(lm.tibiaProximalLateral), F(lm.tibiaProximalMedial));
       else if (lm.femurDistalLateral && lm.femurDistalMedial) lateral = sub(F(lm.femurDistalLateral), F(lm.femurDistalMedial));
+      let lateralX: number | undefined;
       if (lateral && Math.abs(lateral.x) > 1e-6) {
         basis = "points";
-        madDirection = lateral.x * offset.x > 0 ? "lateral" : "medial";
+        lateralX = lateral.x;
       } else if (kneeSide) {
         basis = "knee_side";
         // Standard AP view: the patient's right is the viewer's left, so a right knee's lateral side is image-left.
-        const lateralX = kneeSide === "RIGHT" ? -1 : 1;
-        madDirection = lateralX * offset.x > 0 ? "lateral" : "medial";
+        lateralX = kneeSide === "RIGHT" ? -1 : 1;
       }
-      if (madDirection) {
-        alignment =
-          hka < 0.5 ? "NEUTRAL" : madDirection === "lateral" ? "VARUS" : "VALGUS";
+      if (lateralX !== undefined) {
+        const lineSide: MadSide = lateralX * offset.x > 0 ? "medial" : "lateral";
+        alignment = hka < 0.5 ? "NEUTRAL" : lineSide === "medial" ? "VARUS" : "VALGUS";
+        if (measures.mad.value! > 0) madDirection = lineSide;
       }
     }
   }

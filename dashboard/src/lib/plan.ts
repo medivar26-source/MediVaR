@@ -193,8 +193,10 @@ export type V1TibialComponent = {
   scales?: { FLAP?: number; KLAT?: number };
   /** The surgeon chose to continue on an unverified scale. Never set silently. */
   estimated_scale_accepted?: boolean;
-  /** How far the component sits below (+) or above (-) the marked cut level on the scans. Drawing only: it does not change the fit. */
+  /** How far the component sits below (+) or above (-) the marked cut level on the AP scan. Drawing only: it does not change the fit. */
   level_offset_mm?: number;
+  /** The same, for the lateral scan. Each scan keeps its own height, so moving the drawing on one never moves it on the other. */
+  level_offset_klat_mm?: number;
 };
 
 export type V1FemoralComponent = {
@@ -215,8 +217,10 @@ export type V1FemoralComponent = {
   scales?: { FLAP?: number; KLAT?: number };
   /** The surgeon chose to continue on an unverified scale. Never set silently. */
   estimated_scale_accepted?: boolean;
-  /** How far the component sits below (+) or above (-) the marked cut level on the scans. Drawing only: it does not change the fit. */
+  /** How far the component sits below (+) or above (-) the marked cut level on the AP scan. Drawing only: it does not change the fit. */
   level_offset_mm?: number;
+  /** The same, for the lateral scan. Each scan keeps its own height, so moving the drawing on one never moves it on the other. */
+  level_offset_klat_mm?: number;
 };
 
 export type V1VrPayload = {
