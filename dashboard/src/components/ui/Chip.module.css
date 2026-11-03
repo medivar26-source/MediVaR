@@ -21,11 +21,19 @@
   transition:
     background-color var(--m-fast) var(--ease-out),
     border-color var(--m-fast) var(--ease-out),
-    color var(--m-fast) var(--ease-out);
+    color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
-.interactive:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-sunken);
+
+/* Pressed: a filter gives under the finger the moment it lands, like a button. */
+.interactive:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .interactive:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-sunken);
+  }
 }
 
 /* Selected is a solid fill. A pale tint reads as decoration rather than as
@@ -36,9 +44,11 @@
   color: var(--on-brand);
   font-weight: var(--fw-bold);
 }
-.selected.interactive:hover {
-  background: var(--brand-hover);
-  border-color: var(--brand-hover);
+@media (hover: hover) and (pointer: fine) {
+  .selected.interactive:hover {
+    background: var(--brand-hover);
+    border-color: var(--brand-hover);
+  }
 }
 
 .muted {
@@ -89,8 +99,10 @@
     background-color var(--m-fast) var(--ease-out),
     color var(--m-fast) var(--ease-out);
 }
-.segment:hover:not(.segmentOn) {
-  color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+  .segment:hover:not(.segmentOn) {
+    color: var(--text);
+  }
 }
 
 .segmentOn {
@@ -98,4 +110,15 @@
   border-color: var(--border);
   color: var(--ink);
   font-weight: var(--fw-bold);
+}
+
+/* Pressed: feedback the moment a finger or button goes down, not on release. */
+.interactive,
+.segment {
+  transition-property: background-color, border-color, color, transform;
+}
+
+.interactive:active,
+.segment:active {
+  transform: scale(0.97);
 }

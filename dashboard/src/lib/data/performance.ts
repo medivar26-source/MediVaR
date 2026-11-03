@@ -13,14 +13,12 @@
 import {
   CASE_BY_ID,
   CATEGORY_BY_KEY,
+  CURRENT_USER,
   PROCEDURES,
-  PROFILE_BY_ID,
-  REPORT_BY_SESSION,
   SCENES,
-  sceneResultsFor,
-  sessionsFor,
 } from "@/lib/seed";
-import { categoryAverages, marksLost as marksLostFor, weeklyActivity } from "./rollups";
+import { categoryAverages, marksLost as marksLostFor, passedOf, weeklyActivity } from "./rollups";
+import { resultsFor, sceneResultsOf, sessionsOf } from "./results";
 import { visibleSessions } from "./scope";
 import { slugForCategory } from "@/lib/skills";
 import { getLearnerSessions } from "./learner-sessions";
@@ -28,15 +26,16 @@ import { hasRun } from "./session-links";
 import type { Profile } from "@/lib/types";
 import { shortDate } from "@/lib/format";
 import type { SessionSummary, Verdict } from "@/lib/types";
-import { PASS_MARK } from "@/lib/types";
 
 function mean(values: number[]): number | undefined {
   if (!values.length) return undefined;
   return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
 }
 
-const passed = (s: SessionSummary) =>
-  s.totalScore !== undefined && s.totalScore >= PASS_MARK[s.difficulty];
+const passed = (s: SessionSummary) => passedOf(s) === true;
+
+/** The catalogue procedure a run was on: from the sample case, or as the stored run names it. */
+const procedureOf = (s: SessionSummary) => (s.caseId ? CASE_BY_ID.get(s.caseId)?.procedureId : undefined) ?? s.procedureId;
 
 /* ============================================================
    /performance
@@ -82,7 +81,8 @@ export type PerformanceOverview = {
 export async function getPerformanceOverview(
   userId: string,
 ): Promise<PerformanceOverview> {
-  const mine = sessionsFor(userId);
+  const data = await resultsFor(userId);
+  const mine = sessionsOf(data, userId);
   const completed = mine.filter(
     (s) => s.status === "completed" && s.totalScore !== undefined,
   );
@@ -108,7 +108,7 @@ export async function getPerformanceOverview(
       } Pass marks — Beginner 60 · Intermediate 70 · Expert 80.`
     : "No completed sessions yet.";
 
-  const categories = categoryAverages(mine).map((c) => ({
+  const categories = categoryAverages(mine, data).map((c) => ({
     key: c.key,
     slug: slugForCategory(c.key),
     label: c.label,
@@ -118,9 +118,7 @@ export async function getPerformanceOverview(
   const rankedCats = [...categories].sort((a, b) => a.pct - b.pct);
 
   const procedures = PROCEDURES.map((p) => {
-    const runs = completed.filter(
-      (s) => CASE_BY_ID.get(s.caseId)?.procedureId === p.id,
-    );
+    const runs = completed.filter((s) => procedureOf(s) === p.id);
     const runScores = runs.map((s) => s.totalScore as number);
     const latest = [...runs].sort((a, b) =>
       (b.endedAt ?? "").localeCompare(a.endedAt ?? ""),
@@ -191,12 +189,13 @@ export type SkillGroup = {
  * for another procedure.
  */
 export async function getSkillGroups(userId: string): Promise<SkillGroup[]> {
-  const scored = sessionsFor(userId).filter(
+  const data = await resultsFor(userId);
+  const scored = sessionsOf(data, userId).filter(
     (s) => s.status === "completed" && s.totalScore !== undefined,
   );
 
   return PROCEDURES.filter((p) => p.status === "published").flatMap((p) => {
-    const runs = scored.filter((s) => CASE_BY_ID.get(s.caseId)?.procedureId === p.id);
+    const runs = scored.filter((s) => procedureOf(s) === p.id);
     if (runs.length === 0) return [];
     const hasScoringModel = PROCEDURES_WITH_SCORING.has(p.id);
     return [
@@ -206,7 +205,7 @@ export async function getSkillGroups(userId: string): Promise<SkillGroup[]> {
         sessions: runs.length,
         hasScoringModel,
         categories: hasScoringModel
-          ? categoryAverages(runs).map((c) => ({
+          ? categoryAverages(runs, data).map((c) => ({
               key: c.key,
               slug: slugForCategory(c.key),
               label: c.label,
@@ -255,7 +254,8 @@ export async function getSkillDetail(
   const meta = CATEGORY_BY_KEY.get(categoryKey);
   if (!meta) return null;
 
-  const mine = sessionsFor(userId).filter((s) => s.status === "completed");
+  const data = await resultsFor(userId);
+  const mine = sessionsOf(data, userId).filter((s) => s.status === "completed");
   const categoryScenes = SCENES.filter((s) => s.categoryKey === categoryKey);
   const sceneIds = new Set(categoryScenes.map((s) => s.scene));
 
@@ -265,7 +265,7 @@ export async function getSkillDetail(
     .slice()
     .reverse()
     .flatMap((session) =>
-      sceneResultsFor(session.id)
+      sceneResultsOf(data, session.id)
         .filter((r) => sceneIds.has(r.scene))
         .map((r) => ({ ...r, at: session.endedAt ?? "" })),
     );
@@ -291,8 +291,8 @@ export async function getSkillDetail(
     };
   });
 
-  const pct = categoryAverages(mine).find((c) => c.key === categoryKey)?.pct;
-  const marksLost = marksLostFor(mine)
+  const pct = categoryAverages(mine, data).find((c) => c.key === categoryKey)?.pct;
+  const marksLost = marksLostFor(mine, data)
     .filter((m) => sceneIds.has(m.scene))
     .map((m) => ({ scene: m.scene, label: m.label, points: m.points }));
 
@@ -342,7 +342,7 @@ export type AssessmentsView = {
 };
 
 export async function getAssessments(userId: string): Promise<AssessmentsView> {
-  const sessions = sessionsFor(userId).filter((s) => s.mode === "assessment");
+  const sessions = sessionsOf(await resultsFor(userId), userId).filter((s) => s.mode === "assessment");
   const completed = sessions.filter(
     (s) => s.status === "completed" && s.totalScore !== undefined,
   );
@@ -384,13 +384,14 @@ export type ReportRow = SessionSummary & {
  * cannot disagree about what the viewer is allowed to read.
  */
 export async function getReportsList(user?: Profile): Promise<ReportRow[]> {
-  return visibleSessions(user)
-    .filter((session) => REPORT_BY_SESSION.has(session.id))
+  const data = await resultsFor((user ?? CURRENT_USER).id);
+  return (await visibleSessions(user))
+    .filter((session) => data.reportBySession.has(session.id))
     .sort((a, b) => (b.endedAt ?? "").localeCompare(a.endedAt ?? ""))
     .map((session) => ({
       ...session,
-      reportGeneratedAt: REPORT_BY_SESSION.get(session.id)!.generatedAt,
-      learnerName: PROFILE_BY_ID.get(session.userId ?? "")?.displayName,
+      reportGeneratedAt: data.reportBySession.get(session.id)!.generatedAt,
+      learnerName: data.profileById.get(session.userId ?? "")?.displayName,
     }));
 }
 

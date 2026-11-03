@@ -83,9 +83,11 @@
   cursor: pointer;
 }
 
-.collapseBtn:hover {
-  background: var(--surface-sunken);
-  color: var(--ink);
+@media (hover: hover) and (pointer: fine) {
+  .collapseBtn:hover {
+    background: var(--surface-sunken);
+    color: var(--ink);
+  }
 }
 
 /* The headroom above the first row is what stops its hover lift being clipped by this
@@ -130,11 +132,13 @@
     color var(--m-fast) var(--ease-out);
 }
 
-.capsuleBtn:hover {
-  position: relative;
-  z-index: 2;
-  border-color: var(--border-strong);
-  background: var(--surface);
+@media (hover: hover) and (pointer: fine) {
+  .capsuleBtn:hover {
+    position: relative;
+    z-index: 2;
+    border-color: var(--border-strong);
+    background: var(--surface);
+  }
 }
 
 /* The lift and its shadow need a pointer that hovers; a tap on a touch screen would leave the row raised. */
@@ -151,10 +155,16 @@
   color: var(--ink);
 }
 
-.capsuleBtnHere,
-.capsuleBtnHere:hover {
+.capsuleBtnHere {
   color: var(--brand-hover);
   font-weight: var(--fw-bold);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .capsuleBtnHere:hover {
+    color: var(--brand-hover);
+    font-weight: var(--fw-bold);
+  }
 }
 
 .capsuleIcon {
@@ -240,18 +250,28 @@
   font-weight: var(--fw-semibold);
   transition:
     background-color var(--m-fast) var(--ease-out),
-    color var(--m-fast) var(--ease-out);
+    color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
 
-.item:hover {
-  background: var(--surface-sunken);
+@media (hover: hover) and (pointer: fine) {
+  .item:hover {
+    background: var(--surface-sunken);
+  }
 }
 
-.itemOn,
-.itemOn:hover {
+.itemOn {
   color: var(--brand-hover);
   background: var(--brand-surface);
   font-weight: var(--fw-bold);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .itemOn:hover {
+    color: var(--brand-hover);
+    background: var(--brand-surface);
+    font-weight: var(--fw-bold);
+  }
 }
 
 .itemIcon {
@@ -371,12 +391,15 @@
   transition:
     background-color var(--m-fast) var(--ease-out),
     color var(--m-fast) var(--ease-out),
-    border-color var(--m-fast) var(--ease-out);
+    border-color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
 
-.railBtn:hover {
-  border-color: var(--border-strong);
-  color: var(--ink);
+@media (hover: hover) and (pointer: fine) {
+  .railBtn:hover {
+    border-color: var(--border-strong);
+    color: var(--ink);
+  }
 }
 
 /* The section the current page belongs to. */
@@ -426,16 +449,28 @@
   transform: translate(-50%, -50%) scale(0.6);
 }
 
-.sidebarCollapsed:hover .logoGlyphDefault,
 .sidebarCollapsed:focus-within .logoGlyphDefault {
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.6);
 }
 
-.sidebarCollapsed:hover .logoGlyphToggle,
+@media (hover: hover) and (pointer: fine) {
+  .sidebarCollapsed:hover .logoGlyphDefault {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+}
+
 .sidebarCollapsed:focus-within .logoGlyphToggle {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sidebarCollapsed:hover .logoGlyphToggle {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 /* Anything you can press keeps the ordinary hand, even over the resize cursor. */
@@ -490,8 +525,10 @@
   transition: border-color var(--m-fast) var(--ease-out);
 }
 
-.search:hover {
-  border-color: var(--border);
+@media (hover: hover) and (pointer: fine) {
+  .search:hover {
+    border-color: var(--border);
+  }
 }
 
 .searchIcon {
@@ -541,8 +578,10 @@
   transition: border-color var(--m-fast) var(--ease-out);
 }
 
-.iconBtn:hover {
-  border-color: var(--border);
+@media (hover: hover) and (pointer: fine) {
+  .iconBtn:hover {
+    border-color: var(--border);
+  }
 }
 
 .iconDot {
@@ -579,8 +618,10 @@
   transition: background-color var(--m-fast) var(--ease-out);
 }
 
-.addBtn:hover {
-  background: var(--brand-hover);
+@media (hover: hover) and (pointer: fine) {
+  .addBtn:hover {
+    background: var(--brand-hover);
+  }
 }
 
 .surface {
@@ -596,6 +637,24 @@
    their container. */
 .surface > [data-banner] {
   margin-bottom: var(--s-4);
+}
+
+/* Page change: whatever the router puts in the content area (the new page, or its loading
+   placeholder and then the page) settles in by a few pixels. The side navigation and top bar
+   stay still, so only the part that changed moves. Elements that stay mounted (a filter or
+   search updating the same page) are not re-inserted, so they do not replay it.
+   A CSS animation, not JS: it runs off the main thread while the new page hydrates.
+   `backwards` holds the first frame only before it starts; once it ends no transform is
+   left behind, so fixed-position overlays inside a page are not re-anchored to it. */
+.surface > :not(dialog) {
+  animation: pageEnter var(--m-base) var(--ease-out) backwards;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 }
 
 /* ---------- page header ---------- */
@@ -759,13 +818,32 @@
   transition: opacity var(--m-slow) var(--ease-out);
 }
 
-/* Slides in from the edge it belongs to; closing is immediate. */
+/* Slides in from the edge it belongs to. */
 @starting-style {
   .drawer[open] {
     transform: translateX(-100%);
   }
   .drawer[open]::backdrop {
     opacity: 0;
+  }
+}
+
+/* ...and leaves through the same edge, quicker than it came. Needs `overlay` to stay in the top layer
+   while it slides; without it (Safari today) the menu closes at once, as before. */
+@supports (overlay: auto) {
+  .drawer:not([open]) {
+    transform: translateX(-100%);
+    transition:
+      transform var(--m-base) var(--ease-drawer),
+      overlay var(--m-base) allow-discrete,
+      display var(--m-base) allow-discrete;
+  }
+  .drawer:not([open])::backdrop {
+    opacity: 0;
+    transition:
+      opacity var(--m-base) var(--ease-out),
+      overlay var(--m-base) allow-discrete,
+      display var(--m-base) allow-discrete;
   }
 }
 
@@ -825,4 +903,17 @@
     animation: none;
     background: var(--brand);
   }
+}
+
+/* Pressed: feedback the moment a finger or button goes down, not on release. */
+.item:active,
+.capsuleBtn:active,
+.railBtn:active {
+  background: var(--divider);
+}
+
+.iconBtn:active,
+.collapseBtn:active,
+.addBtn:active {
+  transform: scale(0.95);
 }

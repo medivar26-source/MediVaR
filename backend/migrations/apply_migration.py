@@ -22,7 +22,7 @@ def apply(migration_file: str):
         print(f"Migration file not found: {migration_path}")
         sys.exit(1)
 
-    with open(migration_path, "r") as f:
+    with open(migration_path, "r", encoding="utf-8") as f:
         sql = f.read()
 
     print(f"Applying migration: {migration_file}")

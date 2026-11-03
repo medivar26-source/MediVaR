@@ -50,12 +50,19 @@
   cursor: pointer;
   transition:
     background-color var(--m-fast) var(--ease-out),
-    color var(--m-fast) var(--ease-out);
+    color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
 
-.close:hover {
-  background: var(--border-strong);
-  color: var(--ink);
+@media (hover: hover) and (pointer: fine) {
+  .close:hover {
+    background: var(--border-strong);
+    color: var(--ink);
+  }
+}
+
+.close:active {
+  transform: scale(0.95);
 }
 
 .closeIcon {

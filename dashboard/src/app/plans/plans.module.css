@@ -39,8 +39,10 @@
   text-decoration: none;
 }
 
-.railItem:hover {
-  background: var(--surface-sunken);
+@media (hover: hover) and (pointer: fine) {
+  .railItem:hover {
+    background: var(--surface-sunken);
+  }
 }
 
 .railItem:focus-visible {
@@ -48,10 +50,16 @@
   outline-offset: 2px;
 }
 
-.railItemOn,
-.railItemOn:hover {
+.railItemOn {
   border-color: var(--brand-border);
   background: var(--brand-surface);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .railItemOn:hover {
+    border-color: var(--brand-border);
+    background: var(--brand-surface);
+  }
 }
 
 .railTitle {

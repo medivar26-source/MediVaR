@@ -79,8 +79,10 @@
   text-decoration: none;
 }
 
-.sectionLink:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .sectionLink:hover {
+    text-decoration: underline;
+  }
 }
 
 /* ---- Programs Grid ---- */
@@ -102,12 +104,15 @@
   color: inherit;
   transition:
     border-color var(--m-fast) var(--ease-out),
-    box-shadow var(--m-fast) var(--ease-out);
+    box-shadow var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
 
-.programCard:hover {
-  border-color: var(--brand-border);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+@media (hover: hover) and (pointer: fine) {
+  .programCard:hover {
+    border-color: var(--brand-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
 }
 
 .programCardHead {
@@ -176,12 +181,15 @@
   color: inherit;
   transition:
     border-color var(--m-fast) var(--ease-out),
-    box-shadow var(--m-fast) var(--ease-out);
+    box-shadow var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
 
-.caseCard:hover {
-  border-color: var(--brand-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+@media (hover: hover) and (pointer: fine) {
+  .caseCard:hover {
+    border-color: var(--brand-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
 }
 
 .caseCardHead {
@@ -239,8 +247,10 @@
   white-space: nowrap;
 }
 
-.caseAction:hover {
-  background: var(--brand-hover);
+@media (hover: hover) and (pointer: fine) {
+  .caseAction:hover {
+    background: var(--brand-hover);
+  }
 }
 
 /* ---- 2-Column Split: Active Session & Latest Assessment ---- */
@@ -402,7 +412,20 @@
   text-decoration: none;
 }
 
-.programChip:hover {
-  border-color: var(--brand-border);
-  background: var(--brand-surface);
+@media (hover: hover) and (pointer: fine) {
+  .programChip:hover {
+    border-color: var(--brand-border);
+    background: var(--brand-surface);
+  }
+}
+
+/* Pressed: feedback the moment a finger or button goes down, not on release. */
+.programCard:active,
+.caseCard:active {
+  transform: scale(0.99);
+}
+
+.caseAction:active,
+.programChip:active {
+  transform: scale(0.97);
 }

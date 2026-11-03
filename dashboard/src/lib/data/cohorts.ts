@@ -1,5 +1,5 @@
-import { SESSIONS } from "@/lib/seed";
-import { categoryAverages, cohortHotspots } from "./rollups";
+import { categoryAverages, cohortHotspots, cohortLearners } from "./rollups";
+import { getStoredResults, sessionsOfCohort } from "./results";
 import type { CategoryAverage, LearnerSummary, SceneHotspot } from "@/lib/types";
 import { apiClient } from "@/lib/api-client";
 import { getPrograms } from "./programs";
@@ -48,19 +48,24 @@ export async function getPreset(id: string): Promise<PresetSummary | null> {
 
 export async function getCohorts(): Promise<CohortSummary[]> {
   try {
-    const data = await apiClient.get('/cohorts/');
-    return data.map((c: any) => ({
-      id: c.id,
-      program_id: c.program_id,
-      name: c.name,
-      ownerId: c.owner_id,
-      createdAt: c.created_at,
-      learners: c.learners,
-      meanScore: c.mean_score !== null ? c.mean_score : undefined,
-      belowPass: c.below_pass,
-      presetId: c.preset_id,
-      presetName: c.preset_name,
-    }));
+    const [data, results] = await Promise.all([apiClient.get('/cohorts/'), getStoredResults()]);
+    return data.map((c: any) => {
+      // The cohort's mean and below-pass count, from the same roll-up the dashboard uses.
+      const scored = cohortLearners(c.id, results).filter((l) => l.meanScore !== undefined);
+      const means = scored.map((l) => l.meanScore as number);
+      return {
+        id: c.id,
+        program_id: c.program_id,
+        name: c.name,
+        ownerId: c.owner_id,
+        createdAt: c.created_at,
+        learners: c.learners,
+        meanScore: means.length ? Math.round(means.reduce((a, b) => a + b, 0) / means.length) : undefined,
+        belowPass: means.filter((m) => m < 70).length,
+        presetId: c.preset_id,
+        presetName: c.preset_name,
+      };
+    });
   } catch (error) {
     console.error("Failed to fetch cohorts:", error);
     return [];
@@ -84,28 +89,36 @@ export async function getCohort(id: string): Promise<CohortDetail | null> {
       presetName: c.preset_name,
     };
     
-    const learners = data.learners.map((l: any) => ({
-      id: l.id,
-      displayName: l.display_name,
-      role: l.role,
-      sessions: l.sessions,
-      assessments: l.assessments,
-      meanScore: l.mean_score !== null ? l.mean_score : undefined,
-      criticalErrors: l.critical_errors,
-      weakestCategory: l.weakest_category,
-      lastActiveAt: l.last_active_at,
-      joinedAt: l.joined_at,
-    }));
-    
-    // We still use SESSIONS seeded data for now for categories/hotspots since they are complex aggregations
-    // and SESSIONS mock is still intact. But we only use SESSIONS belonging to these learners.
-    const memberIds = new Set(learners.map((l: any) => l.id));
+    // Each learner's figures from the stored results (the same roll-up the dashboard uses); the roster
+    // itself (who is in the cohort, when they joined) from the cohort API.
+    const results = await getStoredResults();
+    const figures = new Map(cohortLearners(id, results).map((l) => [l.id, l]));
+    const learners = data.learners.map((l: any) => {
+      const f = figures.get(l.id);
+      return {
+        id: l.id,
+        displayName: l.display_name,
+        role: l.role,
+        sessions: f?.sessions ?? l.sessions ?? 0,
+        assessments: f?.assessments ?? l.assessments ?? 0,
+        meanScore: f?.meanScore,
+        criticalErrors: f?.criticalErrors ?? 0,
+        weakestCategory: f?.weakestCategory,
+        lastActiveAt: f?.lastActiveAt ?? l.last_active_at,
+        joinedAt: l.joined_at,
+      };
+    });
+    const scoredMeans = learners.flatMap((l: any) => (l.meanScore !== undefined ? [l.meanScore as number] : []));
+    cohort.meanScore = scoredMeans.length
+      ? Math.round(scoredMeans.reduce((a: number, b: number) => a + b, 0) / scoredMeans.length)
+      : undefined;
+    cohort.belowPass = scoredMeans.filter((m: number) => m < 70).length;
 
     return {
       cohort,
       learners,
-      categories: categoryAverages(SESSIONS.filter((s) => memberIds.has(s.userId))),
-      hotspots: cohortHotspots(id),
+      categories: categoryAverages(sessionsOfCohort(results, id), results),
+      hotspots: cohortHotspots(id, results),
       presets: await getPresets(),
     };
   } catch (error) {

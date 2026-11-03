@@ -68,8 +68,10 @@
   transition: opacity var(--m-fast) var(--ease-out);
 }
 
-.dial:hover .face {
-  opacity: 0;
+@media (hover: hover) and (pointer: fine) {
+  .dial:hover .face {
+    opacity: 0;
+  }
 }
 
 .time {
@@ -97,9 +99,14 @@
   transition: opacity var(--m-fast) var(--ease-out);
 }
 
-.dial:hover .action,
 .dial:focus-visible .action {
   opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dial:hover .action {
+    opacity: 1;
+  }
 }
 
 .dial:focus-visible .face {

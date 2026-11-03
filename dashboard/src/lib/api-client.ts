@@ -2,9 +2,10 @@
  * Centralized API client for communicating with the FastAPI backend.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-
 import { cookies } from "next/headers";
+import { REQUEST_TIMEOUT_MS, UPLOAD_TIMEOUT_MS, withDeadline } from "@/lib/http";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 export class ApiError extends Error {
   status: number;
@@ -37,6 +38,7 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
   const config: RequestInit = {
     ...options,
     headers,
+    signal: withDeadline(options.signal, REQUEST_TIMEOUT_MS),
   };
 
   const response = await fetch(url, config);
@@ -91,6 +93,7 @@ export const apiClient = {
       method: "POST",
       headers,
       body: formData,
+      signal: withDeadline(options?.signal, UPLOAD_TIMEOUT_MS),
     });
     if (!response.ok) {
       let errorData;

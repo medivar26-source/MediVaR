@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/shell";
-import { Badge, type BadgeStatus, Button, DemoDataNote } from "@/components/ui";
+import { Badge, type BadgeStatus, Button } from "@/components/ui";
 import { HeroMetric, StatCard, StatRow } from "@/components/viz";
 import { clock, dateTime, longDuration, shortDate, titleCase } from "@/lib/format";
 import type { LearnerDashboard as Data } from "@/lib/data/dashboard";
@@ -18,6 +18,7 @@ import { LiveDial } from "./LiveDial";
 import ls from "./learner-dashboard.module.css";
 import s from "./dashboard.module.css";
 import { pathologyText, sideText } from "@/lib/case-meta";
+import { ResultsNote } from "@/components/results/ResultsNote";
 
 function mapBadgeTone(tone: string): BadgeStatus {
   if (tone === "brand") return "active";
@@ -81,7 +82,7 @@ export function LearnerDashboard({
           ) : undefined
         }
       />
-      <DemoDataNote />
+      <ResultsNote userId={user.id} />
 
       <div className={ls.container}>
         {/* 1. The one thing to do next */}
@@ -149,14 +150,14 @@ export function LearnerDashboard({
                 label="Best score"
                 value={stats.bestScore ?? "—"}
                 sub={latestReport?.session.caseTitle.split(" — ")[0]}
-                chevron
+                href={stats.bestScore !== undefined ? "/progress?tab=reports" : undefined}
               />
               <StatCard
                 label="Weakest area"
                 value={data.weakest ? `${data.weakest.pct}%` : "—"}
                 variant="dark"
                 sub={data.weakest?.label}
-                chevron
+                href={data.weakest ? "/progress?tab=skills" : undefined}
               />
               <StatCard
                 label="Sessions"
@@ -168,7 +169,7 @@ export function LearnerDashboard({
                 value={stats.criticalErrors}
                 variant="accent"
                 deltaSuffix=""
-                sub="−5 pts each"
+                sub="Three in one run fail it"
               />
             </StatRow>
           </div>
@@ -366,7 +367,7 @@ export function LearnerDashboard({
         {/* SECTION H: Recent Activity */}
         <div>
           <div className={ls.sectionHeader}>
-            <h3 className={ls.sectionTitle}>Recent Sessions</h3>
+            <h3 className={ls.sectionTitle}>Recent sessions</h3>
             <Link prefetch={false} href="/sessions" className={ls.sectionLink}>
               All sessions ({data.details.length}) →
             </Link>

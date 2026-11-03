@@ -49,7 +49,7 @@ export default function AuthFormPanel({ next }: { next?: string }) {
             </p>
           </div>
 
-          <div className={styles.tabs}>
+          <div className={styles.tabs} data-mode={mode}>
             <button
               type="button"
               onClick={() => setMode("instructor")}

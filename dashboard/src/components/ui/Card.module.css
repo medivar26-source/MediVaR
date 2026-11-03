@@ -40,11 +40,14 @@
   cursor: pointer;
   transition:
     border-color var(--m-fast) var(--ease-out),
-    background-color var(--m-fast) var(--ease-out);
+    background-color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
-.interactive:hover {
-  border-color: var(--brand-border);
-  background: var(--brand-surface);
+@media (hover: hover) and (pointer: fine) {
+  .interactive:hover {
+    border-color: var(--brand-border);
+    background: var(--brand-surface);
+  }
 }
 
 /* ---------- header ---------- */
@@ -86,4 +89,9 @@
 
 .action {
   flex: 0 0 auto;
+}
+
+/* Pressed: feedback the moment a finger or button goes down, not on release. */
+.interactive:active {
+  transform: scale(0.99);
 }

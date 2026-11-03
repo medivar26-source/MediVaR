@@ -1,4 +1,5 @@
 import { getSessionToken } from "@/lib/session";
+import { requestSignal } from "@/lib/http";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -20,6 +21,7 @@ async function adminGet<T>(path: string): Promise<{ data?: T; error?: string }> 
   const token = await getSessionToken();
   try {
     const res = await fetch(`${API_BASE}${path}`, {
+      signal: requestSignal(),
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });

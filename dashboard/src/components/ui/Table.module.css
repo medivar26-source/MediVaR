@@ -1,6 +1,9 @@
 /* The most important component in the product — the report lives in one. */
 
 .wrap {
+  /* Positioned so absolutely placed children (the screen-reader labels in badges) are clipped by the
+     scroll box. Without it they escaped it and stretched the whole page sideways on phones. */
+  position: relative;
   width: 100%;
   overflow-x: auto;
   border-radius: var(--r-lg);
@@ -38,11 +41,20 @@
   white-space: nowrap;
 }
 
+/* Left-aligned explicitly: a row's name cell is a <th scope="row">, which a browser centres by default,
+   so without this the first column floated in the middle of its cell and read as a different style. */
 .td {
   padding: var(--s-4);
   border-bottom: var(--bw) solid var(--divider);
   color: var(--text);
+  text-align: left;
   vertical-align: middle;
+}
+
+/* A column of row actions: as narrow as its buttons, never wrapping them onto a second line. */
+.compact {
+  width: 1%;
+  white-space: nowrap;
 }
 
 .row:last-child .td {
@@ -52,8 +64,10 @@
 .row {
   transition: background-color var(--m-fast) var(--ease-out);
 }
-.row:hover .td {
-  background: var(--canvas);
+@media (hover: hover) and (pointer: fine) {
+  .row:hover .td {
+    background: var(--canvas);
+  }
 }
 
 /* Numeric columns right-aligned with tabular figures so digits stack. */
@@ -92,15 +106,22 @@
   letter-spacing: inherit;
   text-transform: inherit;
   cursor: pointer;
+  transition: color var(--m-fast) ease;
 }
-.sortable:hover {
-  color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+  .sortable:hover {
+    color: var(--text);
+  }
+}
+.sortable:active {
+  color: var(--ink);
 }
 
 .sortIcon {
   width: 13px;
   height: 13px;
   opacity: 0.5;
+  transition: opacity var(--m-fast) ease;
 }
 .sortActive .sortIcon {
   opacity: 1;

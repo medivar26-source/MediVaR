@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { NEW_INSTITUTION } from "@/lib/admin-constants";
 import { getSessionToken } from "@/lib/session";
+import { requestSignal } from "@/lib/http";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -47,6 +48,7 @@ export async function createInstructor(
   const token = await getSessionToken();
   try {
     const res = await fetch(`${API_BASE}/admin/instructors`, {
+      signal: requestSignal(),
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({

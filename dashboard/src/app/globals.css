@@ -180,6 +180,41 @@ samp {
   transform: translateY(0);
 }
 
+/* ---------- disclosures: <details> opens instead of snapping ----------
+   The content grows from nothing to its own height and fades in; closing reverses it. Animating to
+   `auto` needs interpolate-size, so a browser without it keeps the instant open. Scoped to details
+   (the property inherits into ::details-content), so no other height in the app starts animating.
+   Height is one of the few layout animations allowed: there is no transform equivalent, so it is kept short. */
+
+@supports (interpolate-size: allow-keywords) {
+  details {
+    interpolate-size: allow-keywords;
+  }
+
+  details::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow-y: clip;
+    transition:
+      block-size var(--m-base) var(--ease-out),
+      opacity var(--m-base) var(--ease-out),
+      content-visibility var(--m-base) allow-discrete;
+  }
+
+  details[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+
+  /* The reduced-motion rule below cannot list this pseudo-element (an unknown one would void the whole
+     selector in older browsers), so it is repeated here. */
+  @media (prefers-reduced-motion: reduce) {
+    details::details-content {
+      transition-duration: 0.01ms;
+    }
+  }
+}
+
 /* ---------- reduced motion: disable all of it ---------- */
 
 @media (prefers-reduced-motion: reduce) {

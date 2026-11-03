@@ -134,7 +134,7 @@ def assert_case_in_institution(case_id: UUID, institution_id: Optional[UUID]) ->
         raise ValueError("Case not found.")
 
 
-def get_institution_cases(institution_id: UUID) -> List[Dict[str, Any]]:
+def get_institution_cases(institution_id: UUID, limit: int = 500, offset: int = 0) -> List[Dict[str, Any]]:
     """Lists all cases for an institution with draft/published version IDs and linked programs."""
     conn = get_db_conn()
     try:
@@ -158,9 +158,10 @@ def get_institution_cases(institution_id: UUID) -> List[Dict[str, Any]]:
                 LEFT JOIN procedures pr ON pr.id = c.procedure_id
                 WHERE c.institution_id = %s
                 GROUP BY c.id, pr.name, v.pathology_label, v.side
-                ORDER BY c.updated_at DESC
+                ORDER BY c.updated_at DESC, c.id
+                LIMIT %s OFFSET %s
                 """,
-                (str(institution_id),)
+                (str(institution_id), limit, offset)
             )
             rows = cur.fetchall()
             return [dict(r) for r in rows]
@@ -305,7 +306,7 @@ def get_instructor_case_detail(case_id: UUID, institution_id: Optional[UUID] = N
 # Learner Queries (Sanitized Presentation Layer)
 # ---------------------------------------------------------------------------
 
-def get_learner_cases(user_id: UUID) -> List[Dict[str, Any]]:
+def get_learner_cases(user_id: UUID, limit: int = 500, offset: int = 0) -> List[Dict[str, Any]]:
     """
     Lists published/active cases that the learner is authorized to access
     via enrolled programs or direct cohort assignments.
@@ -330,9 +331,10 @@ def get_learner_cases(user_id: UUID) -> List[Dict[str, Any]]:
                 WHERE cm.user_id = %s
                   AND c.status = 'active'
                   AND c.published_version_id IS NOT NULL
-                ORDER BY c.name ASC
+                ORDER BY c.name ASC, c.id
+                LIMIT %s OFFSET %s
                 """,
-                (str(user_id),)
+                (str(user_id), limit, offset)
             )
             return [dict(r) for r in cur.fetchall()]
     finally:

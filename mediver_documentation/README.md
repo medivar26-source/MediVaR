@@ -27,6 +27,7 @@ This documentation pack is the shared source-of-truth for the product requiremen
 | 19_DEFINITION_OF_DONE.md | Completion and production gates |
 | 20_CLINICAL_AND_ASSESSMENT_CALCULATIONS.md | Calculation and assessment specification |
 | 22_PERSISTENT_PLANS_ATTEMPTS_REPORTS_DESIGN.md | Proposed (not applied) design for persistent plans, attempts and reports; proposed SQL in `proposals/` |
+| 23_VR_CONNECTIVITY_DESIGN.md | How the dashboard and the Quest 3 exchange plans and reports through the backend; backend built and tested, migration 015 proposed (not applied) |
 
 ## Team ownership
 

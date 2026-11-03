@@ -31,6 +31,20 @@ class Settings(BaseSettings):
     # DB direct connection (IPv4 pooler — verified working)
     SUPABASE_DB_URL: str = ""
 
+    # Database connection pool. Opening a connection to the hosted database is slow, so requests share a few.
+    # Set DB_POOL_ENABLED=false to open one per call, as before.
+    DB_POOL_ENABLED: bool = True
+    DB_POOL_MIN: int = 1
+    DB_POOL_MAX: int = 10
+    DB_CONNECT_TIMEOUT: int = 10          # seconds to wait for a new database connection
+
+    # Deadlines for calls to Supabase (seconds), so a slow upstream cannot hold a request open.
+    SUPABASE_HTTP_TIMEOUT: int = 15
+    SUPABASE_STORAGE_TIMEOUT: int = 30
+
+    # Responses smaller than this (bytes) are not worth compressing.
+    GZIP_MINIMUM_SIZE: int = 1024
+
     # Legacy alias kept for backwards-compat with existing code
     @property
     def SUPABASE_KEY(self) -> str:  # noqa: N802

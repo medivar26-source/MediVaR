@@ -54,13 +54,15 @@ export function Tr({ children, state, className }: TrProps) {
 
 export type ThProps = ThHTMLAttributes<HTMLTableCellElement> & {
   numeric?: boolean;
+  /** Matches a `compact` cell below it. */
+  compact?: boolean;
 };
 
-export function Th({ numeric, className, children, ...rest }: ThProps) {
+export function Th({ numeric, compact, className, children, ...rest }: ThProps) {
   return (
     <th
       scope="col"
-      className={cx(s.th, numeric && s.numeric, className)}
+      className={cx(s.th, numeric && s.numeric, compact && s.compact, className)}
       {...rest}
     >
       {children}
@@ -72,10 +74,12 @@ export type TdProps = TdHTMLAttributes<HTMLTableCellElement> & {
   numeric?: boolean;
   /** Renders as the row's header cell — the parameter or entity name. */
   head?: boolean;
+  /** Shrinks the column to its content and keeps it on one line (a column of row actions). */
+  compact?: boolean;
 };
 
-export function Td({ numeric, head, className, children, ...rest }: TdProps) {
-  const classes = cx(s.td, numeric && s.numeric, head && s.key, className);
+export function Td({ numeric, head, compact, className, children, ...rest }: TdProps) {
+  const classes = cx(s.td, numeric && s.numeric, head && s.key, compact && s.compact, className);
 
   if (head) {
     return (

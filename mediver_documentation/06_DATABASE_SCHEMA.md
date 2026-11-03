@@ -478,3 +478,27 @@ The existing `clinical_measurements` model can support plan-vs-actual data, but 
 ## Confirmed feedback linkage
 
 `instructor_feedback` shall support attachment to a specific attempt and, where applicable, a specific procedural step, event or error so that instructor corrections can be shown in context to the resident later. Existing general resident notes remain supported.
+
+## As built (2026-11-03)
+
+The sections above are the target model. These tables exist in the database now (migrations applied by the owner):
+
+| Migration | Table | Holds |
+|---|---|---|
+| 013 | `plans` | A learner's pre-operative plan: `payload` (the planner state), `session_config` (mode, difficulty, implant design, fixation), and on lock the immutable `locked_snapshot` and `vr_payload`. A trigger refuses any change to a locked plan. Exactly one of `case_id` / `personal_case_id`. |
+| 013 | `attempts` | One performance of one locked plan (`UNIQUE (plan_id)`): mode, difficulty, design, fixation, lifecycle status (`created` … `assessed`). Written by the backend only. |
+| 013 | `assessment_results` | The stored report of an attempt: total, pass mark, verdict, critical errors, cap, percentile, and JSONB categories, parameters, scene results, feedback, scorer payload, `scoring_version`. Immutable. |
+| 015 | `devices` | A headset that has paired at least once (`device_id` is the headset's own id). |
+| 015 | `assignments` | "Send to headset": one locked plan for one trainee, the headset mode, status (`pending → paired → running → reported`, or `expired` / `cancelled`), the **hash** of the one-time code and its expiry, the device that redeemed it. |
+| 015 | `device_tokens` | The headset's bearer token, hashed, 30 days, revoked when the device pairs again. |
+| 015 | `run_reports` | Every report a headset uploads, verbatim, with its revision and scoring status (`scored`, `awaiting_inputs`, `not_scored`). `UNIQUE (assignment_id, run_id)`. |
+
+```text
+plans ──< assignments >── devices ──< device_tokens
+  │            │
+  │            └──< run_reports >──┐
+  └──< attempts (1 per plan) ──────┴── assessment_results (0..1)
+```
+
+Not built yet from the target model: `vr_events`, `clinical_measurements`, `errors`, `skill_scores`, `recommendations`,
+`audit_logs`. Their facts travel inside the JSONB columns until then. Design notes: `22_…`, `23_VR_CONNECTIVITY_DESIGN.md`.

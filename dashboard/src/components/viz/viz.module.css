@@ -112,7 +112,20 @@
   }
 }
 
+/* A stat is a label and a number: two still fit side by side on a phone, so the band stays one glance
+   tall instead of four screen-heights. Only the narrowest phones get one per row. */
 @media (max-width: 560px) {
+  .statRow {
+    gap: var(--s-2);
+  }
+
+  .statRow > .stat {
+    min-height: 88px;
+    padding: var(--s-3);
+  }
+}
+
+@media (max-width: 339px) {
   .statRow {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -131,6 +144,37 @@
 
 .statWide {
   grid-column: span 2;
+}
+
+/* A stat card that opens the detail behind its number. */
+.statLink {
+  color: inherit;
+  transition:
+    border-color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
+}
+
+.statLink:active {
+  transform: scale(0.985);
+}
+
+.statLink .statChevron {
+  transition: transform var(--m-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .statLink:hover {
+    border-color: var(--border-strong);
+  }
+
+  .statLink:hover .statChevron {
+    transform: translateX(2px);
+  }
+}
+
+.statLink:focus-visible {
+  outline-offset: 3px;
+  border-radius: var(--r-md);
 }
 
 .statLabel {
@@ -257,6 +301,20 @@
 }
 
 /* ---------- ranked list ---------- */
+
+/* A chart or list with nothing in it says so, in the panel's own space, rather than leaving a blank box. */
+.vizEmpty {
+  display: grid;
+  place-items: center;
+  min-height: 96px;
+  padding: var(--s-4);
+  border: var(--bw) dashed var(--border);
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  font-size: var(--t-label);
+  line-height: var(--t-label-lh);
+  text-align: center;
+}
 
 .ranked {
   display: flex;

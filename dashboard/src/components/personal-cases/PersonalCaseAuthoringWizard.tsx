@@ -584,7 +584,7 @@ export function PersonalCaseAuthoringWizard({
                       return isDicom ? (
                       <DicomViewer src={(img as any).signed_url || img.storage_path} alt={img.label} className="absolute inset-0" />
                     ) : (
-                      <img src={(img as any).signed_url || img.storage_path} alt={img.label} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                      <img src={(img as any).signed_url || img.storage_path} alt={img.label} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                     )
                     })()
                   ) : (

@@ -22,16 +22,27 @@ import { PASS_MARK, type Profile, type SessionSummary } from "@/lib/types";
 import {
   CASE_BY_ID,
   CATEGORY_BY_KEY,
-  PROFILE_BY_ID,
-  REPORT_BY_SESSION,
   SESSION_BY_ID,
-  sceneResultsFor,
   scenesForVariant,
 } from "@/lib/seed";
 import { PLAN_BY_ID } from "./plans";
 import { getLearnerSessions } from "./learner-sessions";
 import { visibleSessions } from "./scope";
 import { orderSessions } from "./session-order";
+import { passedOf } from "./rollups";
+import {
+  SAMPLE_RESULTS,
+  getStoredResults,
+  runForScheduled,
+  sceneResultsOf,
+  type ResultsData,
+  type StoredReportDetail,
+} from "./results";
+
+/** The results a session id lives in: the sample rows for a sample session, the stored results otherwise. */
+async function dataForSession(id: string): Promise<ResultsData> {
+  return SESSION_BY_ID.has(id) ? SAMPLE_RESULTS : getStoredResults();
+}
 
 export * from "@/lib/report";
 
@@ -99,7 +110,7 @@ export async function getSessionList(
   // A learner's list is the shared learner-sessions answer, so this page, the case
   // pages and the Program page can never disagree about it.
   const base =
-    personaFor(user.role) === "learner" ? await getLearnerSessions(user.id) : visibleSessions(user);
+    personaFor(user.role) === "learner" ? await getLearnerSessions(user.id) : await visibleSessions(user);
 
   const rows = base.filter(
     (row) =>
@@ -112,10 +123,7 @@ export async function getSessionList(
 
   const sessions: SessionListItem[] = ordered.map((row) => ({
     ...row,
-    passed:
-      row.totalScore === undefined
-        ? undefined
-        : row.totalScore >= PASS_MARK[row.difficulty],
+    passed: passedOf(row),
   }));
 
   const reported = sessions.filter((session) => session.totalScore !== undefined);
@@ -136,9 +144,30 @@ export async function getSessionList(
   return { sessions, stats };
 }
 
-export async function getSession(id: string): Promise<SessionSummary | null> {
+/**
+ * The id a run is stored under.
+ *
+ * A session has two ids. The instructor *schedules* a session (`sessions.id`), and the learner *performs*
+ * it as an attempt (`attempts.id`), which is the row that carries the score and the report. Cohort and
+ * learner pages link by the scheduled id, so `/sessions/<scheduled id>/report` is a valid address that
+ * used to 404: nothing was stored under it. This maps a scheduled id to the run performed for it
+ * (preferring one that has a report), and leaves any other id exactly as it was.
+ */
+export async function resolveSessionId(id: string): Promise<string> {
+  if (SESSION_BY_ID.has(id)) return id;
+  const data = await getStoredResults();
+  if (data.sessionById.has(id)) return id;
+  return runForScheduled(data, id)?.id ?? id;
+}
+
+export async function getSession(requested: string): Promise<SessionSummary | null> {
+  const id = await resolveSessionId(requested);
   const local = SESSION_BY_ID.get(id);
   if (local) return local;
+
+  // A stored run (an attempt): the account's results already hold the ones it may read.
+  const stored = (await getStoredResults()).sessionById.get(id);
+  if (stored) return stored;
 
   try {
     const { cookies } = await import("next/headers");
@@ -177,7 +206,7 @@ export async function getSessionProgress(id: string): Promise<SessionProgress | 
   if (!session) return null;
 
   const scenes = scenesForVariant(session.design, session.fixation);
-  const done = sceneResultsFor(id).length;
+  const done = sceneResultsOf(await dataForSession(id), id).length;
   const current = session.currentScene ?? null;
   const index = current ? scenes.findIndex((s) => s.scene === current) : -1;
 
@@ -229,7 +258,7 @@ export type SceneResultSummary = {
  * record already knew.
  */
 export async function getSceneResults(id: string): Promise<SceneResultSummary[]> {
-  return sceneResultsFor(id).map((row) => ({
+  return sceneResultsOf(await dataForSession(id), id).map((row) => ({
     scene: row.scene,
     outcome: row.outcome,
   }));
@@ -304,15 +333,18 @@ export type SessionReport = Report & { captions: ReportCaptions };
  * this file derived would be a second opinion. The captions phrase those
  * stored figures; they add none of their own.
  */
-export async function getReport(sessionId: string): Promise<SessionReport | null> {
-  const session = SESSION_BY_ID.get(sessionId);
-  const stored = REPORT_BY_SESSION.get(sessionId);
+export async function getReport(requested: string): Promise<SessionReport | null> {
+  const sessionId = await resolveSessionId(requested);
+  const data = await dataForSession(sessionId);
+  const session = data.sessionById.get(sessionId);
+  const stored = data.reportBySession.get(sessionId);
   if (!session || !stored) return null;
+  if (stored.stored) return storedReport(data, sessionId, stored.stored);
 
   const kase = CASE_BY_ID.get(session.caseId);
   const plan = PLAN_BY_ID.get(session.planId);
   const passMark = PASS_MARK[session.difficulty];
-  const results = sceneResultsFor(sessionId);
+  const results = sceneResultsOf(data, sessionId);
   const scenes = scenesForVariant(session.design, session.fixation);
 
   const categories: ReportCategory[] = stored.categories.map((cat) => {
@@ -445,10 +477,10 @@ export async function getReport(sessionId: string): Promise<SessionReport | null
     passed: stored.totalScore >= passMark,
     cappedByCriticalErrors: session.criticalErrors >= 3,
     criticalErrors: session.criticalErrors,
-    percentile: stored.percentile,
+    percentile: stored.percentile ?? null,
     generatedAt: stored.generatedAt,
     header: {
-      user: PROFILE_BY_ID.get(session.userId)?.displayName ?? "Unknown",
+      user: data.profileById.get(session.userId)?.displayName ?? "Unknown",
       caseTitle: session.caseTitle,
       caseId: session.caseId,
       mode: session.mode,
@@ -466,6 +498,11 @@ export async function getReport(sessionId: string): Promise<SessionReport | null
 
   void kase;
 
+  return withCaptions(base, `${base.categories.length} categories summing to ${base.max}. Nine tenths of each is technique, one tenth is time against par.`);
+}
+
+/** The prose beside a report's figures. Phrases the stored numbers; adds none. */
+function withCaptions(base: Report, categoriesCaption: string): SessionReport {
   const errors = `${base.criticalErrors} critical error${base.criticalErrors === 1 ? "" : "s"}`;
   return {
     ...base,
@@ -474,13 +511,100 @@ export async function getReport(sessionId: string): Promise<SessionReport | null
         base.percentile === null
           ? null
           : `${ordinal(base.percentile)} percentile in your cohort`,
+      // When the marks earned were already under the cap, nothing was cut: the errors failed the run.
       capped: base.cappedByCriticalErrors
-        ? `Capped at ${base.total} by ${errors}.`
+        ? base.categories.reduce((sum, c) => sum + c.score, 0) > base.total
+          ? `Capped at ${base.total} by ${errors}.`
+          : `Failed by ${errors}.`
         : null,
       cappedDetail: base.cappedByCriticalErrors
         ? `The categories below are what the technique earned; ${errors} end${base.criticalErrors === 1 ? "s" : ""} a session whatever they say`
         : null,
-      categories: `${base.categories.length} categories summing to ${base.max}. Nine tenths of each is technique, one tenth is time against par.`,
+      categories: categoriesCaption,
     },
   };
+}
+
+/**
+ * A report the scorer stored (`assessment_results`). Every figure is read as written: the total, each
+ * category with its technique and time shares, the planned-versus-achieved rows and their verdicts, the
+ * marks each scene lost, the verdict and the cap. Only the order and the wording are decided here.
+ */
+export function storedReport(data: ResultsData, sessionId: string, detail: StoredReportDetail): SessionReport {
+  const session = data.sessionById.get(sessionId)!;
+  const record = data.reportBySession.get(sessionId)!;
+  const results = sceneResultsOf(data, sessionId);
+
+  const categories: ReportCategory[] = detail.categories.map((cat) => ({
+    key: cat.key,
+    label: cat.label,
+    short: cat.short,
+    max: cat.max,
+    score: cat.score,
+    accuracy: cat.accuracy,
+    timing: cat.timing,
+    raw: cat.raw ?? null,
+    deductions: results
+      .filter((r) => r.outcome !== "pass" && r.categoryKey === cat.key)
+      .map((r) => ({
+        scene: r.scene,
+        label: r.label ?? r.scene,
+        lost: Math.round((r.pointsLost ?? 0) * 10) / 10,
+        reason: r.notes?.[0] ?? `Scene closed ${r.outcome}.`,
+        warnings: r.warnings,
+      })),
+  }));
+
+  const timeline: ReportTimelineEntry[] = results.map((r) => ({
+    scene: r.scene,
+    part: r.part,
+    label: r.label ?? r.scene,
+    outcome: r.outcome,
+    durationS: r.durationS ?? null,
+    parTimeS: r.parS ?? null,
+    warnings: r.warnings,
+    reached: true,
+    category: r.categoryKey ?? null,
+    points: r.points ?? null,
+    maxPoints: r.maxPoints ?? null,
+    timingCredit: r.timingCredit ?? null,
+    maxTimeS: r.maxS ?? null,
+  }));
+
+  const base: Report = {
+    sessionId,
+    total: record.totalScore,
+    max: record.max,
+    passMark: detail.passMark,
+    passed: detail.passed,
+    cappedByCriticalErrors: detail.capped,
+    criticalErrors: detail.criticalErrors,
+    percentile: record.percentile ?? null,
+    generatedAt: record.generatedAt,
+    header: {
+      user: data.profileById.get(session.userId)?.displayName ?? "Not recorded",
+      caseTitle: session.caseTitle,
+      caseId: session.caseId,
+      mode: session.mode,
+      difficulty: session.difficulty,
+      design: session.design,
+      fixation: session.fixation,
+      date: session.endedAt ?? record.generatedAt,
+      durationS: session.durationS ?? null,
+    },
+    categories,
+    parameters: detail.parameters,
+    feedback: [...detail.feedback].sort((a, b) => b.points - a.points),
+    timeline,
+    rules: detail.rules,
+    planning: detail.planning,
+    scoringVersion: detail.scoringVersion,
+    sample: detail.sample,
+  };
+
+  const sum = categories.reduce((total, c) => total + c.max, 0);
+  return withCaptions(
+    base,
+    `${categories.length} categories summing to ${sum}. Pre-operative planning is scored from the plan; every other category is nine tenths technique and one tenth time against par.`,
+  );
 }

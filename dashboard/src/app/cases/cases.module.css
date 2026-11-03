@@ -56,8 +56,10 @@
   color: var(--text-muted);
 }
 
-.search:hover {
-  border-color: var(--border);
+@media (hover: hover) and (pointer: fine) {
+  .search:hover {
+    border-color: var(--border);
+  }
 }
 
 .search:focus {
@@ -83,11 +85,21 @@
   background: none;
   border: 0;
   cursor: pointer;
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
 
-.searchClear:hover {
-  background: var(--surface);
-  color: var(--ink);
+@media (hover: hover) and (pointer: fine) {
+  .searchClear:hover {
+    background: var(--surface);
+    color: var(--ink);
+  }
+}
+
+.searchClear:active {
+  transform: scale(0.95);
 }
 
 .count {
@@ -119,12 +131,19 @@
   cursor: pointer;
   transition:
     background-color var(--m-fast) var(--ease-out),
-    border-color var(--m-fast) var(--ease-out);
+    border-color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
 
-.clear:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-sunken);
+@media (hover: hover) and (pointer: fine) {
+  .clear:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-sunken);
+  }
+}
+
+.clear:active {
+  transform: scale(0.97);
 }
 
 /* ---------- facets ----------

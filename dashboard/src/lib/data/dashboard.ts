@@ -13,21 +13,17 @@
 
 import type { SessionSummary as CohortSession } from "./cohorts";
 import { pickUpcoming } from "./session-order";
-import {
-  CASES,
-  COHORTS,
-  REPORT_BY_SESSION,
-  SESSIONS,
-  sessionsFor,
-} from "@/lib/seed";
+import { CASES } from "@/lib/seed";
 import {
   categoryAverages,
   cohortHotspots,
   cohortLearners,
   marksLost,
+  passedOf,
   timeByScene,
   weeklyActivity,
 } from "./rollups";
+import { resultsFor, sessionsOf, sessionsOfCohort } from "./results";
 import type {
   CaseSummary,
   CategoryAverage,
@@ -131,7 +127,8 @@ export async function getLearnerDashboard(
     console.warn("Failed to fetch scheduled sessions:", err);
   }
 
-  const mine = sessionsFor(userId);
+  const data = await resultsFor(userId);
+  const mine = sessionsOf(data, userId);
   const completed = mine.filter(
     (s) => s.status === "completed" && s.totalScore !== undefined,
   );
@@ -144,11 +141,9 @@ export async function getLearnerDashboard(
   const latest = byDate[byDate.length - 1];
   const previous = byDate[byDate.length - 2];
 
-  const passed = completed.filter(
-    (s) => (s.totalScore ?? 0) >= PASS_MARK[s.difficulty],
-  ).length;
+  const passed = completed.filter((s) => passedOf(s) === true).length;
 
-  const categories = categoryAverages(mine);
+  const categories = categoryAverages(mine, data);
   const weakest = [...categories].sort((a, b) => a.pct - b.pct)[0];
 
   // The four most recent completed sessions, with their category breakdown.
@@ -158,15 +153,19 @@ export async function getLearnerDashboard(
     .map((session) => ({
       session,
       highlights: highlightsFor(session, scores),
-      categories: REPORT_BY_SESSION.get(session.id)?.categories ?? [],
+      categories: data.reportBySession.get(session.id)?.categories ?? [],
     }));
 
   const weekly = weeklyActivity(mine, weeks);
-  const cohortMeans = weeklyActivity(SESSIONS, weeks).map((w) => w.mean);
+  // The comparison line is the learner's own cohort. A real learner's results hold only their own runs,
+  // and their own rows are not a cohort, so they get no comparison line rather than a fake one.
+  const cohortId = data.profileById.get(userId)?.cohortId;
+  const cohortRows = data.source === "sample" && cohortId ? sessionsOfCohort(data, cohortId) : [];
+  const cohortMeans = cohortRows.length ? weeklyActivity(cohortRows, weeks).map((w) => w.mean) : [];
   const values = weekly.map((w) => w.mean);
 
   const attemptedCases = new Set(mine.map((s) => s.caseId));
-  const latestReportRow = latest ? REPORT_BY_SESSION.get(latest.id) : undefined;
+  const latestReportRow = latest ? data.reportBySession.get(latest.id) : undefined;
 
   return {
     stats: {
@@ -215,7 +214,7 @@ export async function getLearnerDashboard(
             },
           }
         : undefined,
-    timeLost: timeByScene(mine),
+    timeLost: timeByScene(mine, data),
     trend: byDate.map((s) => ({
       sessionId: s.id,
       date: s.endedAt ?? "",
@@ -229,7 +228,7 @@ export async function getLearnerDashboard(
       caption: trendCaption(values, cohortMeans, "Your weekly mean"),
     },
     weekly,
-    marksLost: marksLost(mine),
+    marksLost: marksLost(mine, data),
     categories,
     weakest,
     details,
@@ -262,7 +261,7 @@ function highlightsFor(session: SessionSummary, allScores: number[]): string[] {
     out.push("Personal best");
   }
   if (session.criticalErrors === 0) out.push("No critical errors");
-  if ((session.totalScore ?? 0) >= PASS_MARK[session.difficulty]) {
+  if (passedOf(session) === true) {
     out.push("Above pass mark");
   }
   if (session.difficulty === "expert") out.push("Expert difficulty");
@@ -298,8 +297,12 @@ function trendCaption(
 
 export type InstructorDashboard = {
   cohort?: Cohort;
+  /** What the figures cover: the one cohort, "3 cohorts", or that there is none yet. */
+  scopeLabel: string;
   stats: {
     learners: number;
+    /** Learners with at least one scored report. With none, `meanScore` is a placeholder 0, not a result. */
+    scoredLearners: number;
     meanScore: number;
     belowPassMark: number;
     sessionsThisWeek: number;
@@ -326,26 +329,31 @@ export async function getInstructorDashboard(
   weeks = 7,
 ): Promise<InstructorDashboard> {
   const now = Date.now();
+  const data = await resultsFor(ownerId);
 
-  const owned = COHORTS.filter((c) => c.ownerId === ownerId).sort((a, b) =>
+  const owned = data.cohorts.filter((c) => c.ownerId === ownerId).sort((a, b) =>
     a.createdAt.localeCompare(b.createdAt),
   );
-  const cohort: Cohort | undefined = owned[0];
+  // The sample instructor's screens show their first cohort, as they always have. A real instructor's
+  // results already hold exactly the learners in the cohorts they own, so the figures cover all of them.
+  const cohort: Cohort | undefined = data.source === "sample" || owned.length === 1 ? owned[0] : undefined;
+  const scopeCohortId = data.source === "sample" ? cohort?.id : undefined;
+  const scopeLabel = cohort?.name ?? (owned.length > 1 ? `${owned.length} cohorts` : "No cohort assigned");
 
   const weekAgo = now - 7 * 86_400_000;
 
   // An instructor with no cohort yet is a real state — the screen renders its
   // empty shape rather than erroring or inventing a group.
-  const learners: LearnerSummary[] = cohort ? cohortLearners(cohort.id) : [];
-  const hotspots: SceneHotspot[] = cohort ? cohortHotspots(cohort.id) : [];
-  const cohortCategories: CategoryAverage[] = cohort
-    ? categoryAverages(
-        SESSIONS.filter((s) => learners.some((l) => l.id === s.userId)),
-      )
-    : [];
+  const hasScope = data.source === "sample" ? Boolean(cohort) : owned.length > 0;
+  const learners: LearnerSummary[] = hasScope ? cohortLearners(scopeCohortId, data) : [];
+  const hotspots: SceneHotspot[] = hasScope ? cohortHotspots(scopeCohortId, data) : [];
+  // Every figure below counts the same learners' runs, so the trend, the week's count and the means agree.
+  const learnerIds = new Set(learners.map((l) => l.id));
+  const cohortSessions = sessionsOfCohort(data, scopeCohortId).filter((s) => learnerIds.has(s.userId));
+  const cohortCategories: CategoryAverage[] = hasScope ? categoryAverages(cohortSessions, data) : [];
 
-  const weekRows = weeklyActivity(SESSIONS, weeks);
-  const sessionsThisWeek = SESSIONS.filter((s) => {
+  const weekRows = weeklyActivity(cohortSessions, weeks);
+  const sessionsThisWeek = cohortSessions.filter((s) => {
     const at = Date.parse(s.startedAt ?? "");
     return Number.isFinite(at) && at >= weekAgo;
   }).length;
@@ -401,8 +409,10 @@ export async function getInstructorDashboard(
 
   return {
     cohort,
+    scopeLabel,
     stats: {
       learners: learners.length,
+      scoredLearners: scored.length,
       meanScore,
       belowPassMark: below,
       sessionsThisWeek,

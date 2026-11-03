@@ -27,8 +27,10 @@ export type ReportCategory = {
   score: number;
   /** Share of the marks earned on technique, 0–100. */
   accuracy: number;
-  /** Share earned on time against par, 0–100. Worth a tenth of the category. */
-  timing: number;
+  /** Share earned on time against par, 0–100. Worth a tenth of the category. Null where a category is not timed. */
+  timing: number | null;
+  /** The unrounded mark the scorer reached before rounding half-up to `score`. Absent on sample reports. */
+  raw?: number | null;
   deductions: ReportDeduction[];
 };
 
@@ -41,6 +43,8 @@ export type ReportParameter = {
   achieved: number;
   tolerance: number;
   verdict: Verdict | null;
+  /** The scene that measured it, when the scorer says. */
+  scene?: string;
 };
 
 export type ReportFeedback = {
@@ -61,6 +65,53 @@ export type ReportTimelineEntry = {
   parTimeS: number | null;
   warnings: number;
   reached: boolean;
+  /** The category the scene's marks belong to (null for the time-out, which carries none). */
+  category?: string | null;
+  /** Marks the scene earned and the marks it offered, as the scorer wrote them. */
+  points?: number | null;
+  maxPoints?: number | null;
+  /** 0–1 credit for time against par. */
+  timingCredit?: number | null;
+  /** The scene's time limit, in seconds. */
+  maxTimeS?: number | null;
+};
+
+/** The scoring rules the scorer stored beside the result, so the page can show its working. */
+export type ReportRules = {
+  /** Share of a timed category's marks earned on technique (0.9). */
+  techniqueShare: number;
+  /** Share earned on time against par (0.1). */
+  timingShare: number;
+  /** Pass mark per difficulty. */
+  passMarks: Record<string, number>;
+  /** Critical errors at which the total is capped… */
+  criticalErrorLimit: number;
+  /** …to this many marks. */
+  criticalErrorCap: number;
+  /** Credit a scene earns on technique, by verdict. */
+  techniqueCredit: Record<string, number>;
+  /** Plain-words statement of how a verdict follows from a deviation. */
+  verdictRule?: string;
+};
+
+/** One row of the pre-operative planning audit: what the learner planned against the reference. */
+export type PlanningCriterion = {
+  key: string;
+  name: string;
+  unit: string;
+  planned: number;
+  reference: number;
+  deviation: number;
+  tolerance: number;
+  /** 0–100 */
+  score: number;
+  severity: string;
+};
+
+export type ReportPlanning = {
+  criteria: PlanningCriterion[];
+  /** The scorer's mean of the criterion scores, 0–100. */
+  meanScore: number | null;
 };
 
 export type Report = {
@@ -89,6 +140,12 @@ export type Report = {
   parameters: ReportParameter[];
   feedback: ReportFeedback[];
   timeline: ReportTimelineEntry[];
+  /** Present on stored reports whose scorer wrote its rules. */
+  rules?: ReportRules;
+  planning?: ReportPlanning;
+  scoringVersion?: string;
+  /** True when the stored run is sample data rather than a real performance. */
+  sample?: boolean;
 };
 
 /**

@@ -59,6 +59,8 @@ export type PlanRecord = {
   createdAt: string;
   updatedAt: string;
   lockedVersion?: PlanSnapshot;
+  /** The backend's id for this plan once the sealed version has been stored there (POST /plans/locked). */
+  dbPlanId?: string;
 };
 
 const FULL_TIMINGS = { "1": 54, "2": 108, "3": 61, "4": 57, "5": 49, "6": 38, "7": 17 };

@@ -20,16 +20,25 @@
   text-decoration: none;
 }
 
-.tab:hover {
-  background: var(--brand-surface);
-  border-color: var(--brand-border);
+@media (hover: hover) and (pointer: fine) {
+  .tab:hover {
+    background: var(--brand-surface);
+    border-color: var(--brand-border);
+  }
 }
 
-.tabOn,
-.tabOn:hover {
+.tabOn {
   background: var(--brand);
   border-color: var(--brand);
   color: var(--on-brand);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tabOn:hover {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: var(--on-brand);
+  }
 }
 
 .columns {
@@ -97,8 +106,10 @@
   color: inherit;
 }
 
-.skillRow:hover {
-  background: var(--brand-surface);
+@media (hover: hover) and (pointer: fine) {
+  .skillRow:hover {
+    background: var(--brand-surface);
+  }
 }
 
 .skillRowStatic {
@@ -175,4 +186,33 @@
     flex-shrink: 0;
     white-space: nowrap;
   }
+}
+
+/* Pressed: feedback the moment a finger or button goes down, not on release. */
+.tab {
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    border-color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
+}
+
+.tab:active {
+  transform: scale(0.97);
+}
+
+/* Switching tab: the tab bar stays still and the new tab's content settles in under it.
+   Only content the switch inserts animates; a filter updating the same tab does not replay it. */
+.tabs ~ :not(dialog) {
+  animation: tabSwap var(--m-base) var(--ease-out) backwards;
+}
+
+@keyframes tabSwap {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.skillRow:active {
+  background: var(--surface-sunken);
 }

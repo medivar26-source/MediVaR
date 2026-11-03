@@ -118,12 +118,12 @@ export default async function CaseDetailPage({
     <AppShell user={user} searchHint='Try searching "varus"'>
       <Breadcrumbs
         items={[
-          { label: "Cases", href: "/cases" },
+          { label: "Content Library", href: "/content" },
           { label: detail.title },
         ]}
       />
       <PageHeader
-        eyebrow={`${procedureText(detail)} · ${detail.id}`}
+        eyebrow={procedureText(detail)}
         title={detail.title}
         lede={detail.summary}
         actions={

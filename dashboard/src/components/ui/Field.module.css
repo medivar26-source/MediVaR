@@ -66,8 +66,10 @@
   color: var(--text-muted);
 }
 
-.control:hover:not(:disabled):not(:read-only) {
-  border-color: var(--border-strong);
+@media (hover: hover) and (pointer: fine) {
+  .control:hover:not(:disabled):not(:read-only) {
+    border-color: var(--border-strong);
+  }
 }
 
 .control:focus {
@@ -89,9 +91,14 @@
   color: var(--text);
 }
 
-.invalid,
-.invalid:hover {
+.invalid {
   border-color: var(--fail);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .invalid:hover {
+    border-color: var(--fail);
+  }
 }
 .invalid:focus {
   border-color: var(--fail);

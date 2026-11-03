@@ -172,3 +172,22 @@ The exact route/resource names should follow the existing API conventions rather
 
 ## Confirmed authorization
 Residents can access their own planning, attempts, results and feedback. Instructors can access the residents and attempts within their authorized training scope, including review and feedback.
+
+## As built (2026-11-03)
+
+Base `/api/v1`. Implemented in `backend/api/v1/endpoints/results.py` and `connect.py`.
+
+| Method | Path | Caller | Does |
+|---|---|---|---|
+| GET | `/health` | anyone | `{status, service, apiVersion, serverTimeUtc}` |
+| GET | `/results` | signed in | Every attempt and report the caller may read (own; a cohort owner's learners; an admin's institution). 404 if 013 is missing |
+| POST | `/plans/locked` | signed in | Keep a sealed plan (case visibility and V1 payload checked; idempotent on `locked_version_id`) |
+| POST | `/assignments` | signed in (owner or supervising instructor) | "Send to headset": returns a one-time 6-digit code, shown once |
+| GET | `/assignments?plan_id=` | signed in | Status of what was sent; never the code |
+| POST | `/devices/pair` | headset, no token | `{code, deviceId, deviceName, appVersion, schemaVersion}` → `{assignmentId, token, tokenExpiresAt, casePlan}`; 404 / 410 / 429 |
+| GET | `/assignments/{id}/plan` | headset (bearer) | The CasePlan again |
+| PUT | `/assignments/{id}/runs/{runId}/report` | headset (bearer) | Store a RunReport; idempotent on `runId`, a higher `reportRevision` replaces; 401 re-pair, 422 poison, 409 another run |
+
+The connectivity calls answer 404 "not set up" while 015 is missing. Full contract: `23_VR_CONNECTIVITY_DESIGN.md`
+section 4. The planned `/vr/attempts` endpoints in the sections above were replaced by the headset team's
+`pair` / `plan` / `report` contract.

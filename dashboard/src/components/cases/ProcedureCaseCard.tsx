@@ -1,18 +1,22 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { pathologyText, sideText } from "@/lib/case-meta";
 import type { CaseCard } from "@/lib/data/cases";
 import { titleCase } from "@/lib/format";
 import { PASS_MARK } from "@/lib/types";
+import { CaseDetailsButton, type CaseDetails } from "./CaseDetailsButton";
 import s from "./ProcedureCaseCard.module.css";
 
 /**
- * A case under its procedure. The case's metadata is shown as labelled fields rather than
- * tags, and a field the record does not have says "Not recorded". The whole card opens the
- * case; there is one action, so there is one link.
+ * A case under its procedure, kept to what a reader needs to choose one: its status (or the learner's best
+ * score), its title, the side and the difficulty, and the one action that opens it.
  *
- * Learners see how many times they have attempted it. Instructors have no attempts of their
- * own on a case, so they see its publication status instead.
+ * Everything else — the pathology, the summary, the version, the viewer's attempts — is in the pop-up the ⓘ at
+ * the card's top right opens. A field the record does not have says "Not recorded".
+ *
+ * Learners see their own best score (and, in the pop-up, their attempts). Instructors have no attempts of
+ * their own on a case, so they see its publication status and version instead.
  */
 export function ProcedureCaseCard({
   item,
@@ -23,42 +27,54 @@ export function ProcedureCaseCard({
   staff: boolean;
 }) {
   const passMark = PASS_MARK[item.difficulty] ?? 70;
+  const published = item.status === "active";
+  const statusLabel = published ? "Published" : titleCase(item.status ?? "draft");
+
+  const details: CaseDetails = {
+    id: item.id,
+    title: item.title,
+    summary: item.summary,
+    status: staff ? { label: statusLabel, tone: published ? "pass" : "warn" } : null,
+    fields: [
+      { label: "Pathology", value: pathologyText(item) },
+      { label: "Side", value: sideText(item) },
+      { label: "Difficulty", value: titleCase(item.difficulty) },
+      staff
+        ? { label: "Version", value: `v${item.version ?? 1}` }
+        : { label: "Attempts", value: String(item.attempts) },
+      ...(!staff && item.bestScore !== undefined
+        ? [{ label: "Best score", value: String(item.bestScore), note: `pass mark ${passMark}` }]
+        : []),
+    ],
+  };
 
   return (
-    <Link prefetch={false} href={`/cases/${item.id}`} className={s.card}>
-      <span className={s.head}>
-        <span className={s.title}>{item.title}</span>
+    <article className={s.card}>
+      <div className={s.top}>
         {staff ? (
-          <Badge status={item.status === "active" ? "pass" : "warn"}>
-            {item.status === "active" ? "Published" : titleCase(item.status ?? "draft")}
-          </Badge>
+          <Badge status={published ? "pass" : "warn"}>{statusLabel}</Badge>
         ) : item.bestScore !== undefined ? (
-          <Badge status={item.bestScore >= passMark ? "pass" : "warn"}>{item.bestScore}</Badge>
-        ) : null}
-      </span>
+          <Badge status={item.bestScore >= passMark ? "pass" : "warn"}>Best {item.bestScore}</Badge>
+        ) : (
+          <span />
+        )}
+        <CaseDetailsButton details={details} />
+      </div>
 
-      {item.summary && <span className={s.summary}>{item.summary}</span>}
+      <h3 className={s.title} title={item.title}>
+        {item.title}
+      </h3>
 
-      <dl className={s.fields}>
-        <div>
-          <dt>Pathology</dt>
-          <dd>{pathologyText(item)}</dd>
-        </div>
-        <div>
-          <dt>Side</dt>
-          <dd>{sideText(item)}</dd>
-        </div>
-        <div>
-          <dt>Difficulty</dt>
-          <dd>{titleCase(item.difficulty)}</dd>
-        </div>
-        <div>
-          <dt>{staff ? "Version" : "Attempts"}</dt>
-          <dd>{staff ? `v${item.version ?? 1}` : item.attempts}</dd>
-        </div>
-      </dl>
+      <p className={s.meta}>
+        <span>{sideText(item)}</span>
+        <span aria-hidden="true">·</span>
+        <span>{titleCase(item.difficulty)}</span>
+      </p>
 
-      <span className={s.open}>Open case →</span>
-    </Link>
+      <Link prefetch={false} href={`/cases/${item.id}`} className={s.open}>
+        Open case
+        <ArrowRight aria-hidden="true" strokeWidth={2.25} />
+      </Link>
+    </article>
   );
 }

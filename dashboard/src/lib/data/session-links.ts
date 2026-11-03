@@ -19,9 +19,16 @@ export function hasRun(session: Pick<SessionSummary, "status">): boolean {
   return status === "completed" || status === "live" || status === "aborted";
 }
 
-/** Whether a stored report exists to open. A completed session without one has none to link. */
-export function hasReport(sessionId: string): boolean {
-  return REPORT_BY_SESSION.has(sessionId);
+/**
+ * Whether a stored report exists to open. A completed session without one has none to link. A run read
+ * from the database carries its score only when its report row exists, so the score is the evidence.
+ */
+export function hasReport(
+  session: string | Pick<SessionSummary, "id" | "source" | "totalScore">,
+): boolean {
+  if (typeof session === "string") return REPORT_BY_SESSION.has(session);
+  if (session.source === "database") return session.totalScore !== undefined;
+  return REPORT_BY_SESSION.has(session.id);
 }
 
 /** True for a session that comes from the built-in sample data rather than a real account's records. */
@@ -56,12 +63,12 @@ export type SessionLinks = {
 };
 
 export function sessionLinks(
-  session: Pick<SessionSummary, "id" | "caseId" | "planId">,
+  session: Pick<SessionSummary, "id" | "caseId" | "planId"> & Partial<Pick<SessionSummary, "source" | "totalScore">>,
 ): SessionLinks {
   return {
     session: `/sessions/${session.id}`,
     case: session.caseId ? `/cases/${session.caseId}` : undefined,
     plan: session.planId && PLAN_BY_ID.has(session.planId) ? `/plan/${session.planId}/review` : undefined,
-    report: hasReport(session.id) ? `/sessions/${session.id}/report` : undefined,
+    report: hasReport(session) ? `/sessions/${session.id}/report` : undefined,
   };
 }

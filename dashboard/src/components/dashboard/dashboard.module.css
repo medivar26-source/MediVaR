@@ -74,8 +74,10 @@
   color: var(--text);
 }
 
-.ctxIcon:hover {
-  border-color: var(--border-strong);
+@media (hover: hover) and (pointer: fine) {
+  .ctxIcon:hover {
+    border-color: var(--border-strong);
+  }
 }
 
 .ctxIconDone {
@@ -100,12 +102,15 @@
   font-weight: var(--fw-bold);
   transition:
     background-color var(--m-fast) var(--ease-out),
-    color var(--m-fast) var(--ease-out);
+    color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
 
-.ctxAction:hover {
-  background: var(--brand);
-  color: var(--on-brand);
+@media (hover: hover) and (pointer: fine) {
+  .ctxAction:hover {
+    background: var(--brand);
+    color: var(--on-brand);
+  }
 }
 
 .timeframe {
@@ -197,7 +202,18 @@
   margin-left: auto;
 }
 
+/* A panel with no rows says why, in one quiet line, instead of standing empty. */
+.panelEmpty {
+  padding: var(--s-4);
+  border: var(--bw) dashed var(--border);
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  font-size: var(--t-label);
+  line-height: var(--t-label-lh);
+}
+
 .tabs {
+  position: relative;
   display: inline-flex;
   gap: 2px;
   padding: 3px;
@@ -212,11 +228,54 @@
   font-size: var(--t-caption);
   font-weight: var(--fw-semibold);
   color: var(--text-muted);
+  transition: color var(--m-fast) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tab:hover {
+    color: var(--ink);
+  }
 }
 
 .tabOn {
   background: var(--dark);
   color: #fff;
+}
+
+/* Once the sliding copy is measured it draws the selection, so the tab underneath stays plain. */
+.tabs[data-slide] .tabOn {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+/* The selected-style copy of the row, clipped to the chosen tab. Moving the clip slides the pill:
+   the selection is already on screen and travels to a new place, hence ease-in-out. */
+.tabsSelected {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: inherit;
+  padding: inherit;
+  border-radius: inherit;
+  background: var(--dark);
+  pointer-events: none;
+  transition: clip-path var(--m-base) var(--ease-in-out);
+}
+
+.tabsSelected .tab {
+  color: #fff;
+}
+
+/* The chosen tab's content settles in; the tab row above it holds still. */
+.tabPanel {
+  animation: tabSwap var(--m-base) var(--ease-out) backwards;
+}
+
+@keyframes tabSwap {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
 }
 
 /* ---------- split panel: dark block + chart ---------- */
@@ -413,12 +472,15 @@
   text-decoration: none;
   transition:
     border-color var(--m-fast) var(--ease-out),
-    background-color var(--m-fast) var(--ease-out);
+    background-color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
 
-.quickTile:hover {
-  border-color: var(--brand-border);
-  background: var(--brand-surface);
+@media (hover: hover) and (pointer: fine) {
+  .quickTile:hover {
+    border-color: var(--brand-border);
+    background: var(--brand-surface);
+  }
 }
 
 .quickIcon {
@@ -448,4 +510,14 @@
   .quickGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* Pressed: feedback the moment a finger or button goes down, not on release. */
+.quickTile:active {
+  transform: scale(0.98);
+}
+
+.ctxAction:active,
+.ctxIcon:active {
+  transform: scale(0.96);
 }

@@ -1078,6 +1078,8 @@ export function CaseAuthoringWizard({
                             <img
                               src={img.storage_path.startsWith('cases/synth/') ? `/${img.storage_path}` : img.storage_path}
                               alt={`${img.view_type} preview`}
+                              loading="lazy"
+                              decoding="async"
                               className={s.previewImg}
                               onError={(e) => {
                                 (e.target as HTMLElement).style.display = "none";
@@ -1800,6 +1802,8 @@ export function CaseAuthoringWizard({
                         <img
                           src={img.storage_path.startsWith('cases/synth/') ? `/${img.storage_path}` : img.storage_path}
                           alt={`${img.view_type} Learner Preview`}
+                          loading="lazy"
+                          decoding="async"
                           className={s.previewImg}
                           onError={(e) => {
                             (e.target as HTMLElement).style.display = "none";

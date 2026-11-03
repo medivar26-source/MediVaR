@@ -42,8 +42,10 @@
   background-color: var(--primary);
   color: var(--primary-foreground);
 }
-.variant-default:hover {
-  background-color: color-mix(in srgb, var(--primary) 80%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .variant-default:hover {
+    background-color: color-mix(in srgb, var(--primary) 80%, transparent);
+  }
 }
 
 .variant-outline {
@@ -51,42 +53,62 @@
   background-color: var(--background);
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
-.variant-outline:hover, .variant-outline[aria-expanded="true"] {
+.variant-outline[aria-expanded="true"] {
   background-color: var(--muted);
   color: var(--foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .variant-outline:hover {
+    background-color: var(--muted);
+    color: var(--foreground);
+  }
 }
 
 .variant-secondary {
   background-color: var(--secondary);
   color: var(--secondary-foreground);
 }
-.variant-secondary:hover {
-  background-color: color-mix(in srgb, var(--secondary), var(--foreground) 5%);
+@media (hover: hover) and (pointer: fine) {
+  .variant-secondary:hover {
+    background-color: color-mix(in srgb, var(--secondary), var(--foreground) 5%);
+  }
 }
 .variant-secondary[aria-expanded="true"] {
   background-color: var(--secondary);
   color: var(--secondary-foreground);
 }
 
-.variant-ghost:hover, .variant-ghost[aria-expanded="true"] {
+.variant-ghost[aria-expanded="true"] {
   background-color: var(--muted);
   color: var(--foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .variant-ghost:hover {
+    background-color: var(--muted);
+    color: var(--foreground);
+  }
 }
 
 .variant-destructive {
   background-color: color-mix(in srgb, var(--destructive) 10%, transparent);
   color: var(--destructive);
 }
-.variant-destructive:hover {
-  background-color: color-mix(in srgb, var(--destructive) 20%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .variant-destructive:hover {
+    background-color: color-mix(in srgb, var(--destructive) 20%, transparent);
+  }
 }
 
 .variant-link {
   color: var(--primary);
   text-underline-offset: 4px;
 }
-.variant-link:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .variant-link:hover {
+    text-decoration: underline;
+  }
 }
 
 .size-default {

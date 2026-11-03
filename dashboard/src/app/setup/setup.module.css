@@ -165,10 +165,21 @@
   border-radius: var(--r-md);
   background: var(--surface);
   cursor: pointer;
+  transition:
+    border-color var(--m-fast) var(--ease-out),
+    box-shadow var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
 
-.mode:hover {
-  border-color: var(--border-strong);
+@media (hover: hover) and (pointer: fine) {
+  .mode:hover {
+    border-color: var(--border-strong);
+  }
+}
+
+/* Pressed: a large card gives only slightly (like the app's link cards), so it reads as a press, not a jump. */
+.mode:active {
+  transform: scale(0.99);
 }
 
 .mode:focus-visible {

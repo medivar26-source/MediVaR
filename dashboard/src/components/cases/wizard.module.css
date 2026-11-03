@@ -283,9 +283,11 @@
     color var(--m-fast) var(--ease-out);
 }
 
-.modalClose:hover {
-  background: var(--surface-sunken);
-  color: var(--ink);
+@media (hover: hover) and (pointer: fine) {
+  .modalClose:hover {
+    background: var(--surface-sunken);
+    color: var(--ink);
+  }
 }
 
 /* ---------- Responsive ---------- */

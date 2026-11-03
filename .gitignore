@@ -46,5 +46,9 @@ env/
 # database backups written by backend/scripts (older ones already tracked stay tracked)
 backend/db_backup_*
 
+# sample-results seed: ids it created and the sample accounts' passwords (local only)
+backend/scripts/sample_results_manifest.json
+
 # documentation
 mediver_documentation/changes/
+mediver_documentation/user details/

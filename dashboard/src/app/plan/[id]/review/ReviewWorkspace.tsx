@@ -20,6 +20,9 @@ import {
   storedMeasure,
 } from "@/lib/data/assessment_geometry";
 import { notchingLikely } from "@/lib/data/tkr_templates";
+import r from "./review.module.css";
+import { SendToHeadset } from "./SendToHeadset";
+import type { HeadsetLink } from "@/lib/headset-link";
 
 function fitStatusColor(status?: string): string {
   if (!status) return "#f59e0b";
@@ -28,7 +31,7 @@ function fitStatusColor(status?: string): string {
   return "#f59e0b";
 }
 
-export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
+export function ReviewWorkspace({ plan, headset }: { plan: PlanDetail; headset?: HeadsetLink }) {
   const [isPending, startTransition] = useTransition();
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -376,14 +379,16 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
           </div>
 
           <p style={{ margin: 0, fontSize: "0.8125rem", color: "#cbd5e1", lineHeight: 1.4 }}>
-            VR headset transfer transport is not yet connected; payload is cached for pairing. In accordance with MediVeR-XR architecture, 2D software parameters are now hard-locked into read-only mode.
+            The 2D plan is now read-only. The headset receives exactly this sealed version.
           </p>
+
+          {headset && <SendToHeadset planId={plan.id} initial={headset} />}
 
           <div style={{ marginTop: "0.25rem", padding: "0.75rem", borderRadius: "8px", background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.25)" }}>
             <strong style={{ fontSize: "0.8125rem", color: "#e2e8f0" }}>What happens next</strong>
             <ol style={{ margin: "0.4rem 0 0", paddingLeft: "1.1rem", fontSize: "0.8125rem", color: "#cbd5e1", lineHeight: 1.6 }}>
               <li>Your plan is sealed. It can no longer be edited.</li>
-              <li>Put on the headset and pair it to load this plan (headset pairing is not connected yet).</li>
+              <li>Get a code above and type it on the headset. The headset loads this plan.</li>
               <li>Perform the operation. The score appears under <Link href="/sessions" style={{ color: "#38bdf8" }}>Sessions</Link>, with a report for each run.</li>
             </ol>
           </div>
@@ -486,6 +491,7 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
       {/* Lock Confirmation Modal */}
       {showModal && (
         <div
+          className={r.lockScrim}
           style={{
             position: "fixed",
             top: 0,
@@ -500,6 +506,7 @@ export function ReviewWorkspace({ plan }: { plan: PlanDetail }) {
           }}
         >
           <div
+            className={r.lockPanel}
             style={{
               background: "var(--surface)",
               border: "1px solid var(--border)",

@@ -211,6 +211,8 @@
   --m-xslow: 700ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  /* Something already on screen moving to a new place (a tab's selection sliding along). */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   /* Panels that slide in from an edge (the phone menu): quick start, long settle. */
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 

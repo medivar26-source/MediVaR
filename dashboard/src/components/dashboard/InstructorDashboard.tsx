@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CalendarPlus, ChevronRight, FilePlus, UserPlus, Users } from "lucide-react";
 import { PageHeader, SectionHeader } from "@/components/shell";
-import { Badge, Banner, Button, DemoDataNote } from "@/components/ui";
+import { Badge, Banner, Button } from "@/components/ui";
 import {
   BarChart,
   DistributionBar,
@@ -23,6 +23,7 @@ import { cx } from "@/lib/cx";
 import { WEEK_OPTIONS } from "@/lib/window";
 import s from "./dashboard.module.css";
 import p from "@/app/panels.module.css";
+import { ResultsNote } from "@/components/results/ResultsNote";
 
 const BAND_COLOUR = [
   "var(--pass)",
@@ -32,6 +33,7 @@ const BAND_COLOUR = [
 ];
 
 export function InstructorDashboard({
+  user,
   data,
   weeks,
   cohorts = [],
@@ -44,8 +46,14 @@ export function InstructorDashboard({
 }) {
   const { stats } = data;
   const passMark = PASS_MARK.intermediate;
-  const cohortName = data.cohort?.name ?? "No cohort assigned";
+  const cohortName = data.scopeLabel;
   const urgent = data.needsAttention.filter((n) => n.severity === "fail");
+  // With nobody scored there is no cohort mean: show a dash, not a made-up 0%.
+  const hasScores = stats.scoredLearners > 0;
+  const meanText = hasScores ? `cohort mean ${stats.meanScore}%` : "no scores yet";
+  const categoryPcts = data.categories.map((c) => c.pct);
+  const lowestPct = categoryPcts.length ? `${Math.min(...categoryPcts)}%` : "—";
+  const highestPct = categoryPcts.length ? `${Math.max(...categoryPcts)}%` : "—";
 
   // Everything is taught inside a cohort, so a job starts at the cohort. With exactly one
   // cohort there is nothing to choose, and the link goes straight to the right tab.
@@ -67,14 +75,14 @@ export function InstructorDashboard({
       <PageHeader
         eyebrow={cohortName}
         title="Who needs you"
-        lede={`${stats.learners} learners · cohort mean ${stats.meanScore}% · pass mark ${passMark}`}
+        lede={`${stats.learners} learner${stats.learners === 1 ? "" : "s"} · ${meanText} · pass mark ${passMark}`}
         actions={
           <Button variant="secondary" icon={Users} href="/programs?tab=cohorts">
             All cohorts
           </Button>
         }
       />
-      <DemoDataNote />
+      <ResultsNote userId={user.id} />
 
       <nav className={s.quickGrid} aria-label="Common jobs">
         {quickActions.map((a) => (
@@ -130,7 +138,7 @@ export function InstructorDashboard({
                 </p>
                 <div className={p.cardFoot}>
                   <span className={p.cardOpen}>
-                    Open Cohort
+                    Open cohort
                     <ChevronRight className={p.cardChevron} strokeWidth={2} />
                   </span>
                 </div>
@@ -167,9 +175,9 @@ export function InstructorDashboard({
       <div className={s.heroBand}>
         <HeroMetric
           label="Cohort mean"
-          value={String(stats.meanScore)}
-          valueTail="%"
-          delta={stats.meanDelta}
+          value={hasScores ? String(stats.meanScore) : "—"}
+          valueTail={hasScores ? "%" : undefined}
+          delta={hasScores ? stats.meanDelta : undefined}
           deltaSuffix=" pts"
           compare={
             <>
@@ -190,7 +198,7 @@ export function InstructorDashboard({
             value={stats.belowPassMark}
             variant="dark"
             sub="Needs intervention"
-            chevron
+            href={stats.belowPassMark > 0 ? "/programs?tab=cohorts" : undefined}
           />
           <StatCard
             label="Sessions this week"
@@ -219,8 +227,19 @@ export function InstructorDashboard({
           <Panel
             title="Needs attention"
             sub="Below the pass mark first, then inactive 14 days or more"
-            action={<Badge status="fail">{data.needsAttention.length}</Badge>}
+            action={
+              <Badge status={urgent.length > 0 ? "fail" : data.needsAttention.length > 0 ? "warn" : "neutral"}>
+                {data.needsAttention.length}
+              </Badge>
+            }
           >
+            {data.needsAttention.length === 0 && (
+              <p className={s.panelEmpty}>
+                {stats.learners === 0
+                  ? "No learners yet. Learners appear here once they join one of your cohorts."
+                  : "Nobody is below the pass mark or inactive for 14 days."}
+              </p>
+            )}
             <div className={s.stack}>
               {data.needsAttention.map(({ learner, reason, severity }) => (
                 <div
@@ -256,6 +275,7 @@ export function InstructorDashboard({
                 label: "Scenes",
                 content: (
                   <RankedList
+                    empty="No failed or borderline scenes yet."
                     items={data.hotspots.map((h) => ({
                       tag: h.scene,
                       label: h.label,
@@ -269,6 +289,7 @@ export function InstructorDashboard({
                 label: "Categories",
                 content: (
                   <RankedList
+                    empty="No scored categories yet."
                     items={[...data.categories]
                       .sort((a, b) => a.pct - b.pct)
                       .map((c) => ({
@@ -310,15 +331,11 @@ export function InstructorDashboard({
               <span className={s.splitLabel}>Cohort weakness</span>
               <div className={s.splitStat}>
                 <span className={s.splitStatLabel}>Lowest category</span>
-                <span className={s.splitStatValue}>
-                  {Math.min(...data.categories.map((c) => c.pct))}%
-                </span>
+                <span className={s.splitStatValue}>{lowestPct}</span>
               </div>
               <div className={s.splitStat}>
                 <span className={s.splitStatLabel}>Highest</span>
-                <span className={s.splitStatValue}>
-                  {Math.max(...data.categories.map((c) => c.pct))}%
-                </span>
+                <span className={s.splitStatValue}>{highestPct}</span>
               </div>
               <div className={s.splitStat}>
                 <span className={s.splitStatLabel}>Sessions / week</span>
@@ -341,6 +358,7 @@ export function InstructorDashboard({
                 }))}
                 max={100}
                 height={180}
+                empty="Category scores appear after the cohort's first scored session."
                 formatTag={(v) => `${v}%`}
               />
             </div>

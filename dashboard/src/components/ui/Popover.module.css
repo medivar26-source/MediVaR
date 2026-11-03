@@ -67,8 +67,10 @@
   transition: background-color var(--m-fast) var(--ease-out);
 }
 
-.item:hover {
-  background: var(--surface-sunken);
+@media (hover: hover) and (pointer: fine) {
+  .item:hover {
+    background: var(--surface-sunken);
+  }
 }
 
 .itemOn {
@@ -109,4 +111,9 @@
   text-align: center;
   font-size: var(--t-caption);
   color: var(--text-muted);
+}
+
+/* Pressed: feedback the moment a finger or button goes down, not on release. */
+.item:active {
+  background: var(--divider);
 }

@@ -209,6 +209,8 @@
   color: var(--text-muted);
 }
 
-.stepsSummary:hover {
-  color: var(--ink);
+@media (hover: hover) and (pointer: fine) {
+  .stepsSummary:hover {
+    color: var(--ink);
+  }
 }

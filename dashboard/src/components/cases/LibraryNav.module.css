@@ -19,14 +19,35 @@
   text-decoration: none;
 }
 
-.tab:hover {
-  background: var(--brand-surface);
-  border-color: var(--brand-border);
+@media (hover: hover) and (pointer: fine) {
+  .tab:hover {
+    background: var(--brand-surface);
+    border-color: var(--brand-border);
+  }
 }
 
-.tabOn,
-.tabOn:hover {
+.tabOn {
   background: var(--brand);
   border-color: var(--brand);
   color: var(--on-brand);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tabOn:hover {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: var(--on-brand);
+  }
+}
+
+/* Pressed: feedback the moment a finger or button goes down, not on release. */
+.tab {
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    border-color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
+}
+
+.tab:active {
+  transform: scale(0.97);
 }

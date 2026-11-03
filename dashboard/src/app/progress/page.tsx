@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BarChart3, Play } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/shell";
-import { Button, DemoDataNote, EmptyState } from "@/components/ui";
+import { Button, EmptyState } from "@/components/ui";
 import { LearnerAnalytics } from "@/components/dashboard/LearnerAnalytics";
 import { getLearnerDashboard } from "@/lib/data/dashboard";
 import { startEarlyReads } from "@/lib/data/early-reads";
@@ -21,6 +21,7 @@ import { ActivityView } from "../activity/ActivityView";
 import { History, Overview, SkillGroupsView } from "../performance/PerformanceViews";
 import s from "../performance/performance.module.css";
 import { ReportsView } from "../reports/ReportsView";
+import { ResultsNote } from "@/components/results/ResultsNote";
 
 export const metadata: Metadata = { title: "Progress" };
 
@@ -64,7 +65,7 @@ export default async function ProgressPage({
   return (
     <AppShell user={user} searchHint='Try searching "reports"'>
       <PageHeader title="Progress" lede="See how you are doing, open a report, or work on a skill." />
-      <DemoDataNote
+      <ResultsNote userId={user.id}
         sample="scores, activity and reports for past sessions"
         live="the sessions scheduled for you"
       />

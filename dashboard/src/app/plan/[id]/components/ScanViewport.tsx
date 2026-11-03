@@ -2,6 +2,8 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { Minus, Plus } from "lucide-react";
+import hud from "./ScanViewport.module.css";
 const DicomViewer = dynamic(() => import("@/components/cases/DicomViewer"), { ssr: false });
 
 /**
@@ -250,95 +252,36 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
         cursor: isPanning ? "grabbing" : "grab",
       }}
     >
-      {/* Floating Zoom & Pan HUD Toolbar */}
-      <div
-        style={{
-          position: "absolute",
-          top: "12px",
-          right: "12px",
-          zIndex: 50,
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-          background: "rgba(15, 23, 42, 0.85)",
-          backdropFilter: "blur(6px)",
-          border: "1px solid rgba(255, 255, 255, 0.15)",
-          borderRadius: "8px",
-          padding: "4px 8px",
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
-        }}
-      >
+      {/* Zoom bar. Its buttons stop their own clicks, so pressing one never starts a pan or places a point. */}
+      <div className={hud.hud} role="group" aria-label="Zoom">
         <button
           type="button"
+          className={hud.hudBtn}
           onClick={handleZoomOut}
-          title="Zoom Out"
-          style={{
-            background: "rgba(255, 255, 255, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            color: "#fff",
-            borderRadius: "4px",
-            width: "26px",
-            height: "26px",
-            cursor: "pointer",
-            fontWeight: "bold",
-            fontSize: "16px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          disabled={zoom <= MIN_ZOOM}
+          aria-label="Zoom out"
+          title="Zoom out"
         >
-          −
+          <Minus className={hud.hudIcon} strokeWidth={2.25} aria-hidden="true" />
         </button>
-
-        <span
-          style={{
-            color: "#e2e8f0",
-            fontSize: "12px",
-            fontWeight: 600,
-            minWidth: "42px",
-            textAlign: "center",
-          }}
-        >
+        <span className={hud.hudZoom} aria-live="polite">
           {Math.round(zoom * 100)}%
         </span>
-
         <button
           type="button"
+          className={hud.hudBtn}
           onClick={handleZoomIn}
-          title="Zoom In"
-          style={{
-            background: "rgba(255, 255, 255, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            color: "#fff",
-            borderRadius: "4px",
-            width: "26px",
-            height: "26px",
-            cursor: "pointer",
-            fontWeight: "bold",
-            fontSize: "16px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          disabled={zoom >= MAX_ZOOM}
+          aria-label="Zoom in"
+          title="Zoom in"
         >
-          +
+          <Plus className={hud.hudIcon} strokeWidth={2.25} aria-hidden="true" />
         </button>
-
         <button
           type="button"
+          className={`${hud.hudBtn} ${hud.hudReset}`}
           onClick={handleResetZoom}
-          title="Reset Zoom & Fit View"
-          style={{
-            background: "rgba(255, 255, 255, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            color: "#94a3b8",
-            borderRadius: "4px",
-            padding: "2px 8px",
-            height: "26px",
-            cursor: "pointer",
-            fontSize: "11px",
-            fontWeight: 500,
-          }}
+          title="Fit the whole scan in view"
         >
           Reset
         </button>
@@ -346,21 +289,7 @@ export function ScanViewport({ src, alt = "Scan Image", children, overlay, focus
 
       {overlay}
 
-      {/* Helper text overlay in bottom-left */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: "10px",
-          left: "12px",
-          zIndex: 40,
-          color: "rgba(255, 255, 255, 0.5)",
-          fontSize: "11px",
-          pointerEvents: "none",
-          background: "rgba(0, 0, 0, 0.4)",
-          padding: "2px 6px",
-          borderRadius: "4px",
-        }}
-      >
+      <div className={hud.hint}>
         Scroll to zoom • Left-drag to move the scan • Right-click to place a point
       </div>
 

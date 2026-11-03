@@ -19,11 +19,21 @@
   background: var(--surface);
   color: inherit;
   text-decoration: none;
+  transition:
+    border-color var(--m-fast) var(--ease-out),
+    background-color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
 
-.card:hover {
-  border-color: var(--brand-border);
-  background: var(--brand-surface);
+.card:active {
+  transform: scale(0.99);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    border-color: var(--brand-border);
+    background: var(--brand-surface);
+  }
 }
 
 .card:focus-visible {
@@ -67,9 +77,4 @@
   font-size: var(--t-label);
   font-weight: var(--fw-semibold);
   color: var(--brand);
-}
-
-.lede {
-  margin: 0 0 var(--s-4);
-  color: var(--text-muted);
 }

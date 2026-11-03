@@ -10,10 +10,26 @@
   background: var(--surface);
   color: var(--text);
   overflow: hidden;
+  /* A search panel opens many times a session, so it settles faster than the other dialogs. */
+  transition:
+    opacity var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
 
 .dialog::backdrop {
   background: var(--scrim);
+  transition: opacity var(--m-fast) var(--ease-out);
+}
+
+/* Opens by dropping a few pixels into place from where the search field sits; closing is immediate. */
+@starting-style {
+  .dialog[open] {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--s-2))) scale(0.98);
+  }
+  .dialog[open]::backdrop {
+    opacity: 0;
+  }
 }
 
 /* `dialog` is display:none when closed; the frame lays out only when it is open. */
@@ -46,6 +62,11 @@
   background: none;
   font-size: 17px;
   color: var(--ink);
+}
+
+/* The open panel and the caret already show where typing goes; a ring inside the field doubled its edge. */
+.input:focus-visible {
+  outline: none;
 }
 
 .input::placeholder {
@@ -109,19 +130,25 @@
   color: var(--on-brand);
 }
 
+/* Title over meta. Both are spans inside a button, so they are made blocks here; inline they ran together. */
 .itemBody {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .itemTitle {
+  overflow: hidden;
   font-size: var(--t-label);
   font-weight: var(--fw-semibold);
   color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .itemMeta {
-  margin-top: 1px;
   font-size: var(--t-caption);
   color: var(--text-muted);
 }

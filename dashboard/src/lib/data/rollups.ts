@@ -7,17 +7,8 @@
  * `lib/seed` and reduce it; they hold no data of their own.
  */
 
-import {
-  CATEGORY_META,
-  PROFILES,
-  REPORTS,
-  REPORT_BY_SESSION,
-  SCENE_RESULTS,
-  SESSIONS,
-  SESSION_BY_ID,
-  SCENE_BY_ID,
-  scenesForVariant,
-} from "@/lib/seed";
+import { CATEGORY_META, REPORTS, SCENE_BY_ID, scenesForVariant } from "@/lib/seed";
+import { SAMPLE_RESULTS, type ResultsData } from "./results";
 import { PASS_MARK, type CategoryAverage, type LearnerSummary, type SceneHotspot, type SessionSummary } from "@/lib/types";
 
 export function mean(values: number[]): number | undefined {
@@ -36,12 +27,15 @@ export function reported(sessions: SessionSummary[]): SessionSummary[] {
  * Mean share of each category's marks, as a percentage, across the sessions
  * given. A category no session scored is absent rather than shown as zero.
  */
-export function categoryAverages(sessions: SessionSummary[]): CategoryAverage[] {
+export function categoryAverages(
+  sessions: SessionSummary[],
+  data: ResultsData = SAMPLE_RESULTS,
+): CategoryAverage[] {
   const ids = reported(sessions).map((s) => s.id);
 
   return CATEGORY_META.flatMap((meta) => {
     const shares = ids.flatMap((id) => {
-      const row = REPORT_BY_SESSION.get(id)?.categories.find(
+      const row = data.reportBySession.get(id)?.categories.find(
         (c) => c.key === meta.key,
       );
       return row && row.max > 0 ? [(row.score / row.max) * 100] : [];
@@ -53,18 +47,23 @@ export function categoryAverages(sessions: SessionSummary[]): CategoryAverage[] 
   });
 }
 
-/** Where marks were actually lost, worst scene first. */
+/**
+ * Where marks were actually lost, worst scene first. A stored report says exactly how many marks each
+ * scene lost; a sample report only has the outcome, so it counts 3 for a fail and 1 for a borderline.
+ */
 export function marksLost(
   sessions: SessionSummary[],
+  data: ResultsData = SAMPLE_RESULTS,
 ): { scene: string; label: string; points: number; pct: number }[] {
   const ids = new Set(reported(sessions).map((s) => s.id));
   const byScene = new Map<string, number>();
 
-  for (const result of SCENE_RESULTS) {
+  for (const result of data.sceneResults) {
     if (!ids.has(result.sessionId) || result.outcome === "pass") continue;
-    const lost = result.outcome === "fail" ? 3 : 1;
+    const lost = result.pointsLost ?? (result.outcome === "fail" ? 3 : 1);
     byScene.set(result.scene, (byScene.get(result.scene) ?? 0) + lost);
   }
+  for (const [scene, points] of byScene) byScene.set(scene, Math.round(points * 10) / 10);
 
   const total = [...byScene.values()].reduce((a, b) => a + b, 0);
   if (!total) return [];
@@ -88,13 +87,14 @@ export function marksLost(
  */
 export function timeByScene(
   sessions: SessionSummary[],
+  data: ResultsData = SAMPLE_RESULTS,
 ): { scene: string; label: string; seconds: number; pct: number }[] {
   const ids = new Set(reported(sessions).map((s) => s.id));
   const byScene = new Map<string, number>();
 
-  for (const result of SCENE_RESULTS) {
+  for (const result of data.sceneResults) {
     if (!ids.has(result.sessionId)) continue;
-    const par = SCENE_BY_ID.get(result.scene)?.parTimeS ?? 0;
+    const par = result.parS ?? SCENE_BY_ID.get(result.scene)?.parTimeS ?? 0;
     const over = Math.max(0, result.durationS - par);
     if (over > 0) byScene.set(result.scene, (byScene.get(result.scene) ?? 0) + over);
   }
@@ -146,13 +146,19 @@ export function weeklyActivity(
   return out;
 }
 
-/** Every learner in a cohort, with the figures an instructor screen states. */
-export function cohortLearners(cohortId: string): LearnerSummary[] {
-  return PROFILES.filter((p) => p.cohortId === cohortId).map((profile) => {
-    const mine = SESSIONS.filter((s) => s.userId === profile.id);
+/**
+ * Every learner in a cohort, with the figures an instructor screen states. With no cohort, every learner
+ * the data holds (for an instructor: everyone in any cohort they own).
+ */
+export function cohortLearners(
+  cohortId: string | undefined,
+  data: ResultsData = SAMPLE_RESULTS,
+): LearnerSummary[] {
+  return data.profiles.filter((p) => !cohortId || p.cohortId === cohortId).map((profile) => {
+    const mine = data.sessions.filter((s) => s.userId === profile.id);
     const done = reported(mine);
     const scores = done.map((s) => s.totalScore as number);
-    const weakest = [...categoryAverages(mine)].sort((a, b) => a.pct - b.pct)[0];
+    const weakest = [...categoryAverages(mine, data)].sort((a, b) => a.pct - b.pct)[0];
 
     return {
       id: profile.id,
@@ -174,18 +180,24 @@ export function cohortLearners(cohortId: string): LearnerSummary[] {
  * `affected` counts learners who closed the scene below a pass, not attempts —
  * one learner failing a scene five times is one person to talk to, not five.
  */
-export function cohortHotspots(cohortId: string): SceneHotspot[] {
+export function cohortHotspots(
+  cohortId: string | undefined,
+  data: ResultsData = SAMPLE_RESULTS,
+): SceneHotspot[] {
   const members = new Set(
-    PROFILES.filter((p) => p.cohortId === cohortId).map((p) => p.id),
+    data.profiles.filter((p) => !cohortId || p.cohortId === cohortId).map((p) => p.id),
   );
   const sessionOwner = new Map(
-    SESSIONS.filter((s) => members.has(s.userId)).map((s) => [s.id, s.userId]),
+    data.sessions.filter((s) => members.has(s.userId)).map((s) => [s.id, s.userId]),
   );
 
   const bad = new Map<string, Set<string>>();
   const seen = new Map<string, Set<string>>();
+  // How often the scene went wrong, fails counting double: orders scenes that the same number of
+  // learners struggled with, so the one they struggle with most comes first.
+  const weight = new Map<string, number>();
 
-  for (const result of SCENE_RESULTS) {
+  for (const result of data.sceneResults) {
     const owner = sessionOwner.get(result.sessionId);
     if (!owner) continue;
 
@@ -195,6 +207,7 @@ export function cohortHotspots(cohortId: string): SceneHotspot[] {
     if (result.outcome !== "pass") {
       if (!bad.has(result.scene)) bad.set(result.scene, new Set());
       bad.get(result.scene)!.add(owner);
+      weight.set(result.scene, (weight.get(result.scene) ?? 0) + (result.outcome === "fail" ? 2 : 1));
     }
   }
 
@@ -210,20 +223,24 @@ export function cohortHotspots(cohortId: string): SceneHotspot[] {
         severity: (share >= 0.5 ? "fail" : share >= 0.25 ? "borderline" : "pass") as SceneHotspot["severity"],
       };
     })
-    .sort((a, b) => b.affected - a.affected)
+    .sort((a, b) => b.affected - a.affected || (weight.get(b.scene) ?? 0) - (weight.get(a.scene) ?? 0))
     .slice(0, 6);
 }
 
 /** Every scene a session was scheduled to perform, with what it recorded. */
-export function sceneRunFor(sessionId: string) {
-  const session = SESSION_BY_ID.get(sessionId);
+export function sceneRunFor(sessionId: string, data: ResultsData = SAMPLE_RESULTS) {
+  const session = data.sessionById.get(sessionId);
   if (!session) return [];
   return scenesForVariant(session.design, session.fixation);
 }
 
-/** Did this score clear the mark in force for its difficulty? */
+/**
+ * Did this run pass? A stored report's own verdict first (it was marked against the pass mark in force, and
+ * a capped run fails whatever its marks); a sample run is judged against today's pass mark.
+ */
 export function passedOf(session: SessionSummary): boolean | undefined {
   if (session.totalScore === undefined) return undefined;
+  if (session.passed !== undefined) return session.passed;
   return session.totalScore >= PASS_MARK[session.difficulty];
 }
 

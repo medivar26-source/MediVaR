@@ -14,7 +14,6 @@ import {
   Th,
   THead,
   Tr,
-  DemoDataNote,
   StatStrip,
 } from "@/components/ui";
 import { asMode, asStatus, getSessionList } from "@/lib/data/sessions";
@@ -25,6 +24,8 @@ import { SessionActions } from "@/components/sessions/SessionActions";
 import { isSampleSession } from "@/lib/data/session-links";
 import { SessionFilters } from "./SessionFilters";
 import s from "./sessions.module.css";
+import p from "@/app/panels.module.css";
+import { ResultsNote } from "@/components/results/ResultsNote";
 
 export const metadata: Metadata = { title: "Sessions" };
 
@@ -85,7 +86,7 @@ export default async function SessionsPage({
           )
         }
       />
-      <DemoDataNote
+      <ResultsNote userId={user.id}
         sample="scores, reports and past headset sessions"
         live={persona === "learner" ? "the sessions scheduled for you" : "the sessions scheduled in your cohorts"}
       />
@@ -162,14 +163,14 @@ export default async function SessionsPage({
           <Table label="Sessions">
             <THead>
               <Tr>
-                <Th>Date</Th>
+                <Th compact>Date</Th>
                 <Th>Case</Th>
-                <Th>Mode</Th>
-                <Th>Variant</Th>
-                <Th numeric>Duration</Th>
-                <Th numeric>Score</Th>
-                <Th>Status</Th>
-                <Th>{/* row action */}</Th>
+                <Th numeric compact>Duration</Th>
+                <Th numeric compact>Score</Th>
+                <Th compact>Status</Th>
+                <Th compact>
+                  <span className="srOnly">Actions</span>
+                </Th>
               </Tr>
             </THead>
             <TBody>
@@ -178,7 +179,7 @@ export default async function SessionsPage({
 
                 return (
                   <Tr key={session.id}>
-                    <Td head>{shortDate(session.scheduledAt ?? session.endedAt ?? session.startedAt)}</Td>
+                    <Td head compact>{shortDate(session.scheduledAt ?? session.endedAt ?? session.startedAt)}</Td>
                     <Td>
                       {session.caseTitle}
                       {isSampleSession(session.id) && (
@@ -187,14 +188,16 @@ export default async function SessionsPage({
                           <Chip tone="muted">Sample</Chip>
                         </>
                       )}
+                      {/* Mode and variant are facts about the run, not columns of their own: one quiet line. */}
+                      <div className={p.cellSub}>
+                        {[titleCase(session.mode), session.design, session.fixation ? titleCase(session.fixation) : undefined]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </div>
                     </Td>
-                    <Td>{titleCase(session.mode)}</Td>
-                    <Td>
-                      {session.design ?? "—"} · {session.fixation ? titleCase(session.fixation) : "—"}
-                    </Td>
-                    <Td numeric>{session.durationS ? clock(session.durationS) : session.duration ? `${session.duration}m` : "—"}</Td>
-                    <Td numeric>{score ?? "—"}</Td>
-                    <Td>
+                    <Td numeric compact>{session.durationS ? clock(session.durationS) : session.duration ? `${session.duration}m` : "—"}</Td>
+                    <Td numeric compact>{score ?? "—"}</Td>
+                    <Td compact>
                       {/* A Badge announces a verdict; "Interrupted" and "No
                           report" are lifecycle facts, so they are Chips The verdict itself is the one the
                           report stored, not a re-marking. */}
@@ -214,7 +217,7 @@ export default async function SessionsPage({
                         <Badge status="pass">Passed</Badge>
                       )}
                     </Td>
-                    <Td>
+                    <Td compact>
                       <SessionActions session={session} />
                     </Td>
                   </Tr>

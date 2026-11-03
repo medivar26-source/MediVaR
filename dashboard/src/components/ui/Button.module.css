@@ -41,9 +41,11 @@
   color: var(--on-brand);
   font-weight: var(--fw-bold);
 }
-.primary:hover:not(:disabled) {
-  background: var(--brand-hover);
-  border-color: var(--brand-hover);
+@media (hover: hover) and (pointer: fine) {
+  .primary:hover:not(:disabled) {
+    background: var(--brand-hover);
+    border-color: var(--brand-hover);
+  }
 }
 .primary:active:not(:disabled) {
   background: var(--brand-pressed);
@@ -55,9 +57,11 @@
   border-color: var(--border);
   color: var(--text);
 }
-.secondary:hover:not(:disabled) {
-  background: var(--surface-sunken);
-  border-color: var(--border-strong);
+@media (hover: hover) and (pointer: fine) {
+  .secondary:hover:not(:disabled) {
+    background: var(--surface-sunken);
+    border-color: var(--border-strong);
+  }
 }
 .secondary:active:not(:disabled) {
   background: var(--divider);
@@ -69,8 +73,10 @@
   color: var(--brand);
   font-weight: var(--fw-bold);
 }
-.tonal:hover:not(:disabled) {
-  background: var(--brand-surface-hover);
+@media (hover: hover) and (pointer: fine) {
+  .tonal:hover:not(:disabled) {
+    background: var(--brand-surface-hover);
+  }
 }
 
 .ghost {
@@ -78,8 +84,10 @@
   border-color: transparent;
   color: var(--brand);
 }
-.ghost:hover:not(:disabled) {
-  background: var(--brand-surface);
+@media (hover: hover) and (pointer: fine) {
+  .ghost:hover:not(:disabled) {
+    background: var(--brand-surface);
+  }
 }
 
 .danger {
@@ -87,8 +95,10 @@
   border-color: var(--fail-border);
   color: var(--fail);
 }
-.danger:hover:not(:disabled) {
-  background: var(--fail-surface);
+@media (hover: hover) and (pointer: fine) {
+  .danger:hover:not(:disabled) {
+    background: var(--fail-surface);
+  }
 }
 
 /* ---------- sizes ---------- */

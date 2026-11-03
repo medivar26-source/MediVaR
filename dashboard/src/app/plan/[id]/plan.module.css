@@ -52,8 +52,10 @@
   white-space: nowrap;
 }
 
-.back:hover {
-  color: var(--ink);
+@media (hover: hover) and (pointer: fine) {
+  .back:hover {
+    color: var(--ink);
+  }
 }
 
 .railEyebrow {
@@ -94,15 +96,24 @@
   transition: background-color var(--m-fast) var(--ease-out);
 }
 
-.step:hover {
-  background: var(--surface);
+@media (hover: hover) and (pointer: fine) {
+  .step:hover {
+    background: var(--surface);
+  }
 }
 
-.stepOn,
-.stepOn:hover {
+.stepOn {
   background: var(--surface);
   border-color: var(--brand);
   border-width: var(--bw-emphasis);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .stepOn:hover {
+    background: var(--surface);
+    border-color: var(--brand);
+    border-width: var(--bw-emphasis);
+  }
 }
 
 /* A step you cannot reach yet is not a link — it states why in its text. */
@@ -111,8 +122,10 @@
   cursor: not-allowed;
 }
 
-.stepLocked:hover {
-  background: rgba(255, 255, 255, 0.55);
+@media (hover: hover) and (pointer: fine) {
+  .stepLocked:hover {
+    background: rgba(255, 255, 255, 0.55);
+  }
 }
 
 .stepDot {

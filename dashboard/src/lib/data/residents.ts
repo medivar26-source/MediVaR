@@ -19,10 +19,11 @@
  */
 
 import { redirect } from "next/navigation";
-import { CATEGORY_META, sessionsFor } from "@/lib/seed";
-import { categoryAverages } from "./rollups";
+import { CATEGORY_META } from "@/lib/seed";
+import { categoryAverages, passedOf } from "./rollups";
+import { resultsFor, sessionsOf, type ResultsData } from "./results";
 import { getSessionToken } from "@/lib/session";
-import { PASS_MARK, type CategoryAverage, type SessionSummary } from "@/lib/types";
+import { type CategoryAverage, type SessionSummary } from "@/lib/types";
 import {
   apiAddAssignment,
   apiAddFeedback,
@@ -97,6 +98,7 @@ function toDetail(
   sessions: SessionSummary[],
   notes: ApiInstructorNote[],
   assignments: ApiTrainingAssignment[],
+  data?: ResultsData,
 ): ResidentDetail {
   const scored = sessions
     .filter((s) => s.status === "completed" && s.totalScore !== undefined)
@@ -109,7 +111,7 @@ function toDetail(
     ? Math.round((completed.length / sessions.length) * 100)
     : undefined;
 
-  const skillPerformance = categoryAverages(sessions);
+  const skillPerformance = categoryAverages(sessions, data);
   const weaknesses = [...skillPerformance].sort((a, b) => a.pct - b.pct).filter((c) => c.pct < 70).slice(0, 3);
 
   const recentCases: RecentCase[] = scored.slice(0, 5).map((s) => ({
@@ -117,7 +119,7 @@ function toDetail(
     caseId: s.caseId ?? "",
     caseTitle: s.caseTitle,
     score: s.totalScore,
-    passed: s.totalScore !== undefined ? s.totalScore >= PASS_MARK[s.difficulty] : undefined,
+    passed: passedOf(s),
     date: s.endedAt,
   }));
 
@@ -164,7 +166,10 @@ export async function getResidentDetail(residentId: string): Promise<ResidentDet
   );
   if (!resident) return null;
 
-  const sessions = sessionsFor(residentId);
+  // Performance comes from the stored results (the backend has already checked this instructor supervises
+  // the resident); a sample learner's id reads the sample history.
+  const data = await resultsFor(residentId);
+  const sessions = sessionsOf(data, residentId);
 
   return toDetail(
     {
@@ -178,6 +183,7 @@ export async function getResidentDetail(residentId: string): Promise<ResidentDet
     sessions,
     notes,
     assignments,
+    data,
   );
 }
 

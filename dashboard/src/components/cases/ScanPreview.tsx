@@ -67,6 +67,8 @@ export function ScanPreview({
     <img
       src={src}
       alt={alt}
+      loading="lazy"
+      decoding="async"
       className={className}
       onError={() => setFailed(true)}
       style={{

@@ -47,9 +47,11 @@
   text-decoration: none;
 }
 
-.clear:hover {
-  color: var(--ink);
-  background: var(--surface-sunken);
+@media (hover: hover) and (pointer: fine) {
+  .clear:hover {
+    color: var(--ink);
+    background: var(--surface-sunken);
+  }
 }
 
 .clear:focus-visible {

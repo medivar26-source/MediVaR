@@ -1,0 +1,289 @@
+/* The report's drawings. Colour comes from the tokens only: --pass / --warn / --fail say how a thing went,
+   --brand is the learner's own line, grey is everything else. Status is never colour alone: every dot also
+   has a <title>, and every verdict in the surrounding page carries an icon and a word. */
+
+/* ---------- score ring (sits on the dark card) ---------- */
+
+.ring {
+  display: block;
+  width: 100%;
+  max-width: 232px;
+  height: auto;
+  margin-inline: auto;
+}
+
+.ringTrack {
+  stroke: color-mix(in srgb, var(--on-dark) 14%, transparent);
+}
+
+.ringPass,
+.ringFail {
+  animation: ringIn 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.ringPass {
+  stroke: color-mix(in srgb, var(--pass) 42%, var(--on-dark));
+}
+.ringFail {
+  stroke: color-mix(in srgb, var(--fail) 45%, var(--on-dark));
+}
+
+@keyframes ringIn {
+  from {
+    stroke-dashoffset: var(--circ);
+  }
+}
+
+.ringTick {
+  stroke: var(--on-dark);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.ringTickLabel {
+  fill: var(--on-dark-muted);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ringValue {
+  fill: var(--on-dark);
+  font-family: var(--font-display);
+  font-size: 64px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ringMax {
+  fill: var(--on-dark-muted);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ---------- radar ---------- */
+
+.radar,
+.pareto,
+.pace {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.radarRing {
+  fill: none;
+  stroke: var(--divider);
+  stroke-width: 1;
+}
+
+.radarOuter {
+  fill: var(--surface-sunken);
+  fill-opacity: 0.55;
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.radarAxis {
+  stroke: var(--divider);
+  stroke-width: 1;
+}
+
+.radarPass {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 4;
+}
+
+.radarShape {
+  fill: color-mix(in srgb, var(--brand) 22%, transparent);
+  stroke: var(--brand);
+  stroke-width: 2.25;
+  stroke-linejoin: round;
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: radarIn 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes radarIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+.radarDot {
+  fill: var(--surface);
+  stroke: var(--brand);
+  stroke-width: 2.25;
+}
+
+.radarDotWeak {
+  fill: var(--surface);
+  stroke: var(--warn);
+  stroke-width: 2.25;
+}
+
+.radarLabel {
+  fill: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.radarValue,
+.radarValueWeak {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.radarValue {
+  fill: var(--text-muted);
+}
+.radarValueWeak {
+  fill: var(--warn);
+}
+
+/* ---------- shared axes ---------- */
+
+.grid {
+  stroke: var(--divider);
+  stroke-width: 1;
+}
+
+.axisBase {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.tick {
+  fill: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.axisTitle {
+  fill: var(--text-disabled);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ---------- pareto ---------- */
+
+.paretoBar,
+.paretoTop {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: barIn 650ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.paretoBar {
+  fill: color-mix(in srgb, var(--warn) 55%, var(--surface));
+}
+.paretoTop {
+  fill: var(--fail);
+}
+
+@keyframes barIn {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+.paretoValue {
+  fill: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.paretoLine {
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.paretoDot {
+  fill: var(--surface);
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.catLabel {
+  fill: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.catSub {
+  fill: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+/* ---------- pace ---------- */
+
+.paceLost {
+  fill: color-mix(in srgb, var(--warn) 18%, transparent);
+}
+
+.paceGained {
+  fill: color-mix(in srgb, var(--pass) 16%, transparent);
+}
+
+.paceParLine {
+  stroke: var(--text-muted);
+  stroke-width: 1.75;
+  stroke-dasharray: 5 5;
+  stroke-linecap: round;
+}
+
+.paceLine {
+  stroke: var(--brand);
+  stroke-width: 2.75;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.dotPass,
+.dotWarn,
+.dotFail {
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+.dotPass {
+  fill: var(--pass);
+}
+.dotWarn {
+  fill: var(--warn);
+}
+.dotFail {
+  fill: var(--fail);
+}
+
+.paceEnd {
+  fill: var(--brand);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.paceEndPar {
+  fill: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ringPass,
+  .ringFail,
+  .radarShape,
+  .paretoBar,
+  .paretoTop {
+    animation: none;
+  }
+}

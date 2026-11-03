@@ -24,9 +24,11 @@
   cursor: pointer;
 }
 
-.backLink:hover {
-  background-color: var(--color-brand-green-soft);
-  color: var(--color-brand-green);
+@media (hover: hover) and (pointer: fine) {
+  .backLink:hover {
+    background-color: var(--color-brand-green-soft);
+    color: var(--color-brand-green);
+  }
 }
 
 .backIcon {

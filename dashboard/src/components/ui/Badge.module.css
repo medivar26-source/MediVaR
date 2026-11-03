@@ -6,6 +6,8 @@
  * the small pill that carries the judgement. */
 
 .badge {
+  /* Anchors the badge's own screen-reader label, so it can never escape a scroll box and widen the page. */
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);

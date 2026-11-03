@@ -69,8 +69,10 @@
   color: var(--auth-ink-soft);
   text-decoration: none;
 }
-.helpLink:hover {
-  color: var(--auth-ink);
+@media (hover: hover) and (pointer: fine) {
+  .helpLink:hover {
+    color: var(--auth-ink);
+  }
 }
 
 .mainContent {
@@ -108,27 +110,49 @@
 /* ---------- Instructor / Learner switcher ---------- */
 
 .tabs {
+  position: relative;
   display: flex;
   background-color: var(--auth-track);
   border-radius: var(--r-pill);
   padding: 0.45rem;
   margin-bottom: var(--auth-gap);
 }
+/* The white pill is one shape that slides between the two halves, rather than one pill
+   disappearing while another appears. It is already on screen and moves, hence ease-in-out. */
+.tabs::before {
+  content: "";
+  position: absolute;
+  top: 0.45rem;
+  bottom: 0.45rem;
+  left: 0.45rem;
+  width: calc(50% - 0.45rem);
+  border-radius: var(--r-pill);
+  background-color: var(--auth-pill);
+  box-shadow: var(--e-1);
+  transition: transform var(--m-base) var(--ease-in-out);
+}
+.tabs[data-mode="learner"]::before {
+  transform: translateX(100%);
+}
 .tabButton {
+  position: relative;
   flex: 1;
   font-size: var(--auth-text);
   font-weight: var(--fw-semibold);
   border-radius: var(--r-pill);
   padding: 0.4rem 0;
-  transition: background-color var(--m-fast) var(--ease-out), color var(--m-fast) var(--ease-out), box-shadow var(--m-fast) var(--ease-out);
+  transition:
+    color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
   border: none;
   background: transparent;
   cursor: pointer;
   color: var(--auth-ink-soft);
 }
+.tabButton:active {
+  transform: scale(0.97);
+}
 .tabButtonActive {
-  background-color: var(--auth-pill);
-  box-shadow: var(--e-1);
   color: var(--auth-accent);
 }
 
@@ -227,8 +251,10 @@
   background-color: var(--auth-pill) !important;
   color: var(--auth-accent) !important;
 }
-.submitButton:hover {
-  background-color: var(--auth-pill-hover) !important;
+@media (hover: hover) and (pointer: fine) {
+  .submitButton:hover {
+    background-color: var(--auth-pill-hover) !important;
+  }
 }
 
 .dividerContainer {

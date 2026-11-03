@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { ChevronRight, TrendingDown, TrendingUp } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cx } from "@/lib/cx";
@@ -84,7 +85,8 @@ export type StatCardProps = {
   sub?: ReactNode;
   /** Small circular initials shown beside `sub`. */
   subInitials?: string;
-  chevron?: boolean;
+  /** Makes the whole card a link, marked by a chevron. A card without one is not pressable and shows none. */
+  href?: string;
   wide?: boolean;
 };
 
@@ -96,18 +98,18 @@ export function StatCard({
   deltaSuffix,
   sub,
   subInitials,
-  chevron,
+  href,
   wide,
 }: StatCardProps) {
-  return (
-    <div
-      className={cx(
-        s.stat,
-        variant === "dark" && s.statDark,
-        variant === "accent" && s.statAccent,
-        wide && s.statWide,
-      )}
-    >
+  const className = cx(
+    s.stat,
+    variant === "dark" && s.statDark,
+    variant === "accent" && s.statAccent,
+    wide && s.statWide,
+    href && s.statLink,
+  );
+  const body = (
+    <>
       <span className={s.statLabel}>{label}</span>
       <span className={s.statValue}>{value}</span>
       <div className={s.statFoot}>
@@ -128,13 +130,20 @@ export function StatCard({
             {sub}
           </span>
         )}
-        {chevron && (
+        {href && (
           <span className={s.statChevron} aria-hidden="true">
             <ChevronRight width={14} height={14} strokeWidth={2.5} />
           </span>
         )}
       </div>
-    </div>
+    </>
+  );
+  return href ? (
+    <Link prefetch={false} href={href} className={className}>
+      {body}
+    </Link>
+  ) : (
+    <div className={className}>{body}</div>
   );
 }
 
@@ -194,7 +203,15 @@ export type RankedItem = {
   pct?: number;
 };
 
-export function RankedList({ items }: { items: RankedItem[] }) {
+export function RankedList({
+  items,
+  empty = "Nothing to rank yet.",
+}: {
+  items: RankedItem[];
+  /** Shown in place of the list when there are no items. */
+  empty?: ReactNode;
+}) {
+  if (items.length === 0) return <p className={s.vizEmpty}>{empty}</p>;
   return (
     <div className={s.ranked}>
       {items.map((item) => (

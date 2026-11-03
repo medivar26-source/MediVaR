@@ -172,6 +172,7 @@ function facetOf(
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 import { cookies } from "next/headers";
+import { requestSignal } from "@/lib/http";
 
 async function getOptionalToken(): Promise<string | null> {
   try {
@@ -237,6 +238,7 @@ export async function listCases(
     getLearnerSessions(userId),
     token
       ? fetch(`${API_BASE}/cases`, {
+          signal: requestSignal(),
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         }).then(
@@ -403,6 +405,7 @@ function toSnapshot(record: Record<string, unknown>): PatientSnapshot {
 export async function fetchCaseListRows(token: string): Promise<ApiCaseListRow[] | null> {
   try {
     const res = await fetch(`${API_BASE}/cases`, {
+      signal: requestSignal(),
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
@@ -435,6 +438,7 @@ export async function getCase(
       // so they are fetched together instead of one after the other.
       const [res, sessions, listRows] = await Promise.all([
         fetch(`${API_BASE}/cases/${caseId}`, {
+          signal: requestSignal(),
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         }),
@@ -564,6 +568,7 @@ export async function getCaseTitle(caseId: string): Promise<string | null> {
   if (token) {
     try {
       const res = await fetch(`${API_BASE}/cases/${caseId}`, {
+        signal: requestSignal(),
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
       });

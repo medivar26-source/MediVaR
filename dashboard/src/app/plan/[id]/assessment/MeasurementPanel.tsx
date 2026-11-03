@@ -109,7 +109,7 @@ export function MeasurementPanel({
       tone: "none",
       step: 1,
       headline: `Point ${placed + (landmarks[placing] ? 0 : 1)} of ${total}: ${info.name}`,
-      detail: `${info.where} Click it on the scan.`,
+      detail: `${info.where} Right-click it on the scan.`,
     };
   } else if (missing.length > 0) {
     advice = {

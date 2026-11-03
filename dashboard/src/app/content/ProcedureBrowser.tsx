@@ -63,7 +63,6 @@ export async function ProcedureList({ userId, staff }: { userId: string; staff: 
   return (
     <>
       {casesUnavailable && <p className={c.usageSub}>The cases could not be loaded just now.</p>}
-      <p className={s.lede}>{staff ? "Choose a procedure to see its cases." : "Choose a procedure to see its cases and your pre-op plans for them."}</p>
       <ul className={s.grid}>
         {entries.map((entry) => (
           <li key={entry.id}>

@@ -221,6 +221,14 @@ export type SessionSummary = {
   totalScore?: number;
   residentCount?: number;
   completedCount?: number;
+  /** The verdict the stored report carries (database runs). Sample runs derive it from PASS_MARK. */
+  passed?: boolean;
+  /** Catalogue procedure id, when a stored run names one the catalogue knows. */
+  procedureId?: string;
+  /** The instructor-scheduled session a stored run belongs to. */
+  scheduledSessionId?: string;
+  /** Where the row came from. */
+  source?: "sample" | "database";
 };
 
 /** A seeded session: always tied to a plan, learner and case, and always has an error count. */

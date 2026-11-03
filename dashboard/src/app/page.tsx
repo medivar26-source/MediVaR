@@ -37,12 +37,13 @@ export default async function DashboardPage({
   if (persona === "admin") redirect("/admin/instructors");
 
   if (persona === "instructor") {
-    const cohorts = await getCohorts();
+    // Independent reads, started together.
+    const [cohorts, instructorData] = await Promise.all([getCohorts(), getInstructorDashboard(user.id, weeks)]);
     return (
       <AppShell user={user} searchHint='Try searching "below pass mark"'>
         <InstructorDashboard
           user={user}
-          data={await getInstructorDashboard(user.id, weeks)}
+          data={instructorData}
           weeks={weeks}
           cohorts={cohorts}
         />

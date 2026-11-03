@@ -2,6 +2,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Profile } from "./types";
+import { requestSignal } from "@/lib/http";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -45,6 +46,7 @@ export const getOptionalUser = cache(async function getOptionalUser(): Promise<P
   let response: Response;
   try {
     response = await fetch(`${API_BASE}/auth/me`, {
+      signal: requestSignal(),
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",

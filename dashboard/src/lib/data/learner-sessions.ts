@@ -14,7 +14,7 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { personaFor } from "@/lib/roles";
-import { sessionsFor } from "@/lib/seed";
+import { resultsFor, sessionsOf } from "./results";
 import { getCurrentUser } from "@/lib/session";
 import type { SessionSummary } from "@/lib/types";
 import { toSessionSummary } from "./cohorts";
@@ -46,8 +46,15 @@ export const getLearnerSessions = cache(async (userId: string): Promise<SessionS
     }
   }
 
+  // The runs: stored results for a real account, the sample history for a sample learner.
+  const runs = sessionsOf(await resultsFor(userId), userId);
+  // A scheduled session the learner has already performed is listed once, as the run (which has the score
+  // and the report), not twice.
+  const performed = new Set(runs.map((r) => r.scheduledSessionId).filter(Boolean));
+  const scheduled = fromApi.filter((row) => !performed.has(row.id));
+
   // Newest first, so "latest" and "recent" mean the same thing on every screen.
   const when = (row: SessionSummary) =>
     Date.parse(row.startedAt ?? row.endedAt ?? row.scheduledAt ?? "") || 0;
-  return [...fromApi, ...sessionsFor(userId)].sort((a, b) => when(b) - when(a));
+  return [...scheduled, ...runs].sort((a, b) => when(b) - when(a));
 });

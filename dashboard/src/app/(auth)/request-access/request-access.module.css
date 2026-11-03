@@ -21,9 +21,11 @@
   transition: background-color var(--m-fast) var(--ease-out), color var(--m-fast) var(--ease-out);
   margin-left: -0.5rem;
 }
-.backButton:hover {
-  background-color: var(--color-brand-green-soft);
-  color: var(--color-brand-green);
+@media (hover: hover) and (pointer: fine) {
+  .backButton:hover {
+    background-color: var(--color-brand-green-soft);
+    color: var(--color-brand-green);
+  }
 }
 .backIcon {
   width: 1.25rem;
@@ -105,8 +107,10 @@
   background-color: var(--color-brand-green);
   color: white;
 }
-.submitButton:hover {
-  background-color: var(--brand-hover);
+@media (hover: hover) and (pointer: fine) {
+  .submitButton:hover {
+    background-color: var(--brand-hover);
+  }
 }
 
 .signInPrompt {

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BarChart3, GraduationCap } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/shell";
-import { Button, EmptyState, DemoDataNote } from "@/components/ui";
+import { Button, EmptyState } from "@/components/ui";
 import { LearnerAnalytics } from "@/components/dashboard/LearnerAnalytics";
 import { getLearnerDashboard } from "@/lib/data/dashboard";
 import {
@@ -20,6 +20,7 @@ import { ActivityView } from "../activity/ActivityView";
 import { ReportsView } from "../reports/ReportsView";
 import { History, Overview, SkillGroupsView } from "./PerformanceViews";
 import s from "./performance.module.css";
+import { ResultsNote } from "@/components/results/ResultsNote";
 
 export const metadata: Metadata = { title: "Insights" };
 
@@ -59,7 +60,7 @@ export default async function PerformancePage({
   return (
     <AppShell user={user} searchHint='Try searching "performance"'>
       <PageHeader title="Insights" lede="Reports from the sessions you supervise, and your own practice." />
-      <DemoDataNote
+      <ResultsNote userId={user.id}
         sample="scores, activity and reports for past sessions"
         live="the sessions scheduled in your cohorts"
       />

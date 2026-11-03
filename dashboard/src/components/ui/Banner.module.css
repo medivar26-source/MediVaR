@@ -87,9 +87,11 @@
     color var(--m-fast) var(--ease-out);
 }
 
-.dismiss:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+@media (hover: hover) and (pointer: fine) {
+  .dismiss:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+  }
 }
 
 /* ---------- tones: the accent moves to the icon and the rule, not the fill ---------- */
@@ -154,9 +156,11 @@
   color: var(--ink);
 }
 
-.pass .action :global(button:hover),
-.warn .action :global(button:hover),
-.fail .action :global(button:hover) {
-  background: rgba(255, 255, 255, 0.86);
-  border-color: rgba(255, 255, 255, 0.86);
+@media (hover: hover) and (pointer: fine) {
+  .pass .action :global(button:hover),
+  .warn .action :global(button:hover),
+  .fail .action :global(button:hover) {
+    background: rgba(255, 255, 255, 0.86);
+    border-color: rgba(255, 255, 255, 0.86);
+  }
 }

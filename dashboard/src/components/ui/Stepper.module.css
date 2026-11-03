@@ -18,8 +18,10 @@
   transition: background-color var(--m-fast) var(--ease-out);
 }
 
-.stepLink:hover {
-  background: var(--surface-sunken);
+@media (hover: hover) and (pointer: fine) {
+  .stepLink:hover {
+    background: var(--surface-sunken);
+  }
 }
 
 .dot {

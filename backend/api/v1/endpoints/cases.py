@@ -9,7 +9,7 @@ import os
 
 from typing import List, Optional, Union
 from uuid import UUID, uuid4
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File, Form
 from core.security import get_current_active_user as get_current_user
 from core.calculations import calculate_calibration
 from db.session import get_service_client, get_db_conn
@@ -28,15 +28,19 @@ router = APIRouter()
 
 @router.get("", response_model=List[CaseListItem])
 @router.get("/", response_model=List[CaseListItem], include_in_schema=False)
-def list_cases(current_user: UserProfile = Depends(get_current_user)):
+def list_cases(
+    limit: int = Query(500, ge=1, le=1000, description="Most cases to return."),
+    offset: int = Query(0, ge=0, description="Cases to skip, for the next page."),
+    current_user: UserProfile = Depends(get_current_user),
+):
     """
-    List cases accessible to authenticated user:
+    List cases accessible to authenticated user, one page at a time:
     - Instructors/Admins: All cases in their institution with versioning pointers.
     - Learners: Published/active cases assigned to their enrolled programs.
     """
     if current_user.role in ("instructor", "admin"):
-        return cases_service.get_institution_cases(current_user.institution_id)
-    return cases_service.get_learner_cases(current_user.id)
+        return cases_service.get_institution_cases(current_user.institution_id, limit=limit, offset=offset)
+    return cases_service.get_learner_cases(current_user.id, limit=limit, offset=offset)
 
 
 @router.post("", response_model=CaseDetailResponse, status_code=status.HTTP_201_CREATED)

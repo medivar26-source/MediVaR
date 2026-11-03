@@ -113,3 +113,25 @@ VR remains a separate execution module. The pre-operative planning system produc
 The VR workflow itself is unchanged by this update and remains governed by the prior procedure-step and event architecture.
 
 After the VR attempt is completed, the application returns to MediVeR for the post-operative review. Both resident and instructor can view the result, and instructor feedback can be attached to specific errors or procedure steps.
+
+## As built (2026-11-03)
+
+The headset and the dashboard never connect to each other; both use the backend over HTTPS (Wi-Fi). Implemented flow:
+
+```text
+seal plan → POST /plans/locked → "Send to headset" → 6-digit code (10 min, one use)
+→ headset POST /devices/pair → bearer token + CasePlan → run → PUT …/runs/{runId}/report
+→ backend stores the report verbatim → scores it → attempts + assessment_results → dashboard reports
+```
+
+- **The plan the headset gets** (the CasePlan) is built on the server from the locked plan: the V1 payload (side, AMA,
+  sizes) plus execution targets with the scorer's own tolerances, scaled by difficulty. No patient identifier is included.
+- **The client authority boundary is kept:** the headset sends facts (committed values, seconds and warnings per scene);
+  the backend scores. The headset's own total is stored for comparison and never used.
+- **Missing inputs are not invented:** a report the scorer cannot score is stored as `awaiting_inputs`, with the exact list.
+  The headset team has been asked for `sceneId` and `warnings` per step, plus six more plan keys
+  (`VR_TEAM_BRIEF.md`).
+- **Attempt states used:** a completed report goes to `submitted`, then `assessed`; abandoned goes to `paused`;
+  in progress goes to `in_progress`.
+- A stand-in headset for testing: `backend/scripts/fake_headset.py`.
+- Design and decisions: `23_VR_CONNECTIVITY_DESIGN.md`.

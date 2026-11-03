@@ -1,0 +1,135 @@
+/* The "Lock preoperative plan?" confirmation. Its layout is still inline in ReviewWorkspace; this file
+   only gives it the same entrance as the app's other dialogs, so it does not appear with a jump. */
+
+.lockScrim {
+  transition: opacity var(--m-base) var(--ease-out);
+}
+
+.lockPanel {
+  transition:
+    opacity var(--m-base) var(--ease-out),
+    transform var(--m-base) var(--ease-out);
+}
+
+@starting-style {
+  .lockScrim {
+    opacity: 0;
+  }
+  .lockPanel {
+    opacity: 0;
+    transform: translateY(var(--s-2)) scale(0.98);
+  }
+}
+
+/* ---------- Send to headset ----------
+   Sits inside the sealed-plan banner, which is dark, so its text uses the banner's own light and muted
+   tones. The code is the one thing that has to be read from across a room and typed on a headset keypad:
+   large, tabular, grouped in threes. */
+
+.headset {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-2);
+  margin-top: var(--s-1);
+  padding: var(--s-3) var(--s-4);
+  border: var(--bw) solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+}
+
+.headsetHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-label);
+}
+
+.codeBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s-2) 0;
+}
+
+.codeLabel,
+.codeMeta {
+  font-size: var(--t-caption);
+  color: #94a3b8;
+}
+
+.code {
+  font-size: 2.25rem;
+  line-height: 1.1;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  /* Settles in when a new code arrives, like the app's other new content. */
+  animation: codeIn var(--m-base) var(--ease-out) backwards;
+}
+
+@keyframes codeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.countdown {
+  font-variant-numeric: tabular-nums;
+  color: #e2e8f0;
+}
+
+.headsetStatus,
+.headsetMuted {
+  margin: 0;
+  font-size: var(--t-caption);
+  line-height: var(--t-caption-lh);
+  color: #cbd5e1;
+}
+
+.headsetMuted {
+  color: #94a3b8;
+}
+
+.headsetError {
+  margin: 0;
+  font-size: var(--t-caption);
+  color: #fca5a5;
+}
+
+.headsetLink {
+  font-size: var(--t-label);
+  font-weight: var(--fw-semibold);
+  color: #86efac;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.headsetForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--s-3);
+}
+
+.headsetField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--t-caption);
+  color: #94a3b8;
+}
+
+/* 16px so a phone does not zoom into the field; light on the dark banner. */
+.headsetField select {
+  min-height: var(--h-sm);
+  padding: 0 var(--s-3);
+  border: var(--bw) solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--r-sm);
+  background: #1e293b;
+  color: #f1f5f9;
+  font-size: 16px;
+}

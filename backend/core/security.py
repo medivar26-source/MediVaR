@@ -15,7 +15,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from core.config import settings
-from db.session import get_db_conn, get_anon_client
+from db.session import get_db_conn, get_token_validation_client
 from schemas.auth import UserProfile
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ def _get_supabase_user_id(token: str) -> str:
     This handles any JWT signing algorithm (HS256/ES256) and ensures the token
     is not revoked.
     """
-    client = get_anon_client()
+    client = get_token_validation_client()
     try:
         user_response = client.auth.get_user(token)
         if not user_response.user:

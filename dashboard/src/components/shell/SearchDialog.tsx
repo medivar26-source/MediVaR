@@ -61,15 +61,18 @@ function Palette({
   // Records found by name for the query that produced them.
   const [found, setFound] = useState<{ q: string; hits: SearchHit[] }>({ q: "", hits: [] });
 
-  // Opening the modal and moving focus are not state, so this stays a legitimate effect. Closing it on
-  // cleanup hands focus back to whatever opened the palette.
+  // Opening the modal and moving focus are not state, so this stays a legitimate effect. The palette
+  // unmounts when it closes, and by the time this cleanup runs the dialog has left the page, so the
+  // browser no longer restores focus by itself: focus goes back to whatever opened it, explicitly.
   useEffect(() => {
     const node = dialogRef.current;
     if (!node) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (!node.open) node.showModal();
     inputRef.current?.focus();
     return () => {
       if (node.open) node.close();
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
     };
   }, []);
 

@@ -19,6 +19,7 @@ import { getProgramDetail } from "@/lib/data/programs";
 import { getCohort, getCohortCases, getCohortSessions } from "@/lib/data/cohorts";
 import { listCasesForAuthoring } from "@/lib/data/content";
 import { dateTimeParts, shortDate, titleCase } from "@/lib/format";
+import { sessionCaption } from "@/lib/session-label";
 import { cx } from "@/lib/cx";
 import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
@@ -244,14 +245,13 @@ export default async function CohortWorkspacePage({
             <Table label={`Sessions in ${cohort.name}`}>
               <THead>
                 <Tr>
-                  <Th>Session Name</Th>
-                  <Th>Case</Th>
-                  <Th>Mode</Th>
+                  <Th>Session</Th>
                   <Th>Scheduled</Th>
-                  <Th numeric>Duration</Th>
                   <Th>Status</Th>
                   <Th>Roster</Th>
-                  <Th>Actions</Th>
+                  <Th compact>
+                    <span className="srOnly">Actions</span>
+                  </Th>
                 </Tr>
               </THead>
               <TBody>
@@ -265,49 +265,47 @@ export default async function CohortWorkspacePage({
                           ? "fail"
                           : "neutral";
 
+                  const upcoming =
+                    session.status === "scheduled" ||
+                    session.status === "in_progress" ||
+                    session.status === "live";
+                  // What the name does not already say (mode, case); nothing when it says both.
+                  const caption = sessionCaption({
+                    name: session.name,
+                    caseName: session.caseName,
+                    mode: session.mode,
+                  });
+                  // The instructor's note is for getting ready; once a session is over it is only noise.
+                  const note = upcoming ? session.description : undefined;
+                  const when = dateTimeParts(session.scheduledAt);
+
                   return (
                     <Tr key={session.id}>
-                      <Td head>
-                        <div>
-                          <strong>{session.name}</strong>
-                          {session.description && (
-                            <div style={{ fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>
-                              {session.description}
-                            </div>
-                          )}
+                      <Td head className={p.sessionCell}>
+                        {session.name}
+                        {caption && <div className={p.cellSub}>{caption}</div>}
+                        {note && <div className={p.cellSub}>{note}</div>}
+                      </Td>
+                      <Td className={p.dateCell}>
+                        {when.date}
+                        <div className={p.cellSub}>
+                          {when.time ? `${when.time} · ` : ""}
+                          {session.duration} min
                         </div>
                       </Td>
-                      <Td>{session.caseName ?? "—"}</Td>
-                      <Td>
-                        <Chip tone="muted">{titleCase(session.mode)}</Chip>
-                      </Td>
-                      <Td>
-                        {/* The time under the date, so the eight columns fit a laptop screen. */}
-                        {dateTimeParts(session.scheduledAt).date}
-                        <div style={{ fontSize: "var(--t-caption)", color: "var(--text-muted)" }}>
-                          {dateTimeParts(session.scheduledAt).time}
-                        </div>
-                      </Td>
-                      <Td numeric>{session.duration} mins</Td>
                       <Td>
                         <Badge status={statusBadge}>
                           {titleCase(session.status.replace("_", " "))}
                         </Badge>
                       </Td>
                       <Td>
-                        {session.completedCount} / {session.residentCount}
+                        <span title={`${session.completedCount} of ${session.residentCount} residents finished`}>
+                          {session.completedCount} / {session.residentCount}
+                        </span>
                       </Td>
-                      <Td>
-                        {(session.status === "scheduled" ||
-                          session.status === "in_progress" ||
-                          session.status === "live") && (
-                          <div
-                            style={{
-                              display: "inline-flex",
-                              gap: "0.5rem",
-                              alignItems: "center",
-                            }}
-                          >
+                      <Td compact>
+                        {upcoming && (
+                          <div className={p.rowActions}>
                             <EditSessionModal session={session} />
                             <CancelSessionButton
                               sessionId={session.id}

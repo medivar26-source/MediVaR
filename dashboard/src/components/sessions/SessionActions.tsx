@@ -18,7 +18,7 @@ export function SessionActions({
   const scheduled = session.status === "scheduled";
 
   return (
-    <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
+    <div style={{ display: "flex", gap: "0.25rem", flexWrap: "nowrap" }}>
       {!scheduled && (
         <Button variant="ghost" size="sm" href={links.session}>
           Session

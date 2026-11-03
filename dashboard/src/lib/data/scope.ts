@@ -7,13 +7,19 @@
  * three personas collapse back into one query and this file goes away.
  */
 
-import { CURRENT_USER, sessionsFor, sessionsForCohort } from "@/lib/seed";
+import { CURRENT_USER } from "@/lib/seed";
 import { personaFor } from "@/lib/roles";
 import type { Profile, SessionSummary } from "@/lib/types";
+import { resultsFor, sessionsOf, sessionsOfCohort } from "./results";
 
-export function visibleSessions(user?: Profile): SessionSummary[] {
+/**
+ * A learner: their own runs. Staff: every run their results hold. The backend has already scoped a real
+ * account's results (a cohort owner's learners, an administrator's institution); the sample instructor
+ * reads the sample learners'.
+ */
+export async function visibleSessions(user?: Profile): Promise<SessionSummary[]> {
   const activeUser = user ?? CURRENT_USER;
-  const persona = personaFor(activeUser.role);
-  if (persona === "learner") return sessionsFor(activeUser.id);
-  return sessionsForCohort();
+  const data = await resultsFor(activeUser.id);
+  if (personaFor(activeUser.role) === "learner") return sessionsOf(data, activeUser.id);
+  return sessionsOfCohort(data);
 }

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { requestSignal } from "@/lib/http";
 
 export type ProgramSummary = {
   id: string;
@@ -39,6 +40,7 @@ export async function getPrograms(): Promise<ProgramSummary[]> {
   const token = await getToken();
 
   const res = await fetch(`${API_BASE}/programs`, {
+    signal: requestSignal(),
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -61,6 +63,7 @@ export async function getEnrolledPrograms(): Promise<ProgramSummary[]> {
   const token = await getToken();
 
   const res = await fetch(`${API_BASE}/programs/enrolled`, {
+    signal: requestSignal(),
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -83,6 +86,7 @@ export async function getProgramDetail(id: string): Promise<ProgramDetail> {
   const token = await getToken();
 
   const res = await fetch(`${API_BASE}/programs/${id}`, {
+    signal: requestSignal(),
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -105,6 +109,7 @@ export async function getProgramCohorts(id: string): Promise<any[]> {
   const token = await getToken();
 
   const res = await fetch(`${API_BASE}/programs/${id}/cohorts`, {
+    signal: requestSignal(),
     headers: {
       Authorization: `Bearer ${token}`,
     },

@@ -10,6 +10,8 @@
  * for a person to read (the 4xx/503 `detail` values it sets deliberately).
  */
 
+import { requestSignal } from "@/lib/http";
+
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -72,6 +74,7 @@ async function call<T>(
   let res: Response;
   try {
     res = await fetch(`${API_BASE}${path}`, {
+      signal: requestSignal(),
       method: init.method ?? "GET",
       headers: {
         Authorization: `Bearer ${token}`,

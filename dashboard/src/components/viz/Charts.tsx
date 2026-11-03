@@ -24,13 +24,17 @@ export function BarChart({
   /** Show value pills on the top N bars. */
   highlight = 2,
   formatTag = (v: number) => String(v),
+  empty = "No data to chart yet.",
 }: {
   data: BarDatum[];
   max?: number;
   height?: number;
   highlight?: number;
   formatTag?: (value: number) => string;
+  /** Shown in place of the chart when there is no data. */
+  empty?: string;
 }) {
+  if (data.length === 0) return <p className={s.vizEmpty}>{empty}</p>;
   const ceiling = max ?? Math.max(...data.map((d) => d.value), 1);
 
   // Rank by value, tallest first. Ties keep source order.

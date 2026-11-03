@@ -50,6 +50,7 @@ export async function signIn(
   let response: Response;
   try {
     response = await fetch(`${API_BASE}/auth/login`, {
+      signal: requestSignal(),
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -113,6 +114,7 @@ export async function signOut() {
   if (token) {
     try {
       await fetch(`${API_BASE}/auth/logout`, {
+        signal: requestSignal(),
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -137,6 +139,7 @@ export async function requestPasswordReset(email: string): Promise<ResetState> {
   }
   try {
     const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+      signal: requestSignal(),
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: trimmed }),
@@ -159,6 +162,7 @@ export async function completePasswordReset(
   if (!accessToken) return { error: "This reset link is invalid or has expired. Request a new one." };
   try {
     const res = await fetch(`${API_BASE}/auth/reset-password`, {
+      signal: requestSignal(),
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ access_token: accessToken, new_password: newPassword }),
@@ -201,6 +205,7 @@ export async function saveAccount(
 
   try {
     const res = await fetch(`${API_BASE}/auth/me`, {
+      signal: requestSignal(),
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
@@ -222,6 +227,7 @@ export async function saveAccount(
 }
 
 import { validatePasswordChange } from "@/lib/auth-validation";
+import { requestSignal } from "@/lib/http";
 
 export type ChangePasswordState = {
   error?: string;
@@ -250,6 +256,7 @@ export async function changePassword(
   let response: Response;
   try {
     response = await fetch(`${API_BASE}/auth/change-password`, {
+      signal: requestSignal(),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -316,6 +323,14 @@ export async function startPlan(formData: FormData): Promise<void> {
         session_config: {
           mode: (formData.get("mode") as any) || "training",
           difficulty: (formData.get("difficulty") as any) || "intermediate",
+          // Chosen on the case setup and needed by the headset. Kept only when it is a real choice:
+          // a missing one is never defaulted, and sending to a headset then says what is missing.
+          ...(formData.get("design") === "CR" || formData.get("design") === "PS"
+            ? { implant_design: formData.get("design") as "CR" | "PS" }
+            : {}),
+          ...(formData.get("fixation") === "cemented" || formData.get("fixation") === "cementless"
+            ? { fixation: formData.get("fixation") as "cemented" | "cementless" }
+            : {}),
         },
       },
       stepTimings: {},
@@ -451,8 +466,97 @@ export async function sealTkrPlan(
     payload: JSON.parse(JSON.stringify(plan.payload)),
   };
 
+  // Keep the sealed version on the backend so a headset can be sent it. Not fatal: the seal stands either
+  // way, and "Send to headset" tries again (the backend treats the same sealed version as one plan).
+  await storeSealedPlan(plan, detail.case.isPersonalCase === true).catch(() => undefined);
+
   revalidatePath("/", "layout");
   return { isReadyForVr: true, vrPayload };
+}
+
+/* ------------------------------- headset link ------------------------------ */
+
+type StoreResult = { ok: true; dbPlanId: string } | { ok: false; notSetUp?: boolean; error: string };
+
+/** POST /plans/locked for a sealed in-memory plan; remembers the backend's id on the record. */
+async function storeSealedPlan(
+  plan: PlanRecord,
+  isPersonalCase: boolean,
+  chosen?: { implant_design?: string; fixation?: string },
+): Promise<StoreResult> {
+  if (plan.dbPlanId) return { ok: true, dbPlanId: plan.dbPlanId };
+  const { CASE_BY_ID } = await import("@/lib/seed");
+  const { lockedPlanBody } = await import("@/lib/headset-link");
+  const built = lockedPlanBody({
+    caseId: plan.caseId,
+    isPersonalCase,
+    isBuiltInCase: CASE_BY_ID.has(plan.caseId),
+    lockedVersion: plan.lockedVersion,
+    stepTimings: plan.stepTimings,
+    chosen,
+  });
+  if ("error" in built) return { ok: false, error: built.error };
+  const { apiClient, ApiError } = await import("@/lib/api-client");
+  try {
+    const res = (await apiClient.post("/plans/locked", built.body)) as { id: string };
+    plan.dbPlanId = res.id;
+    return { ok: true, dbPlanId: res.id };
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404 && /not set up/i.test(err.message)) {
+      return { ok: false, notSetUp: true, error: "The headset link is not set up on this server yet." };
+    }
+    return { ok: false, error: err instanceof Error ? err.message : "The plan could not be stored for the headset." };
+  }
+}
+
+export type SendToHeadsetState = {
+  code?: string;
+  expiresAt?: string;
+  assignmentId?: string;
+  error?: string;
+  notSetUp?: boolean;
+};
+
+/** "Send to headset": a one-time 6-digit code for this sealed plan. The code is shown once and never stored here. */
+export async function sendToHeadset(_prev: SendToHeadsetState, formData: FormData): Promise<SendToHeadsetState> {
+  const planId = String(formData.get("planId") ?? "");
+  if (!planId) return { error: "This form is missing its plan." };
+  const user = await getCurrentUser();
+  const plan = PLAN_BY_ID.get(planId);
+  if (!plan || plan.userId !== user.id) return { error: "Plan not found." };
+  if (!plan.lockedVersion) return { error: "Lock the plan before sending it to a headset." };
+
+  const { getPlan } = await import("@/lib/data/plan");
+  const detail = await getPlan(planId);
+  if (!detail) return { error: "Plan not found." };
+
+  const stored = await storeSealedPlan(plan, detail.case.isPersonalCase === true, {
+    implant_design: String(formData.get("implant_design") ?? "") || undefined,
+    fixation: String(formData.get("fixation") ?? "") || undefined,
+  });
+  if (!stored.ok) return { error: stored.error, notSetUp: stored.notSetUp };
+
+  const mode = String(formData.get("mode") ?? "");
+  const { apiClient, ApiError } = await import("@/lib/api-client");
+  try {
+    const res = (await apiClient.post("/assignments", {
+      plan_id: stored.dbPlanId,
+      ...(mode === "Guided" || mode === "Practice" || mode === "Exam" ? { mode } : {}),
+    })) as { id: string; code: string; code_expires_at: string };
+    revalidatePath(`/plan/${planId}/review`);
+    return { code: res.code, expiresAt: res.code_expires_at, assignmentId: res.id };
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404 && /not set up/i.test(err.message)) {
+      return { notSetUp: true, error: "The headset link is not set up on this server yet." };
+    }
+    return { error: err instanceof Error ? err.message : "Could not get a code. Try again." };
+  }
+}
+
+/** Where this plan's headset assignments have got to (the review page asks every few seconds while one is live). */
+export async function headsetStatus(planId: string): Promise<import("@/lib/headset-link").HeadsetLink> {
+  const { getHeadsetLink } = await import("@/lib/data/headset");
+  return getHeadsetLink(planId);
 }
 
 export type PinState = { pin?: string; expiresAt?: string; error?: string };
@@ -502,6 +606,7 @@ export async function createProgram(
 
   try {
     const res = await fetch(`${API_BASE}/programs`, {
+      signal: requestSignal(),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -541,6 +646,7 @@ export async function createCohort(
 
   try {
     const res = await fetch(`${API_BASE}/cohorts/`, {
+      signal: requestSignal(),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -585,6 +691,7 @@ export async function createLearner(
 
   try {
     const res = await fetch(`${API_BASE}/cohorts/${cohortId}/learners/new`, {
+      signal: requestSignal(),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -623,6 +730,7 @@ export async function addExistingLearner(
 
   try {
     const res = await fetch(`${API_BASE}/cohorts/${cohortId}/learners/existing`, {
+      signal: requestSignal(),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -655,6 +763,7 @@ export async function assignCases(
 
   try {
     const res = await fetch(`${API_BASE}/cohorts/${cohortId}/cases`, {
+      signal: requestSignal(),
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -700,6 +809,7 @@ export async function createSession(
 
   try {
     const res = await fetch(`${API_BASE}/cohorts/${cohortId}/sessions`, {
+      signal: requestSignal(),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -741,6 +851,7 @@ export async function cancelSession(
 
   try {
     const res = await fetch(`${API_BASE}/cohorts/sessions/${sessionId}/cancel`, {
+      signal: requestSignal(),
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -780,6 +891,7 @@ export async function updateSession(
 
   try {
     const res = await fetch(`${API_BASE}/cohorts/sessions/${sessionId}`, {
+      signal: requestSignal(),
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

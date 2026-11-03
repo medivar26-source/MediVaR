@@ -143,9 +143,11 @@
   text-decoration: none;
 }
 
-a.card:hover {
-  border-color: var(--brand-border);
-  background: var(--brand-surface);
+@media (hover: hover) and (pointer: fine) {
+  a.card:hover {
+    border-color: var(--brand-border);
+    background: var(--brand-surface);
+  }
 }
 
 .cardTitle {
@@ -231,16 +233,25 @@ a.card:hover {
   text-decoration: none;
 }
 
-.tab:hover {
-  background: var(--brand-surface);
-  border-color: var(--brand-border);
+@media (hover: hover) and (pointer: fine) {
+  .tab:hover {
+    background: var(--brand-surface);
+    border-color: var(--brand-border);
+  }
 }
 
-.tabOn,
-.tabOn:hover {
+.tabOn {
   background: var(--brand);
   border-color: var(--brand);
   color: var(--on-brand);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tabOn:hover {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: var(--on-brand);
+  }
 }
 
 /* ---- key/value facts: About, device detail ---- */
@@ -483,3 +494,63 @@ a.card:hover {
   color: var(--ink);
 }
 
+/* Pressed: feedback the moment a finger or button goes down, not on release. */
+a.card,
+.tab {
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    border-color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
+}
+
+a.card:active {
+  transform: scale(0.99);
+}
+
+.tab:active {
+  transform: scale(0.97);
+}
+
+/* Switching tab: the tab bar stays still and the new tab's content settles in under it.
+   Each tab renders different elements, so only the content that changed is inserted and
+   animates; a filter updating the same tab does not replay it. */
+.tabs ~ :not(dialog) {
+  animation: tabSwap var(--m-base) var(--ease-out) backwards;
+}
+
+@keyframes tabSwap {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* ---- two-line table cells ----
+   A value with one quiet line under it (a session's name and what the name does not say; a date and
+   its time). The first line stays the table's own size and weight; the second is the caption size,
+   muted, so a row reads as one fact, not two. */
+
+.cellSub {
+  margin-top: 2px;
+  font-size: var(--t-caption);
+  font-weight: var(--fw-regular);
+  line-height: var(--t-caption-lh);
+  color: var(--text-muted);
+}
+
+/* The edit / cancel pair in a row of the cohort's sessions. */
+.rowActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* The name column of a sessions table never shrinks to a sliver: on a phone the table scrolls sideways
+   instead. A date never splits across two lines. */
+.sessionCell {
+  min-width: 15rem;
+}
+
+.dateCell {
+  white-space: nowrap;
+}

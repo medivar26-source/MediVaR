@@ -75,9 +75,11 @@
   text-decoration: none;
 }
 
-.entry:hover {
-  background: var(--brand-surface);
-  border-color: var(--brand-border);
+@media (hover: hover) and (pointer: fine) {
+  .entry:hover {
+    background: var(--brand-surface);
+    border-color: var(--brand-border);
+  }
 }
 
 .entryTime {

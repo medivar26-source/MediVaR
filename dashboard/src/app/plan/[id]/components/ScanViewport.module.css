@@ -1,0 +1,88 @@
+/* The zoom bar and the controls hint that float over the scan. They sit on the black X-ray, so they use the
+   dark tokens (--dark, --dark-2, --dark-3, --on-dark) rather than the light surface colours. */
+
+.hud {
+  position: absolute;
+  top: var(--s-3);
+  right: var(--s-3);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: var(--s-1);
+  border: var(--bw) solid var(--dark-3);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--dark) 88%, transparent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.hudBtn {
+  display: grid;
+  place-items: center;
+  min-width: var(--h-sm);
+  height: var(--h-sm);
+  padding: 0 var(--s-2);
+  border: var(--bw) solid transparent;
+  border-radius: var(--r-xs);
+  background: var(--dark-2);
+  color: var(--on-dark);
+  font-size: var(--t-label);
+  font-weight: var(--fw-semibold);
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
+}
+
+.hudBtn:active:not(:disabled) {
+  transform: scale(0.94);
+  background: var(--forest-3);
+}
+
+.hudBtn:disabled {
+  color: var(--on-dark-dim);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.hudBtn:focus-visible {
+  outline-color: var(--on-dark);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hudBtn:hover:not(:disabled) {
+    background: var(--dark-3);
+  }
+}
+
+.hudIcon {
+  width: 16px;
+  height: 16px;
+}
+
+/* The zoom level reads as a status, not a control. A fixed width stops the bar jumping between 95% and 100%. */
+.hudZoom {
+  min-width: 48px;
+  color: var(--on-dark);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-semibold);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.hudReset {
+  color: var(--on-dark-muted);
+  font-size: var(--t-caption);
+}
+
+.hint {
+  position: absolute;
+  bottom: var(--s-2);
+  left: var(--s-3);
+  z-index: 40;
+  padding: 2px var(--s-2);
+  border-radius: var(--r-xs);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--on-dark-muted);
+  font-size: var(--t-caption);
+  pointer-events: none;
+}

@@ -25,7 +25,7 @@
   transition: opacity var(--m-base) var(--ease-out);
 }
 
-/* Opens by settling into place, the same way the settings dialog does; closing is immediate. */
+/* Opens by settling into place, the same way the settings dialog does. */
 @starting-style {
   .dialog[open] {
     opacity: 0;
@@ -36,13 +36,32 @@
   }
 }
 
-/* `dialog` is display:none when closed; the frame lays out only when it is open. */
-.dialog[open] .frame {
-  display: flex;
+/* Closes the way it opened, faster: the person has already decided. The dialog has to stay in the top
+   layer while it fades, which needs `overlay`; a browser without it (Safari today) would drop the
+   dialog out of the top layer first and show it in the page for a moment, so there it closes at once. */
+@supports (overlay: auto) {
+  .dialog:not([open]) {
+    opacity: 0;
+    transform: translateY(var(--s-1)) scale(0.98);
+    transition:
+      opacity var(--m-fast) var(--ease-out),
+      transform var(--m-fast) var(--ease-out),
+      overlay var(--m-fast) allow-discrete,
+      display var(--m-fast) allow-discrete;
+  }
+  .dialog:not([open])::backdrop {
+    opacity: 0;
+    transition:
+      opacity var(--m-fast) var(--ease-out),
+      overlay var(--m-fast) allow-discrete,
+      display var(--m-fast) allow-discrete;
+  }
 }
 
+/* The dialog itself is display:none when closed, so the frame needs no rule of its own to hide; it
+   stays laid out while the dialog fades out, rather than emptying before the fade. */
 .frame {
-  display: none;
+  display: flex;
   flex-direction: column;
   max-height: 92dvh;
 }
@@ -73,12 +92,19 @@
   cursor: pointer;
   transition:
     background-color var(--m-fast) var(--ease-out),
-    color var(--m-fast) var(--ease-out);
+    color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
 }
 
-.close:hover {
-  background: var(--surface-sunken);
-  color: var(--ink);
+@media (hover: hover) and (pointer: fine) {
+  .close:hover {
+    background: var(--surface-sunken);
+    color: var(--ink);
+  }
+}
+
+.close:active {
+  transform: scale(0.95);
 }
 
 .close:focus-visible {

@@ -137,9 +137,11 @@
   transition: background var(--m-fast) var(--ease-out), border-color var(--m-fast) var(--ease-out);
 }
 
-.nudgeButton:hover:not(:disabled) {
-  background: var(--brand-surface);
-  border-color: var(--brand-border);
+@media (hover: hover) and (pointer: fine) {
+  .nudgeButton:hover:not(:disabled) {
+    background: var(--brand-surface);
+    border-color: var(--brand-border);
+  }
 }
 
 .nudgeButton:disabled {
@@ -226,7 +228,9 @@
     color var(--m-fast) var(--ease-out);
 }
 
-.sizeButton:hover:not(:disabled) { background: var(--brand-surface); border-color: var(--brand-border); }
+@media (hover: hover) and (pointer: fine) {
+  .sizeButton:hover:not(:disabled) { background: var(--brand-surface); border-color: var(--brand-border); }
+}
 
 .sizeSelected {
   border: var(--bw-emphasis) solid var(--brand);
@@ -250,7 +254,9 @@
   cursor: pointer;
 }
 
-.suggest:hover:not(:disabled) { color: var(--brand-hover); text-decoration: underline; }
+@media (hover: hover) and (pointer: fine) {
+  .suggest:hover:not(:disabled) { color: var(--brand-hover); text-decoration: underline; }
+}
 .suggest:disabled { color: var(--text-muted); cursor: default; }
 
 .confirmed {
@@ -337,7 +343,9 @@
   cursor: pointer;
 }
 
-.markerBtn:hover { background: var(--brand-surface); border-color: var(--brand-border); }
+@media (hover: hover) and (pointer: fine) {
+  .markerBtn:hover { background: var(--brand-surface); border-color: var(--brand-border); }
+}
 .markerBtn[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
 
 .markerMeasure {
@@ -383,13 +391,21 @@
   cursor: pointer;
 }
 
-.sizeRow:hover:not(:disabled) { background: var(--surface-sunken); }
+@media (hover: hover) and (pointer: fine) {
+  .sizeRow:hover:not(:disabled) { background: var(--surface-sunken); }
+}
 .sizeRow:disabled { cursor: default; }
 
-.sizeRowOn,
-.sizeRowOn:hover:not(:disabled) {
+.sizeRowOn {
   background: var(--brand-surface);
   border-color: var(--brand-border);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sizeRowOn:hover:not(:disabled) {
+    background: var(--brand-surface);
+    border-color: var(--brand-border);
+  }
 }
 
 .sizeRowName {
@@ -629,7 +645,9 @@
   font-weight: var(--fw-bold);
   cursor: pointer;
 }
-.mapBtn:hover { border-color: var(--brand); color: var(--brand); }
+@media (hover: hover) and (pointer: fine) {
+  .mapBtn:hover { border-color: var(--brand); color: var(--brand); }
+}
 
 .mapCanvas {
   position: relative;
@@ -776,7 +794,9 @@
   cursor: pointer;
 }
 .stepperBtn:disabled { cursor: not-allowed; }
-.stepperBtn:not(:disabled):hover .stepperDot { border-color: var(--brand); }
+@media (hover: hover) and (pointer: fine) {
+  .stepperBtn:not(:disabled):hover .stepperDot { border-color: var(--brand); }
+}
 
 .stepNav {
   display: flex;
@@ -820,4 +840,37 @@
   padding: var(--s-3) var(--s-5) var(--s-5);
   border-top: var(--bw) solid var(--border);
   background: var(--surface);
+}
+
+/* ---------- pressed ----------
+   Every control in the panel gives the moment a finger or the mouse goes down, not on release.
+   Small controls scale a touch further than the app's buttons (0.95, like the shell's icon buttons)
+   so the change is visible at 28px. Rows change shade rather than scale: a whole row shrinking reads
+   as the table moving. */
+.nudgeButton,
+.sizeButton,
+.markerBtn,
+.mapBtn {
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    border-color var(--m-fast) var(--ease-out),
+    color var(--m-fast) var(--ease-out),
+    transform var(--m-fast) var(--ease-out);
+}
+
+.nudgeButton:active:not(:disabled),
+.sizeButton:active:not(:disabled),
+.markerBtn:active,
+.mapBtn:active {
+  transform: scale(0.95);
+}
+
+.sizeRow {
+  transition:
+    background-color var(--m-fast) var(--ease-out),
+    border-color var(--m-fast) var(--ease-out);
+}
+
+.sizeRow:active:not(:disabled) {
+  background: var(--divider);
 }

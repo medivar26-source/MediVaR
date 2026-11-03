@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { AppShell, PageHeader } from "@/components/shell";
 import { Button, Card, CardHeader } from "@/components/ui";
 import {
@@ -52,6 +52,9 @@ export default async function SessionPage({
 
   const session = await getSession(id);
   if (!session || !canViewSession(user, session)) notFound();
+
+  // A session is scheduled under one id and performed under another; the run's own pages live at the performed one.
+  if (session.id !== id) redirect(`/sessions/${session.id}`);
 
   // The session, its case, its plan and its report are four pages. A finished session
   // used to jump straight to its report; it now stays here and links to each one that exists.

@@ -35,11 +35,13 @@ export default async function ProgramsPage({
   const persona = personaFor(user.role);
   const isInstructor = persona === "instructor" || persona === "admin";
 
-  const programs = await getPrograms();
+  // The program list and the cohort list do not depend on each other, so they load together.
+  const wantsCohorts = isInstructor && rawTab === "cohorts";
+  const [programs, cohortList] = await Promise.all([getPrograms(), wantsCohorts ? getCohorts() : Promise.resolve([])]);
 
   if (isInstructor) {
     const tab = rawTab === "cohorts" ? "cohorts" : "programs";
-    const cohorts = tab === "cohorts" ? await getCohorts() : [];
+    const cohorts = cohortList;
     const programName = new Map(programs.map((prog) => [prog.id, prog.name]));
 
     return (
