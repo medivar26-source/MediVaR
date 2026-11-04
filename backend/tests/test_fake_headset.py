@@ -15,9 +15,9 @@ fake = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(fake)
 
 
-def bridge(report, cp):
+def bridge(report, cp, **over):
     return to_attempt_input(report, case_plan=cp, session_config=CONFIG,
-                            planned_measurements=PLANNED_MEASUREMENTS, planning_criteria=CRITERIA)
+                            planned_measurements=PLANNED_MEASUREMENTS, planning_criteria=CRITERIA, **over)
 
 
 class TestFakeHeadset(unittest.TestCase):
@@ -49,11 +49,14 @@ class TestFakeHeadset(unittest.TestCase):
         self.assertLess(p["overall_score"], g["overall_score"])
 
     def test_a_headset_plan_only_report_waits_for_inputs(self):
+        # `--keys headset` sends neither scene ids nor the requested keys: with no scene timed there is
+        # nothing to score, in partial mode as in strict.
         cp, r = self.build(keys="headset")
         res = bridge(r, cp)
         self.assertIsNone(res.attempt_input)
-        self.assertTrue(any("P5.hkaDeg" in m for m in res.missing))
         self.assertTrue(any("no time recorded" in m for m in res.missing))
+        strict = bridge(r, cp, partial=False)
+        self.assertTrue(any("P5.hkaDeg" in m for m in strict.missing))
 
 
 if __name__ == "__main__":

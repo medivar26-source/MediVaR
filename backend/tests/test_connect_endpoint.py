@@ -386,17 +386,31 @@ class TestIngest(NoDatabase):
         self.assertIn("submitted", att)
         self.assertIn("training", att)                       # Practice records as training
 
-    def test_a_report_missing_what_the_scorer_needs_is_stored_and_waits(self):
+    def test_a_report_missing_a_parameter_is_scored_on_the_rest_and_says_so(self):
         body = self.report()
-        body["steps"] = [s for s in body["steps"] if s.get("planKey") != "P5.hkaDeg"]
+        for s in body["steps"]:
+            if s.get("planKey") == "P5.hkaDeg":
+                s.update({"hasCommittedValue": False, "committedValue": 0})   # the scene ran; nothing was measured
+        fake = FakeCursor(self.rules())
+        out = self.ingest(fake, body)
+        self.assertEqual(out["scoring"], "scored")
+        self.assertTrue(any("P5.hkaDeg" in c for c in out["coverage"]), out)
+        self.assertTrue(fake.ran("INSERT INTO assessment_results"))          # scored on what was measured
+        (stored,) = fake.ran("INSERT INTO run_reports")
+        self.assertTrue(any("P5.hkaDeg" in str(col) for col in stored))     # the gap is recorded with the report
+        self.assertIn(json.dumps(body), stored)                              # kept verbatim
+
+    def test_a_report_with_no_scene_times_is_stored_and_waits(self):
+        body = self.report()
+        for s in body["steps"]:
+            s.pop("sceneId", None)
         fake = FakeCursor(self.rules())
         out = self.ingest(fake, body)
         self.assertEqual(out["scoring"], "awaiting_inputs")
-        self.assertTrue(any("P5.hkaDeg" in m for m in out["missing"]))
+        self.assertTrue(any("no time recorded" in m for m in out["missing"]))
         self.assertFalse(fake.ran("INSERT INTO assessment_results"))          # no result invented
         (stored,) = fake.ran("INSERT INTO run_reports")
         self.assertIn("awaiting_inputs", stored)
-        self.assertIn(json.dumps(body), stored)                              # kept verbatim
 
     def test_an_abandoned_run_is_kept_but_not_scored(self):
         fake = FakeCursor(self.rules())

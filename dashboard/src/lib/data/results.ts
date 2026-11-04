@@ -121,7 +121,7 @@ type ApiResult = {
   percentile: number | null;
   categories: { key: string; label: string; short?: string; max: number; score: number; accuracy?: number; timing?: number | null; raw?: number | null }[];
   parameters: {
-    key: string; label: string; unit: string; planned: number | null; achieved: number; deviation: number | null;
+    key: string; label: string; unit: string; planned: number | null; achieved: number | null; deviation: number | null;
     tolerance: number; verdict: Verdict | null; scene?: string;
   }[];
   scene_results: {

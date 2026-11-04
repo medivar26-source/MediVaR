@@ -8,6 +8,10 @@ Use at least:
 - staging
 - production/pilot
 
+Cross-device topology (headset and dashboard on different machines and networks), the site network requirements sheet,
+TLS, the hardening findings in `docker-compose.yml` / `k8s/`, and the phased rollout are in
+`24_CROSS_DEVICE_CONNECTIVITY_AND_PRODUCTION_ROLLOUT.md` (2026-11-04).
+
 ## Database / Supabase operations
 
 - Supabase database migrations must be source controlled.

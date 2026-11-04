@@ -765,7 +765,9 @@ export default async function ReportPage({
                       <span className={`${s.paramNum} ${s.right}`}>
                         {parameter.planned === null ? "—" : withUnit(parameter.planned, parameter.unit)}
                       </span>
-                      <span className={`${s.paramNum} ${s.right}`}>{withUnit(parameter.achieved, parameter.unit)}</span>
+                      <span className={`${s.paramNum} ${s.right}`}>
+                        {parameter.achieved === null ? "—" : withUnit(parameter.achieved, parameter.unit)}
+                      </span>
                       <GaugeTrack gauge={gauge} axis={axis} tolerance={parameter.tolerance} unit={parameter.unit} />
                       <span className={`${s.paramDelta} ${s.right}`}>
                         {gauge.signed === null ? (

@@ -6,9 +6,11 @@ warnings a scene raised. It does not decide a score, a verdict or a pass (docs/1
 authority boundary"). This module reads those facts and hands them to `core.calculations.session_scoring`,
 against the plan the *server* locked, not the snapshot the headset echoes back in the report.
 
-If the report lacks something the scorer needs, the answer is `missing`, not a guess: a run is never scored
-on invented numbers. The report is stored anyway and scored when the inputs arrive (a later revision, or a
-headset update that sends the keys the design note asks for).
+A run is never scored on invented numbers. In the default PARTIAL mode (the real headset's case since
+2026-11-03: it models eight of the eleven parameters and has no closure, lavage or alignment scene) the run is
+scored on the scenes it timed and the parameters it committed, and `coverage` lists what it did not perform or
+measure, for the result to show. A report with no scene time at all is `missing`, stored and not scored. Strict
+mode (`partial=False`) keeps the old all-or-nothing rule for the seed and the tests that pin it.
 """
 from __future__ import annotations
 
@@ -26,8 +28,9 @@ from core.connect.contract import KEY_FOR_PARAMETER, PLAN_KEY_BY_NAME, plan_valu
 @dataclass
 class BridgeResult:
     attempt_input: Optional[AttemptInput]
-    missing: List[str] = field(default_factory=list)   # human-readable, one line each
+    missing: List[str] = field(default_factory=list)   # human-readable, one line each; non-empty = not scorable
     reported: Dict[str, Any] = field(default_factory=dict)  # what the headset claimed about itself (not used to score)
+    coverage: List[str] = field(default_factory=list)  # scored, but these were not performed / not measured
 
 
 def _num(value: Any) -> Optional[float]:
@@ -83,8 +86,10 @@ def to_attempt_input(
     planned_measurements: Dict[str, float],
     planning_criteria: List[Dict[str, Any]],
     step_scene_map: Optional[Dict[str, str]] = None,
+    partial: bool = True,
 ) -> BridgeResult:
-    """`case_plan` is the server-built CasePlan of the assignment. Returns the scorer input, or what is missing."""
+    """`case_plan` is the server-built CasePlan of the assignment. Returns the scorer input, or what is missing.
+    `partial` (default) scores what the headset performed and lists the rest in `coverage`."""
     reported = {k: report.get(k) for k in ("totalScore", "maxScore", "grade") if k in report}
     if report.get("outcome") != "Completed":
         return BridgeResult(None, ["the run did not finish, so it is not scored"], reported)
@@ -105,13 +110,22 @@ def to_attempt_input(
     durations = scene_durations(report, step_scene_map)
     warnings = scene_warnings(report, step_scene_map)
 
+    unmeasured = [p for p in PARAMETERS if p.scene in scenes and p.key not in achieved]
+    unperformed = [sc for sc in visited if sc.scene not in durations]
+
     missing: List[str] = []
-    for p in PARAMETERS:
-        if p.scene in scenes and p.key not in achieved:
-            missing.append(f"no committed value for {p.label} ({KEY_FOR_PARAMETER[p.key]})")
-    for sc in visited:
-        if sc.scene not in durations:
-            missing.append(f"no time recorded for scene {sc.scene} ({sc.name})")
+    coverage: List[str] = []
+    if partial:
+        if not any(sc.scene in durations for sc in visited):
+            missing.append("no time recorded for any scene (no sceneId on any step, and no step map)")
+        # Only parameters of scenes the run actually performed are "not measured"; a parameter of a scene the
+        # run never reached is covered by that scene's own line.
+        performed = {sc.scene for sc in visited if sc.scene in durations}
+        coverage += [f"not measured: {p.label} ({KEY_FOR_PARAMETER[p.key]})" for p in unmeasured if p.scene in performed]
+        coverage += [f"not performed: scene {sc.scene} ({sc.name})" for sc in unperformed]
+    else:
+        missing += [f"no committed value for {p.label} ({KEY_FOR_PARAMETER[p.key]})" for p in unmeasured]
+        missing += [f"no time recorded for scene {sc.scene} ({sc.name})" for sc in unperformed]
 
     if missing:
         return BridgeResult(None, missing, reported)
@@ -119,8 +133,9 @@ def to_attempt_input(
         AttemptInput(
             difficulty=difficulty, design=design, fixation=fixation,
             planning_criteria=planning_criteria, planned_measurements=planned_measurements,
-            planned=planned, achieved=achieved, durations=durations, warnings=warnings,
+            planned=planned, achieved=achieved, durations=durations, warnings=warnings, partial=partial,
         ),
         [],
         reported,
+        coverage,
     )

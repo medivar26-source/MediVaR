@@ -89,7 +89,7 @@ export type Gauge = {
 };
 
 export function gaugeOf(parameter: ReportParameter): Gauge {
-  if (parameter.planned === null || !(parameter.tolerance > 0)) {
+  if (parameter.planned === null || parameter.achieved === null || !(parameter.tolerance > 0)) {
     return {
       key: parameter.key,
       signed: null,

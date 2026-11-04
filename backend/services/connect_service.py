@@ -443,7 +443,8 @@ def _score_and_store(cur, plan: Dict[str, Any], assignment: Dict[str, Any], atte
          json.dumps(r["feedback"]), json.dumps(payload), r["scoring_version"]),
     )
     cur.execute("UPDATE attempts SET status = 'assessed' WHERE id = %s", (attempt_id,))
-    return {"scoring_status": "scored", "scoring_note": []}
+    # Scored; the note records what the run did not perform or measure, if anything (payload.coverage has it too).
+    return {"scoring_status": "scored", "scoring_note": bridged.coverage}
 
 
 def ingest_report(device: Dict[str, Any], assignment_id: str, run_id: str, body: Dict[str, Any]) -> Dict[str, Any]:
@@ -519,4 +520,5 @@ def ingest_report(device: Dict[str, Any], assignment_id: str, run_id: str, body:
         cur.execute("UPDATE assignments SET status = %s WHERE id = %s",
                     ("reported" if body["outcome"] == "Completed" else "running", assignment_id))
         return {"accepted": True, "receivedAtUtc": _utc_iso(received), "scoring": scoring["scoring_status"],
-                "missing": scoring["scoring_note"] if scoring["scoring_status"] == "awaiting_inputs" else []}
+                "missing": scoring["scoring_note"] if scoring["scoring_status"] == "awaiting_inputs" else [],
+                "coverage": scoring["scoring_note"] if scoring["scoring_status"] == "scored" else []}

@@ -176,6 +176,32 @@ class TestScoring(unittest.TestCase):
         with self.assertRaises(ValueError):
             score_attempt(inp)
 
+    def test_partial_run_scores_the_scenes_it_has_and_reports_the_rest(self):
+        inp = perfect_input()
+        inp.partial = True
+        del inp.durations["11.1"]
+        del inp.durations["11.2"]
+        del inp.achieved["hka_deg"]
+        r = score_attempt(inp)
+        self.assertEqual(r["payload"]["coverage"], {"partial": True, "scenes_not_performed": ["11.1", "11.2"],
+                                                    "parameters_not_measured": ["hka_deg"]})
+        hka = next(p for p in r["parameters"] if p["key"] == "hka_deg")
+        self.assertIsNone(hka["achieved"])
+        self.assertIsNone(hka["verdict"])
+        self.assertFalse(hka["measured"])
+        # Scene 6.3 had only the unmeasured parameter: it falls back to its warnings (none) and passes.
+        self.assertEqual(next(s for s in r["scene_results"] if s["scene"] == "6.3")["outcome"], "pass")
+        # Exposure & closure shares its 5 marks among the scenes visited, so a perfect run still reaches 100.
+        self.assertEqual(r["overall_score"], 100)
+        self.assertEqual(sum(c["score"] for c in r["categories"]), 100)
+
+    def test_partial_run_with_no_scene_at_all_is_refused(self):
+        inp = perfect_input()
+        inp.partial = True
+        inp.durations = {}
+        with self.assertRaises(ValueError):
+            score_attempt(inp)
+
     def test_missing_planned_measurement_is_not_zero(self):
         inp = perfect_input()
         inp.planned_measurements = {"MAD_mm": 27.7, "tibial_size": 3}  # mHKA unanswered

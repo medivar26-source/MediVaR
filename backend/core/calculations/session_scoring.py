@@ -27,6 +27,12 @@ The rules, all of which the report screens already state to the learner:
   total at `CRITICAL_ERROR_CAP` and fail the run whatever the marks say; the categories still show what the
   technique earned.
 * Pass mark by difficulty: Beginner 60, Intermediate 70, Expert 80.
+* A PARTIAL run (`AttemptInput.partial`, the headset's case since 2026-11-03) is scored on the scenes it carries
+  a time for and the parameters it committed a value for; the scenes it did not perform and the parameters it
+  did not measure are listed in `payload.coverage` and shown as "not measured" / "not performed". A category's
+  marks are shared by the scenes the run VISITED, so a simulator without a closure scene can still earn the
+  exposure marks on the exposure it did perform. Nothing is ever invented: an unmeasured parameter has no
+  verdict, and a scene with no measured parameter is judged on its warnings, as always.
 
 Category marks are rounded half-up to whole marks and the total is their sum, so the parts always add up to
 the headline figure (except when the cap applies, which the report says in words).
@@ -244,6 +250,9 @@ class AttemptInput:
     warnings: Dict[str, int] = field(default_factory=dict)
     # Free-text notes the headset attached to a warning, per scene.
     notes: Dict[str, str] = field(default_factory=dict)
+    # True to score what was performed and report the rest (see the module note). False (the seed's and the
+    # strict tests' mode) refuses a run that lacks any scene time or any achieved value.
+    partial: bool = False
 
 
 def _fmt(value: float, unit: str) -> str:
@@ -289,22 +298,38 @@ def score_attempt(inp: AttemptInput) -> Dict[str, Any]:
     if inp.difficulty not in PASS_MARK:
         raise ValueError(f"unknown difficulty {inp.difficulty!r}")
 
-    visited = scenes_for_variant(inp.design, inp.fixation)
-    missing = [sc.scene for sc in visited if sc.scene not in inp.durations]
-    if missing:
-        raise ValueError(f"no duration recorded for scenes {missing}: an incomplete run is not scored here")
+    all_scenes = scenes_for_variant(inp.design, inp.fixation)
+    not_performed = [sc.scene for sc in all_scenes if sc.scene not in inp.durations]
+    if inp.partial:
+        visited = [sc for sc in all_scenes if sc.scene in inp.durations]
+        if not visited:
+            raise ValueError("no scene of this run carries a duration: there is nothing to score")
+    else:
+        visited = all_scenes
+        if not_performed:
+            raise ValueError(f"no duration recorded for scenes {not_performed}: an incomplete run is not scored here")
 
     # 1. Parameters: deviation and verdict.
     parameters = []
+    not_measured: List[str] = []
     by_scene_verdicts: Dict[str, List[str]] = {}
     for p in PARAMETERS:
         if p.scene not in {sc.scene for sc in visited}:
             continue
         planned = inp.planned.get(p.key)
         achieved = inp.achieved.get(p.key)
-        if achieved is None:
-            raise ValueError(f"no achieved value for {p.key}")
         tol = tolerance_for(p, inp.difficulty)
+        if achieved is None:
+            if not inp.partial:
+                raise ValueError(f"no achieved value for {p.key}")
+            # Not measured is not zero: no verdict, no share in the scene's outcome, said in the result.
+            not_measured.append(p.key)
+            parameters.append({
+                "key": p.key, "label": p.label, "unit": p.unit, "scene": p.scene,
+                "planned": planned, "achieved": None, "deviation": None,
+                "tolerance": tol, "verdict": None, "tolerance_source": p.source, "measured": False,
+            })
+            continue
         if planned is None:
             deviation, verdict = None, None
         else:
@@ -314,7 +339,7 @@ def score_attempt(inp: AttemptInput) -> Dict[str, Any]:
         parameters.append({
             "key": p.key, "label": p.label, "unit": p.unit, "scene": p.scene,
             "planned": planned, "achieved": achieved, "deviation": deviation,
-            "tolerance": tol, "verdict": verdict, "tolerance_source": p.source,
+            "tolerance": tol, "verdict": verdict, "tolerance_source": p.source, "measured": True,
         })
 
     # 2. Scenes: outcome, time credit, marks.
@@ -428,6 +453,11 @@ def score_attempt(inp: AttemptInput) -> Dict[str, Any]:
             "result": "PASS" if passed else "FAIL",
             "reason_codes": reason_codes,
             "planning": planning,
+            "coverage": {
+                "partial": inp.partial,
+                "scenes_not_performed": not_performed,
+                "parameters_not_measured": not_measured,
+            },
             "rules": {
                 "scoring_version": SCORING_VERSION,
                 "categories": {k: mx for k, _l, _s, mx in CATEGORIES},

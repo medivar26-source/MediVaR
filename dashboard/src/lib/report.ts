@@ -40,7 +40,8 @@ export type ReportParameter = {
   label: string;
   unit: string;
   planned: number | null;
-  achieved: number;
+  /** Null when the headset did not measure this parameter (the scorer records it as not measured). */
+  achieved: number | null;
   tolerance: number;
   verdict: Verdict | null;
   /** The scene that measured it, when the scorer says. */
@@ -157,7 +158,7 @@ export type Report = {
  * one that is full.
  */
 export function deviationOf(parameter: ReportParameter): number | null {
-  if (parameter.planned === null) return null;
+  if (parameter.planned === null || parameter.achieved === null) return null;
   const delta = Math.abs(parameter.achieved - parameter.planned);
   return Math.min(1, delta / (parameter.tolerance || 1));
 }

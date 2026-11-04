@@ -286,13 +286,35 @@ class TestBridge(unittest.TestCase):
         planned = self.bridge(report, case_plan=cp).attempt_input.planned
         self.assertEqual(planned["femoral_valgus_deg"], 6.5)
 
-    def test_missing_inputs_are_listed_not_invented(self):
+    def test_in_strict_mode_missing_inputs_are_listed_not_invented(self):
         cp = plan()
         report = complete_report(cp)
         report["steps"] = [s for s in report["steps"] if s.get("planKey") != "P3.femoralRotationDeg"]
-        res = self.bridge(report, case_plan=cp)
+        res = self.bridge(report, case_plan=cp, partial=False)
         self.assertIsNone(res.attempt_input)
         self.assertTrue(any("P3.femoralRotationDeg" in m for m in res.missing), res.missing)
+
+    def test_a_partial_run_is_scored_on_what_it_measured_and_says_what_it_did_not(self):
+        cp = plan()
+        report = complete_report(cp)
+        # The real headset: no closure scenes, and a tray scene performed without a tray rotation measurement.
+        report["steps"] = [s for s in report["steps"] if s.get("sceneId") not in ("11.1", "11.2")]
+        for s in report["steps"]:
+            if s.get("planKey") == "P4.trayRotationDeg":
+                s.update({"hasCommittedValue": False, "committedValue": 0})
+        res = self.bridge(report, case_plan=cp)
+        self.assertIsNotNone(res.attempt_input)
+        self.assertEqual(res.missing, [])
+        self.assertTrue(any("P4.trayRotationDeg" in c for c in res.coverage), res.coverage)
+        self.assertTrue(any("scene 11.1" in c for c in res.coverage), res.coverage)
+        scored = score_attempt(res.attempt_input)
+        tray = next(p for p in scored["parameters"] if p["key"] == "tray_rotation_deg")
+        self.assertEqual((tray["achieved"], tray["verdict"], tray["measured"]), (None, None, False))
+        self.assertNotIn("11.1", [r["scene"] for r in scored["scene_results"]])
+        self.assertEqual(scored["payload"]["coverage"]["scenes_not_performed"], ["11.1", "11.2"])
+        self.assertIn("tray_rotation_deg", scored["payload"]["coverage"]["parameters_not_measured"])
+        # Nothing invented: every other parameter still on plan, so the measured ones all pass.
+        self.assertTrue(all(p["verdict"] == "pass" for p in scored["parameters"] if p["measured"]))
 
     def test_a_headset_without_scene_ids_cannot_be_timed(self):
         cp = plan()

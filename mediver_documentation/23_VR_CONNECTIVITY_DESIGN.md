@@ -114,21 +114,31 @@ It does not decide a score, a pass or a competency (`10_VR_INTEGRATION.md`, "Cli
 2. stores it **verbatim** in `run_reports`, and creates or advances the `attempt`;
 3. for a *Completed* report, feeds the facts to the scorer **against the plan the server locked**, not the snapshot the
    headset echoes back (a test pins this), and writes the one `assessment_results` row;
-4. if the report lacks something the scorer needs, stores it anyway and says exactly what is missing
-   (`scoring_status = awaiting_inputs`). **It never scores on invented numbers.**
+4. scores what the headset performed and measured, and records what it did not (`payload.coverage`,
+   `scoring_note`): a scene with no time is "not performed", a parameter with no committed value is "not measured"
+   (no verdict, no share in its scene's outcome). A report with no scene time at all is stored and marked
+   `awaiting_inputs`. **It never scores on invented numbers.** Category marks are shared among the scenes the run
+   visited, so a simulator without a closure scene still reaches 100 on what it does have.
 
 The headset's own `totalScore`/`grade` are kept in the stored payload for comparison and are never shown or used.
 
-### What the headset must add (the open dependency)
+### What the headset sends (as built on the Unity side, 2026-11-03)
 
-The headset plan lists six plan keys. The scorer judges eleven parameters across scenes 4.2–7.1, and it needs time per
-scene. Until the headset sends the rest, every report lands as `awaiting_inputs`, shown to the user as "No report":
+The Unity simulator now applies the plan to its judges and uploads a report per run (`Assets/Scripts/Systems/Connect/`).
+Against the table this section used to carry:
 
-| Add to the headset's contract | Why |
+| Requested | Status |
 |---|---|
-| `sceneId` on each step (`"4.2"` … `"7.1"`, the dashboard's scene ids) | time per scene; or send a `stepId → sceneId` table and the backend maps it |
-| `warnings` (int) on each step | scenes without a measured parameter are judged on warnings |
-| Plan keys `P3.femoralSize`, `P3.femoralRotationDeg`, `P5.gapDifferenceMm`, `P5.hkaDeg`, `P4.tibialTraySize`, `P4.trayRotationDeg` (and a committed value for each) | the other six scored parameters. "A new judge is a new key, not a schema change", as the headset plan says |
+| `sceneId` on each step | **Sent.** One table in the headset (`StepSceneMap`) files every simulator step under a dashboard scene; its test refuses a step with no row. Rows the owner should confirm: P1_05 joint exposure → 3.2 (critical Hohmann scene), P1_06 patellar subluxation → 3.1, P2_09 block removal → 4.3, P10_01–04 component placement → 10.2. The time-out screen's seconds go to 0.1. |
+| `warnings` on each step | **Sent.** One stated rule: each failed attempt, a skip, and a step done with a quality below 1 (a red gap) are one warning each. |
+| `P3.femoralRotationDeg` | **Sent as a measurement**: the AP sizer's dial when the reference holes commit it (positive assumed = external, the gap module's assumption). |
+| `P5.gapDifferenceMm` | **Sent as a measurement**: flexion gap minus extension gap, from the two recorded gap readings. |
+| `P3.femoralSize`, `P5.hkaDeg`, `P4.tibialTraySize`, `P4.trayRotationDeg` | **Not sent — not modelled.** The simulator has one tray and one femoral component, no post-cut alignment measure. Rather than invent them, the backend now scores the run on the eight parameters it has and shows these four as "Not measured". |
+| Scenes 2.3, 6.3, 10.1, 11.1, 11.2 | **Not performed** by the simulator today (no release/eversion step, no post-cut alignment, no lavage, Part 11 unauthored); listed as such in the result. |
+
+The headset marks an assignment **spent** once its Completed report is accepted (or on 409/410) and asks for a new
+code; its token stays valid so a backlog still uploads. `P1.flexionDeg` is reported but the headset keeps its own 90°
+(a calibration of its knee model), as the headset plan said it would.
 
 ## 7. Reports, analysis, resident progress
 
@@ -222,6 +232,10 @@ Not built:
   still an open decision in the handoff).
 
 ## 12. Running it (owner)
+
+> **Scope (2026-11-04):** this recipe is the same-PC / trusted-LAN pilot (Phase 0–1). It does not survive an
+> organisation's Wi-Fi (client isolation, egress filtering to 443, TLS inspection, captive portals). For two devices on
+> different networks and for production, read `24_CROSS_DEVICE_CONNECTIVITY_AND_PRODUCTION_ROLLOUT.md`.
 
 From `backend/`:
 
