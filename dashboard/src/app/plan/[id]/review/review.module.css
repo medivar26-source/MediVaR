@@ -1,11 +1,469 @@
-/* The "Lock preoperative plan?" confirmation. Its layout is still inline in ReviewWorkspace; this file
-   only gives it the same entrance as the app's other dialogs, so it does not appear with a jump. */
+/* Step 4, "Review & Send to VR". Every colour, radius, size and gap here is a token from
+   tokens.css: the page used to carry its own slate-and-sky palette inline, which is why it
+   read as a different product from the rest of the app. */
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+
+/* ---------- "Ready to lock" strip ---------- */
+
+.ready {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-5);
+  padding: var(--s-3) var(--s-5);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.readyTitle {
+  font-size: var(--t-body);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-label);
+  color: var(--text);
+}
+
+.checkDone {
+  color: var(--pass);
+}
+
+.checkOpen {
+  color: var(--warn);
+}
+
+/* A missing item is a link to where it gets fixed, so it takes the interactive colour. */
+.checkLink {
+  font-weight: var(--fw-semibold);
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---------- the three summary cards ---------- */
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--s-5);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.cardHead {
+  padding-bottom: var(--s-2);
+  border-bottom: var(--bw) solid var(--divider);
+}
+
+.eyebrow {
+  font-size: var(--t-overline);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cardTitle {
+  margin: var(--s-1) 0 0;
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  line-height: var(--t-h3-lh);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  font-size: var(--t-label);
+  line-height: var(--t-label-lh);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.rowLabel {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.rowValue {
+  text-align: right;
+  overflow-wrap: anywhere;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--t-caption);
+}
+
+/* The operative side is a fact, not a verdict: the same solid info pill the planner header uses. */
+.side {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--s-2);
+  border-radius: var(--r-pill);
+  background: var(--info);
+  color: var(--on-dark);
+  font-size: var(--t-overline);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.02em;
+}
+
+/* Measurement groups (AP, lateral). */
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.groupTitle {
+  font-size: var(--t-overline);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.measure {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s-2);
+}
+
+.tier {
+  font-size: var(--t-caption);
+  font-weight: var(--fw-semibold);
+}
+
+/* The alignment summary: a quiet tint, since it groups rather than judges. */
+.note {
+  margin-top: auto;
+  padding: var(--s-2) var(--s-3);
+  border: var(--bw) solid var(--info-border);
+  border-radius: var(--r-sm);
+  background: var(--info-surface);
+  font-size: var(--t-caption);
+  font-weight: var(--fw-semibold);
+  color: var(--info);
+}
+
+/* Something the plan still lacks, with the way to it. */
+.missing {
+  font-size: var(--t-label);
+  font-weight: var(--fw-bold);
+  color: var(--warn);
+}
+
+.missing a {
+  margin-left: var(--s-1);
+  font-weight: var(--fw-semibold);
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* One implant each, on a sunken surface so the two read as a pair. */
+.implants {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  font-size: var(--t-caption);
+  line-height: var(--t-caption-lh);
+}
+
+.implant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-3);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+}
+
+.implantHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-label);
+  color: var(--ink);
+}
+
+.implantMuted {
+  color: var(--text-muted);
+}
+
+/* ---------- sealed plan ---------- */
+
+.sealed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+/* Send to headset: a light card under the sealed banner. The code is the one thing that has to be
+   read from across a room and typed on a headset keypad: large, tabular, grouped in threes. */
+.headset {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.headsetHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-label);
+  color: var(--ink);
+}
+
+.headsetHead svg {
+  color: var(--brand);
+}
+
+.codeBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-2) 0;
+}
+
+.codeLabel,
+.codeMeta {
+  margin: 0;
+  font-size: var(--t-caption);
+  line-height: var(--t-caption-lh);
+  color: var(--text-muted);
+}
+
+.code {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-display);
+  line-height: var(--t-display-lh);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  /* Settles in when a new code arrives, like the app's other new content. */
+  animation: codeIn var(--m-base) var(--ease-out) backwards;
+}
+
+@keyframes codeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.countdown {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.headsetStatus,
+.headsetMuted {
+  margin: 0;
+  max-width: 64ch;
+  font-size: var(--t-label);
+  line-height: var(--t-label-lh);
+  color: var(--text);
+}
+
+.headsetMuted {
+  color: var(--text-muted);
+}
+
+.headsetError {
+  margin: 0;
+  font-size: var(--t-caption);
+  font-weight: var(--fw-medium);
+  color: var(--fail);
+}
+
+.headsetLink {
+  font-size: var(--t-label);
+  font-weight: var(--fw-semibold);
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.headsetForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--s-3);
+}
+
+.headsetField {
+  width: 15rem;
+}
+
+/* "What happens next": grouping tint, numbered. */
+.next {
+  padding: var(--s-4) var(--s-5);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface-sunken);
+}
+
+.nextTitle {
+  font-size: var(--t-label);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+}
+
+.nextList {
+  margin: var(--s-2) 0 0;
+  padding-left: 1.2em;
+  font-size: var(--t-label);
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.nextList a {
+  font-weight: var(--fw-semibold);
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* The V1 payload, for anyone who needs the exact bytes. */
+.payload {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.payloadHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.payloadPre {
+  margin: 0;
+  padding: var(--s-4);
+  max-height: 24rem;
+  overflow: auto;
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+  font-family: var(--font-mono);
+  font-size: var(--t-caption);
+  line-height: 1.5;
+  color: var(--text);
+}
+
+/* ---------- footer ---------- */
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-4) 0;
+  border-top: var(--bw) solid var(--border);
+}
+
+.backLinks {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--t-label);
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+}
+
+.backLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.backLinks a {
+  color: var(--brand);
+}
+
+.footerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.footerHint {
+  max-width: 46ch;
+  text-align: right;
+  font-size: var(--t-label);
+  line-height: var(--t-label-lh);
+  color: var(--text-muted);
+}
+
+/* ---------- "Lock preoperative plan?" ---------- */
 
 .lockScrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  background: var(--scrim);
+  backdrop-filter: blur(2px);
   transition: opacity var(--m-base) var(--ease-out);
 }
 
 .lockPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  width: min(90%, 30rem);
+  padding: var(--s-6);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--e-4);
   transition:
     opacity var(--m-base) var(--ease-out),
     transform var(--m-base) var(--ease-out);
@@ -21,115 +479,56 @@
   }
 }
 
-/* ---------- Send to headset ----------
-   Sits inside the sealed-plan banner, which is dark, so its text uses the banner's own light and muted
-   tones. The code is the one thing that has to be read from across a room and typed on a headset keypad:
-   large, tabular, grouped in threes. */
-
-.headset {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s-2);
-  margin-top: var(--s-1);
-  padding: var(--s-3) var(--s-4);
-  border: var(--bw) solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--r-md);
-  background: rgba(255, 255, 255, 0.04);
-  color: #e2e8f0;
-}
-
-.headsetHead {
+.lockHead {
   display: flex;
   align-items: center;
-  gap: var(--s-2);
-  font-size: var(--t-label);
-}
-
-.codeBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--s-2) 0;
-}
-
-.codeLabel,
-.codeMeta {
-  font-size: var(--t-caption);
-  color: #94a3b8;
-}
-
-.code {
-  font-size: 2.25rem;
-  line-height: 1.1;
-  font-weight: var(--fw-bold);
-  letter-spacing: 0.08em;
-  font-variant-numeric: tabular-nums;
-  color: #fff;
-  /* Settles in when a new code arrives, like the app's other new content. */
-  animation: codeIn var(--m-base) var(--ease-out) backwards;
-}
-
-@keyframes codeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
-
-.countdown {
-  font-variant-numeric: tabular-nums;
-  color: #e2e8f0;
-}
-
-.headsetStatus,
-.headsetMuted {
-  margin: 0;
-  font-size: var(--t-caption);
-  line-height: var(--t-caption-lh);
-  color: #cbd5e1;
-}
-
-.headsetMuted {
-  color: #94a3b8;
-}
-
-.headsetError {
-  margin: 0;
-  font-size: var(--t-caption);
-  color: #fca5a5;
-}
-
-.headsetLink {
-  font-size: var(--t-label);
-  font-weight: var(--fw-semibold);
-  color: #86efac;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.headsetForm {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
   gap: var(--s-3);
 }
 
-.headsetField {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: var(--t-caption);
-  color: #94a3b8;
+.lockIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--brand-surface);
+  color: var(--brand);
 }
 
-/* 16px so a phone does not zoom into the field; light on the dark banner. */
-.headsetField select {
-  min-height: var(--h-sm);
-  padding: 0 var(--s-3);
-  border: var(--bw) solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--r-sm);
-  background: #1e293b;
-  color: #f1f5f9;
-  font-size: 16px;
+.lockTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+}
+
+.lockText {
+  margin: 0;
+  font-size: var(--t-label);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.lockError {
+  margin: 0;
+  font-size: var(--t-caption);
+  font-weight: var(--fw-medium);
+  color: var(--fail);
+}
+
+.lockActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-3);
+}
+
+@media (max-width: 767px) {
+  .footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .footerHint {
+    text-align: left;
+  }
 }
