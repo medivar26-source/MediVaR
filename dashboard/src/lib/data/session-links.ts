@@ -68,7 +68,9 @@ export function sessionLinks(
   return {
     session: `/sessions/${session.id}`,
     case: session.caseId ? `/cases/${session.caseId}` : undefined,
-    plan: session.planId && PLAN_BY_ID.has(session.planId) ? `/plan/${session.planId}/review` : undefined,
+    // A run read from the database was scored against a stored plan, which the plan page can open for anyone
+    // who may read that run; a sample session's plan is one of the built-in ones.
+    plan: session.planId && (session.source === "database" || PLAN_BY_ID.has(session.planId)) ? `/plan/${session.planId}/review` : undefined,
     report: hasReport(session) ? `/sessions/${session.id}/report` : undefined,
   };
 }

@@ -175,13 +175,18 @@ Residents can access their own planning, attempts, results and feedback. Instruc
 
 ## As built (2026-11-03)
 
-Base `/api/v1`. Implemented in `backend/api/v1/endpoints/results.py` and `connect.py`.
+Base `/api/v1`. Implemented in `backend/api/v1/endpoints/results.py`, `plans.py` (2026-11-05) and `connect.py`.
 
 | Method | Path | Caller | Does |
 |---|---|---|---|
 | GET | `/health` | anyone | `{status, service, apiVersion, serverTimeUtc}` |
 | GET | `/results` | signed in | Every attempt and report the caller may read (own; a cohort owner's learners; an admin's institution). 404 if 013 is missing |
-| POST | `/plans/locked` | signed in | Keep a sealed plan (case visibility and V1 payload checked; idempotent on `locked_version_id`) |
+| POST | `/plans` | signed in | Start a draft for a library or personal case: `{case_id, session_config:{mode, difficulty, implant_design?, fixation?}}` (2026-11-05; needs 013) |
+| GET | `/plans` | signed in | My plans (`?case_id=`); `?supervised=true` for an instructor (their learners) or admin (their institution) |
+| GET | `/plans/{id}` | owner, supervising instructor, institution admin | One plan with its sealed snapshot; anyone else gets 404, never 403 |
+| PATCH | `/plans/{id}` | owner | Save planner work into a draft: `{payload:{v1_assessment, assessment_landmarks, scan_calibration, v1_tibial, tibial_planning, v1_femoral, femoral_planning}}`, merged in the database. 409 when locked, or when the assessment keys are sent after the assessment exists |
+| POST | `/plans/{id}/lock` | owner | Seal a draft: `{vr_payload, session_config:{implant_design?, fixation?}}`. Freezes the stored payload; design and fixation can be supplied here when the plan never had them |
+| POST | `/plans/locked` | signed in | Older one-call "store an already sealed plan" (case visibility and V1 payload checked; idempotent on `locked_version_id`). The dashboard no longer uses it |
 | POST | `/assignments` | signed in (owner or supervising instructor) | "Send to headset": returns a one-time 6-digit code, shown once |
 | GET | `/assignments?plan_id=` | signed in | Status of what was sent; never the code |
 | POST | `/devices/pair` | headset, no token | `{code, deviceId, deviceName, appVersion, schemaVersion}` → `{assignmentId, token, tokenExpiresAt, casePlan}`; 404 / 410 / 429 |

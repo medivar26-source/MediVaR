@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from api.v1.endpoints import health, auth, cohorts, programs, cases, procedures, residents, admin, personal_cases, results, connect
+from api.v1.endpoints import health, auth, cohorts, programs, cases, procedures, residents, admin, personal_cases, results, connect, plans
 
 api_router = APIRouter()
 api_router.include_router(health.router, prefix="", tags=["health"])
@@ -12,6 +12,8 @@ api_router.include_router(residents.router, prefix="/residents", tags=["resident
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(personal_cases.router, prefix="/personal-cases", tags=["personal_cases"])
 api_router.include_router(results.router, prefix="/results", tags=["results"])
+# Pre-op plans in the database (404 until migration 013 is applied).
+api_router.include_router(plans.router, prefix="/plans", tags=["plans"])
 # Dashboard <-> Quest 3 (404 until migration 015 is applied). Paths are the headset plan's contract, so no prefix.
 api_router.include_router(connect.router, prefix="", tags=["vr_connectivity"])
 # Future routes:

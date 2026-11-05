@@ -3,13 +3,12 @@
  * used on both sides of the server boundary.
  *
  * The flow (design: mediver_documentation/23_VR_CONNECTIVITY_DESIGN.md):
- *   seal a plan -> the backend keeps it (POST /plans/locked) -> "Send to headset" (POST /assignments) returns a
- *   one-time 6-digit code -> the trainee types it on the headset -> the headset uploads its report -> the report
- *   appears in Sessions / Insights like any other.
+ *   lock a plan (POST /plans/{id}/lock; the plan is already stored, every edit was saved as it was made) ->
+ *   "Send to headset" (POST /assignments) returns a one-time 6-digit code -> the trainee types it on the headset
+ *   -> the headset uploads its report -> the report appears in Sessions / Insights like any other.
  */
 
-import type { FixationType, ImplantDesign, SimMode } from "@/lib/types";
-import type { PlanPayload, PlanSnapshot, V1VrPayload } from "@/lib/plan";
+import type { FixationType, ImplantDesign } from "@/lib/types";
 
 /** What GET /assignments returns per row (never the code). */
 export type HeadsetAssignment = {
@@ -32,8 +31,6 @@ export type HeadsetLink = {
   available: boolean;
   /** Why this plan cannot be sent, in words for the learner; undefined when it can be. */
   blocker?: string;
-  /** Choices the plan never recorded and the sender must make before a code is issued (never defaulted). */
-  needs?: SetupChoice[];
   assignments: HeadsetAssignment[];
 };
 
@@ -56,70 +53,38 @@ export function assignmentFromApi(row: Record<string, unknown>): HeadsetAssignme
 
 const DESIGNS: ImplantDesign[] = ["CR", "PS"];
 const FIXATIONS: FixationType[] = ["cemented", "cementless"];
-const MODES: SimMode[] = ["training", "assessment"];
 
-export type LockedPlanBody = {
-  case_id?: string;
-  personal_case_id?: string;
-  session_config: { mode: SimMode; difficulty: string; implant_design: ImplantDesign; fixation: FixationType };
-  payload: PlanPayload;
-  step_timings: Record<string, number>;
-  vr_payload: V1VrPayload;
-  locked_version_id: string;
-};
+/** Said for a plan on a built-in practice case: those are not database rows, so there is nothing to send. */
+export const BUILT_IN_NOT_SENDABLE =
+  "This is a built-in practice case, so it cannot be sent to a headset. Plan a case from the library.";
 
-/**
- * The body for POST /plans/locked, or the reason the plan cannot go to a headset. Nothing is filled in: a plan
- * without an implant design or fixation is refused rather than given a default.
- */
+/** Setup choices the headset runs and that nothing may default: the implant design and the fixation. */
 export type SetupChoice = "implant_design" | "fixation";
 
-export function lockedPlanBody(input: {
-  caseId: string;
-  isPersonalCase: boolean;
-  /** True for the built-in demo cases, which are not rows in the database. */
-  isBuiltInCase: boolean;
-  lockedVersion?: PlanSnapshot;
-  stepTimings: Record<string, number>;
-  /** What the sender chose for a plan that did not record it. Ignored where the plan already has a value. */
-  chosen?: { implant_design?: string; fixation?: string };
-}): { body: LockedPlanBody } | { error: string; needs?: SetupChoice[] } {
-  const snap = input.lockedVersion;
-  if (!snap) return { error: "Lock the plan first." };
-  if (input.isBuiltInCase) {
-    return { error: "This is a built-in practice case, so it cannot be sent to a headset. Plan a case from the library." };
-  }
-  const vr = snap.payload.v1_vr_payload;
-  if (!vr) return { error: "The sealed plan has no VR payload." };
-  const recorded = snap.payload.session_config ?? {};
-  const pick = <T extends string>(own: T | undefined, chosen: string | undefined, allowed: T[]): T | undefined =>
-    own && allowed.includes(own) ? own : chosen && (allowed as string[]).includes(chosen) ? (chosen as T) : undefined;
-  const cfg = {
-    ...recorded,
-    implant_design: pick(recorded.implant_design, input.chosen?.implant_design, DESIGNS),
-    fixation: pick(recorded.fixation, input.chosen?.fixation, FIXATIONS),
-  };
-  if (!cfg.difficulty) return { error: "The plan does not record its difficulty." };
-  const needs: SetupChoice[] = [];
-  if (!cfg.implant_design) needs.push("implant_design");
-  if (!cfg.fixation) needs.push("fixation");
-  if (needs.length > 0) {
-    return { error: "Choose the implant design and fixation for this run.", needs };
-  }
+/**
+ * Which of those a plan never recorded. They are asked for when the plan is locked (the database freezes a
+ * locked plan's setup, so they cannot be added afterwards), and never preselected.
+ */
+export function missingSetup(config: { implant_design?: string; fixation?: string } | undefined): SetupChoice[] {
+  const missing: SetupChoice[] = [];
+  if (!config?.implant_design || !(DESIGNS as string[]).includes(config.implant_design)) missing.push("implant_design");
+  if (!config?.fixation || !(FIXATIONS as string[]).includes(config.fixation)) missing.push("fixation");
+  return missing;
+}
+
+/** The sender's choices, kept only for what the plan never recorded and only when they are real values. */
+export function chosenSetup(
+  recorded: { implant_design?: string; fixation?: string } | undefined,
+  asked: { implant_design?: string | null; fixation?: string | null },
+): { implant_design?: string; fixation?: string } {
+  const needs = missingSetup(recorded);
   return {
-    body: {
-      ...(input.isPersonalCase ? { personal_case_id: input.caseId } : { case_id: input.caseId }),
-      session_config: {
-        mode: cfg.mode && MODES.includes(cfg.mode) ? cfg.mode : "training",
-        difficulty: cfg.difficulty!,
-        implant_design: cfg.implant_design!,
-        fixation: cfg.fixation!,
-      },
-      payload: snap.payload,
-      step_timings: input.stepTimings,
-      vr_payload: vr,
-      locked_version_id: snap.versionId,
-    },
+    ...(needs.includes("implant_design") && asked.implant_design && (DESIGNS as string[]).includes(asked.implant_design)
+      ? { implant_design: asked.implant_design }
+      : {}),
+    ...(needs.includes("fixation") && asked.fixation && (FIXATIONS as string[]).includes(asked.fixation)
+      ? { fixation: asked.fixation }
+      : {}),
   };
 }
 

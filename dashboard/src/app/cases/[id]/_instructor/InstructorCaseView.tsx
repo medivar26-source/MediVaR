@@ -5,7 +5,8 @@ import { AppShell, Breadcrumbs, PageHeader } from "@/components/shell";
 import { Badge, Button, Card, CardHeader, EmptyState, StatStrip, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
 import type { CaseDetail, InstructorConfig } from "@/lib/data/cases";
 import { getSupervisedLearners } from "@/lib/data/cohorts";
-import { PLANS, type PlanRecord } from "@/lib/data/plans";
+import type { PlanRecord } from "@/lib/data/plans";
+import { listLearnerPlansForCase } from "@/lib/data/plan-store";
 import { shortDate, titleCase } from "@/lib/format";
 import { cx } from "@/lib/cx";
 import { PASS_MARK, type Profile } from "@/lib/types";
@@ -45,10 +46,11 @@ export async function InstructorCaseView({
   presets: InstructorConfig[];
   tab: CaseTab;
 }) {
-  // Only plans from learners this instructor supervises: plan storage is not scoped by institution.
+  // Only plans from learners this instructor supervises: the backend lists the plans of their cohorts' learners,
+  // and the learner list below narrows that to the same people the rest of this page names.
   const supervised = await getSupervisedLearners().catch(() => []);
   const learnerName = new Map(supervised.map((l) => [l.id, l.displayName]));
-  const learnerPlans = PLANS.filter((plan) => plan.caseId === detail.id && learnerName.has(plan.userId)).sort((a, b) =>
+  const learnerPlans = (await listLearnerPlansForCase(detail.id, new Set(learnerName.keys()))).sort((a, b) =>
     b.updatedAt.localeCompare(a.updatedAt),
   );
 

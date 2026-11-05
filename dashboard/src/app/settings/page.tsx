@@ -4,7 +4,7 @@ import { AppShell, PageHeader, SectionHeader } from "@/components/shell";
 import { Badge, Button, Chip } from "@/components/ui";
 import { cx } from "@/lib/cx";
 import { getSettings } from "@/lib/data/settings";
-import { relativeTime, shortDate, titleCase } from "@/lib/format";
+import { relativeTime, shortDate, timeUntil, titleCase } from "@/lib/format";
 import { personaFor, ROLE_LABEL } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import { isEmbedded, settingsHref } from "@/lib/embed";
@@ -271,7 +271,6 @@ export default async function SettingsPage({
                 <p className={p.panelTitle}>Data source</p>
                 <p className={p.panelSub}>{view.source.label}</p>
               </div>
-              <Badge status="warn">Not connected</Badge>
             </div>
             <p className={p.panelSub}>{view.source.detail}</p>
           </section>
@@ -281,8 +280,8 @@ export default async function SettingsPage({
           {view.pins.length === 0 ? (
             <section className={p.panel} aria-label="Pairing PINs">
               <p className={p.panelSub}>
-                No PIN has been issued for any of your plans. A PIN is minted
-                from a sealed plan, lives thirty minutes, and can be used once.
+                No code has been issued for any of your plans. A code is minted
+                from a sealed plan, lives ten minutes, and can be used once.
               </p>
               <div>
                 <Button href="/plans" variant="secondary">
@@ -301,7 +300,7 @@ export default async function SettingsPage({
                         {pin.state === "redeemed"
                           ? `Redeemed ${relativeTime(pin.redeemedAt, new Date().toISOString())} — a headset paired`
                           : pin.state === "live"
-                            ? `Expires ${relativeTime(pin.expiresAt, new Date().toISOString())}`
+                            ? `Expires ${timeUntil(pin.expiresAt, new Date().toISOString())}`
                             : `Expired ${relativeTime(pin.expiresAt, new Date().toISOString())}`}
                       </p>
                     </div>

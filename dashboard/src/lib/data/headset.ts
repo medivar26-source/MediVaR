@@ -7,39 +7,25 @@
  */
 
 import { ApiError, apiClient } from "@/lib/api-client";
-import { assignmentFromApi, lockedPlanBody, type HeadsetLink } from "@/lib/headset-link";
-import { CASE_BY_ID } from "@/lib/seed";
+import { BUILT_IN_NOT_SENDABLE, assignmentFromApi, type HeadsetLink } from "@/lib/headset-link";
+import { isStoredPlan } from "@/lib/plan-api";
 import { getCurrentUser } from "@/lib/session";
-import { PLAN_BY_ID } from "./plans";
+import { findPlan } from "./plan-store";
 
-export async function getHeadsetLink(planId: string, opts: { isPersonalCase?: boolean } = {}): Promise<HeadsetLink> {
+export async function getHeadsetLink(planId: string): Promise<HeadsetLink> {
   const user = await getCurrentUser();
-  const plan = PLAN_BY_ID.get(planId);
+  const plan = await findPlan(planId);
   if (!plan || plan.userId !== user.id) return { available: false, assignments: [] };
 
-  const check = lockedPlanBody({
-    caseId: plan.caseId,
-    isPersonalCase: opts.isPersonalCase === true,
-    isBuiltInCase: CASE_BY_ID.has(plan.caseId),
-    lockedVersion: plan.lockedVersion,
-    stepTimings: plan.stepTimings,
-  });
-  // Missing setup choices are asked for in the panel; anything else stops the send.
-  // Once stored, the backend already holds the choices made at the first send: do not ask again.
-  const needs = "error" in check && !plan.dbPlanId ? check.needs : undefined;
-  const blocker = "error" in check && !check.needs ? check.error : undefined;
+  // A built-in practice plan is not a database row, so a headset has nothing to load.
+  if (!isStoredPlan(plan)) return { available: true, blocker: BUILT_IN_NOT_SENDABLE, assignments: [] };
 
   try {
-    // Without a stored copy there is nothing to list for this plan, but the call still tells us whether the
-    // backend has the link at all.
-    const rows = (await apiClient.get(
-      plan.dbPlanId ? `/assignments?plan_id=${encodeURIComponent(plan.dbPlanId)}` : "/assignments",
-    )) as Record<string, unknown>[];
-    const assignments = plan.dbPlanId ? rows.map(assignmentFromApi) : [];
-    return { available: true, blocker, needs, assignments };
+    const rows = (await apiClient.get(`/assignments?plan_id=${encodeURIComponent(plan.id)}`)) as Record<string, unknown>[];
+    return { available: true, assignments: rows.map(assignmentFromApi) };
   } catch (err) {
-    if (err instanceof ApiError && err.status === 404) return { available: false, blocker, needs, assignments: [] };
+    if (err instanceof ApiError && err.status === 404) return { available: false, assignments: [] };
     // The backend is down or refused: show the button anyway; pressing it reports the real error.
-    return { available: true, blocker, needs, assignments: [] };
+    return { available: true, assignments: [] };
   }
 }

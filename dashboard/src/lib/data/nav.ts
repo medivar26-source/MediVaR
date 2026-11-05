@@ -11,7 +11,8 @@
  */
 
 import { getCohorts } from "./cohorts";
-import { PLANS } from "./plans";
+import { listMyPlans } from "./plan-store";
+import type { PlanRecord } from "./plans";
 import { personaFor } from "@/lib/roles";
 import { sessionsFor } from "@/lib/seed";
 import { getLearnerSessions } from "./learner-sessions";
@@ -48,13 +49,13 @@ const EMPTY: NavData = { counts: {}, pinned: [], notifications: [] };
  * Learner: pick the plan back up, or find a case. Instructor: scheduling starts
  * from a cohort (cohort → Sessions tab), so the action opens the cohort list.
  */
-function primaryActionFor(user: Profile): NavAction | undefined {
+function primaryActionFor(user: Profile, plans: PlanRecord[]): NavAction | undefined {
   const persona = personaFor(user.role);
   if (persona === "instructor") {
     return { label: "Schedule session", href: "/programs?tab=cohorts" };
   }
   if (persona !== "learner") return undefined;
-  const open = PLANS.filter(
+  const open = plans.filter(
     (plan) => plan.userId === user.id && !plan.isReadyForVr && !plan.lockedVersion,
   ).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
   return open
@@ -81,11 +82,13 @@ async function cohortNotifications(user: Profile): Promise<NavNotification[]> {
 }
 
 export async function getNavData(user: Profile): Promise<NavData> {
-  const data = await buildNavData(user);
-  return { ...data, primaryAction: primaryActionFor(user) };
+  // The signed-in person's plans: stored ones from the backend (once per request), built-in practice plans from memory.
+  const plans = await listMyPlans(user.id);
+  const data = await buildNavData(user, plans);
+  return { ...data, primaryAction: primaryActionFor(user, plans) };
 }
 
-async function buildNavData(user: Profile): Promise<NavData> {
+async function buildNavData(user: Profile, plans: PlanRecord[]): Promise<NavData> {
   const cohortNotes = await cohortNotifications(user);
   // A learner's pinned case, live count and latest report come from the same sessions
   // the Sessions page lists; anyone else keeps the sample history for their id.
@@ -93,7 +96,7 @@ async function buildNavData(user: Profile): Promise<NavData> {
     personaFor(user.role) === "learner"
       ? (await getLearnerSessions(user.id)).filter(hasRun).slice(0, 20)
       : sessionsFor(user.id).slice(0, 20);
-  const readyCount = PLANS.filter(
+  const readyCount = plans.filter(
     (plan) => plan.userId === user.id && plan.isReadyForVr,
   ).length;
 

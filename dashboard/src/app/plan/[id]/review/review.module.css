@@ -340,6 +340,13 @@
   width: 15rem;
 }
 
+/* The two run settings asked at lock time, stacked inside the lock dialog. */
+.lockChoices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
 /* "What happens next": grouping tint, numbered. */
 .next {
   padding: var(--s-4) var(--s-5);

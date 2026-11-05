@@ -19,7 +19,9 @@
  */
 
 import { CASE_BY_ID, SESSIONS } from "@/lib/seed";
-import { PLANS, PLAN_BY_ID } from "./plans";
+import { PLANS, PLAN_BY_ID, type PlanRecord } from "./plans";
+import { createStoredPlan, fetchMyPlans, findPlan } from "./plan-store";
+import { isStoredId, isStoredPlan, newPlanSetup } from "@/lib/plan-api";
 import {
   GUIDANCE,
   REFERENCE_RANGES,
@@ -150,7 +152,9 @@ export async function getPlan(planId: string): Promise<PlanDetail | null> {
   const currentUser = await getCurrentUser();
   const isStaff = currentUser.role === "instructor" || currentUser.role === "admin";
 
-  let plan = PLAN_BY_ID.get(planId);
+  // A stored plan comes from the backend (which only answers for plans this person may read: their own, their
+  // learners', their institution's); a built-in practice plan comes from this server's memory.
+  let plan = await findPlan(planId);
 
   // A plan belongs to the person who started it. Staff may open anyone's (read for review);
   // everyone else gets "not found" rather than another learner's work.
@@ -172,25 +176,38 @@ export async function getPlan(planId: string): Promise<PlanDetail | null> {
     }
 
     if (resolvedCaseId) {
-      plan = PLANS.find((p) => p.userId === currentUser.id && p.caseId === resolvedCaseId);
-      if (!plan) {
-        const now = new Date().toISOString();
-        plan = {
-          id: crypto.randomUUID(),
-          userId: currentUser.id,
-          caseId: resolvedCaseId,
-          payload: {
-            workflow: "tkr",
-            case_id: resolvedCaseId,
-            session_config: { mode: "training", difficulty: "intermediate" },
-          },
-          stepTimings: {},
-          isReadyForVr: false,
-          createdAt: now,
-          updatedAt: now,
-        };
-        PLANS.push(plan);
-        PLAN_BY_ID.set(plan.id, plan);
+      if (isStoredId(resolvedCaseId)) {
+        // The plan for this library or personal case: the learner's newest draft, else their newest plan, else a
+        // new stored draft. Not read from the per-request list: this decides whether to create something.
+        const mine = (await fetchMyPlans(currentUser.id)).filter((p) => p.caseId === resolvedCaseId);
+        const newest = (list: PlanRecord[]) => [...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+        plan = newest(mine.filter((p) => !p.isReadyForVr)) ?? newest(mine);
+        if (!plan) {
+          const created = await createStoredPlan(resolvedCaseId, newPlanSetup({}));
+          if (!created.ok) throw new Error(created.error);
+          plan = created.value;
+        }
+      } else {
+        plan = PLANS.find((p) => p.userId === currentUser.id && p.caseId === resolvedCaseId);
+        if (!plan) {
+          const now = new Date().toISOString();
+          plan = {
+            id: crypto.randomUUID(),
+            userId: currentUser.id,
+            caseId: resolvedCaseId,
+            payload: {
+              workflow: "tkr",
+              case_id: resolvedCaseId,
+              session_config: { mode: "training", difficulty: "intermediate" },
+            },
+            stepTimings: {},
+            isReadyForVr: false,
+            createdAt: now,
+            updatedAt: now,
+          };
+          PLANS.push(plan);
+          PLAN_BY_ID.set(plan.id, plan);
+        }
       }
     }
   }
@@ -304,7 +321,8 @@ export async function getPlan(planId: string): Promise<PlanDetail | null> {
     id: plan.id,
     caseId: plan.caseId,
     isReadyForVr: plan.isReadyForVr,
-    hasSession: SESSIONS.some((s) => s.planId === plan.id),
+    hasSession: plan.attemptId !== undefined || SESSIONS.some((s) => s.planId === plan.id),
+    persisted: isStoredPlan(plan),
     payload: {
       workflow: "tkr",
       ...plan.payload,

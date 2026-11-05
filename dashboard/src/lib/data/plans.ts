@@ -8,6 +8,7 @@
  */
 
 import type { PlanPayload, PlanState, PlanSnapshot } from "@/lib/plan";
+import { isStoredPlan, pinFromHeadset } from "@/lib/plan-api";
 import { pinState, type PinLifecycle } from "./settings";
 import type { SimMode } from "@/lib/types";
 import {
@@ -59,8 +60,16 @@ export type PlanRecord = {
   createdAt: string;
   updatedAt: string;
   lockedVersion?: PlanSnapshot;
-  /** The backend's id for this plan once the sealed version has been stored there (POST /plans/locked). */
+  /**
+   * Set when this plan is a row in the database (it then equals `id`) and so survives a restart. A plan for a
+   * built-in practice case has none: it lives only in this server's memory.
+   */
   dbPlanId?: string;
+  isPersonalCase?: boolean;
+  /** The run that was performed against this plan (one plan backs one performance). */
+  attemptId?: string;
+  /** The newest headset assignment: what the review page and the Pairing list say about its code. */
+  headset?: { status: string; codeExpiresAt?: string; pairedAt?: string };
 };
 
 const FULL_TIMINGS = { "1": 54, "2": 108, "3": 61, "4": 57, "5": 49, "6": 38, "7": 17 };
@@ -414,43 +423,50 @@ export async function getPlans(
   state?: PlanState,
   userId: string = CURRENT_USER.id,
 ): Promise<PlansView> {
-  // `startPlan` files a plan under the signed-in user, so callers pass that id;
-  // the seed user is only the default for code that has no session.
-  const mine = PLANS.filter((plan) => plan.userId === userId);
+  // Stored plans come from the backend, built-in practice plans from this server's memory. The signed-in
+  // user's id is what callers pass; the seed user is only the default for code that has no session.
+  const { listMyPlans } = await import("./plan-store");
+  const mine = await listMyPlans(userId);
   const titles = await caseTitlesFor(userId, mine.map((plan) => plan.caseId));
 
   const rows: PlanRow[] = mine.map((plan) => {
     const kase = CASE_BY_ID.get(plan.caseId);
     const config = plan.payload.session_config;
     const session = SESSIONS.find((s) => s.planId === plan.id);
+    const caseTitle = kase?.title ?? titles.get(plan.caseId) ?? plan.caseId;
+    // A stored plan's performed run is the attempt behind it; a seed plan's is the sample session.
+    const sessionId = session?.id ?? plan.attemptId;
 
-    const pinRow = PINS.find((p) => p.planId === plan.id);
-    const pin: PinLifecycle | undefined = pinRow
-      ? {
-          planId: pinRow.planId,
-          caseId: pinRow.caseId,
-          caseTitle: pinRow.caseTitle,
-          sessionId: pinRow.sessionId,
-          expiresAt: pinRow.expiresAt,
-          redeemedAt: pinRow.redeemedAt,
-          state: pinState({
+    // A stored plan's code state comes from its newest headset assignment; a seed plan's from the sample list.
+    const pinRow = isStoredPlan(plan) ? undefined : PINS.find((p) => p.planId === plan.id);
+    const pin: PinLifecycle | undefined = isStoredPlan(plan)
+      ? pinFromHeadset(plan.headset, plan, caseTitle, sessionId)
+      : pinRow
+        ? {
+            planId: pinRow.planId,
+            caseId: pinRow.caseId,
+            caseTitle: pinRow.caseTitle,
+            sessionId: pinRow.sessionId,
             expiresAt: pinRow.expiresAt,
             redeemedAt: pinRow.redeemedAt,
-          }),
-        }
-      : undefined;
+            state: pinState({
+              expiresAt: pinRow.expiresAt,
+              redeemedAt: pinRow.redeemedAt,
+            }),
+          }
+        : undefined;
 
     const payload = plan.payload as unknown as Record<string, unknown>;
 
     return {
       id: plan.id,
       caseId: plan.caseId,
-      caseTitle: kase?.title ?? titles.get(plan.caseId) ?? plan.caseId,
+      caseTitle,
       difficulty: config?.difficulty ?? kase?.difficulty ?? "intermediate",
       mode: config?.mode ?? "training",
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
-      state: session
+      state: sessionId
         ? "performed"
         : pin?.state === "live"
           ? "paired"
@@ -462,7 +478,7 @@ export async function getPlans(
         (sum: number, value: unknown) => sum + (Number(value) || 0),
         0,
       ),
-      sessionId: session?.id,
+      sessionId,
       presetName: plan.presetName,
       pin,
     };

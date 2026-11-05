@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Copy, Lock, AlertCircle } from "lucide-react";
 import { sealTkrPlan } from "@/app/actions";
-import { Badge, Banner, Button, type BadgeStatus } from "@/components/ui";
+import { Badge, Banner, Button, Select, type BadgeStatus } from "@/components/ui";
 import { planOperativeSide, type PlanDetail, type V1VrPayload } from "@/lib/plan";
 import { SCAN_VIEW_NAME, resolvePlanScales } from "@/lib/data/scan_scale";
 import {
@@ -22,7 +22,7 @@ import {
 import { notchingLikely } from "@/lib/data/tkr_templates";
 import r from "./review.module.css";
 import { SendToHeadset } from "./SendToHeadset";
-import type { HeadsetLink } from "@/lib/headset-link";
+import { missingSetup, type HeadsetLink } from "@/lib/headset-link";
 
 /** The fit verdict as the app's tri-state status, so it carries an icon and a label like every other verdict. */
 function fitStatus(status?: string): BadgeStatus {
@@ -36,8 +36,14 @@ export function ReviewWorkspace({ plan, headset }: { plan: PlanDetail; headset?:
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [sealError, setSealError] = useState<string | null>(null);
+  const [design, setDesign] = useState("");
+  const [fixation, setFixation] = useState("");
 
   const isLocked = plan.isReadyForVr || plan.lockedVersion !== undefined;
+  // The headset's run settings are frozen with the plan, so a stored plan that never recorded them is asked
+  // for them here, never defaulted. (A built-in practice plan is never sent to a headset, so it is not asked.)
+  const needsSetup = plan.persisted ? missingSetup(plan.payload.session_config) : [];
+  const setupChosen = needsSetup.every((key) => (key === "implant_design" ? design : fixation) !== "");
 
   // What was actually measured. Nothing is filled in when the assessment has not been done.
   const assessment = plan.lockedVersion?.payload.v1_assessment || plan.payload.v1_assessment;
@@ -86,6 +92,8 @@ export function ReviewWorkspace({ plan, headset }: { plan: PlanDetail; headset?:
     startTransition(async () => {
       const formData = new FormData();
       formData.set("planId", plan.id);
+      if (needsSetup.includes("implant_design")) formData.set("implant_design", design);
+      if (needsSetup.includes("fixation")) formData.set("fixation", fixation);
       const result = await sealTkrPlan({}, formData);
       if (result.error) {
         setSealError(result.error);
@@ -379,6 +387,32 @@ export function ReviewWorkspace({ plan, headset }: { plan: PlanDetail; headset?:
               The plan is formatted into the V1 VR payload. Locking does not send it: you get a code for the headset afterwards.
             </p>
 
+            {needsSetup.length > 0 && (
+              <div className={r.lockChoices}>
+                <p className={r.lockText}>
+                  This plan never recorded how the headset should run it. Choose now: these are locked with the plan.
+                </p>
+                {needsSetup.includes("implant_design") && (
+                  <Select label="Implant design" required value={design} onChange={(e) => setDesign(e.target.value)} className={r.headsetField}>
+                    <option value="" disabled>
+                      Choose…
+                    </option>
+                    <option value="CR">CR (cruciate-retaining)</option>
+                    <option value="PS">PS (posterior-stabilised)</option>
+                  </Select>
+                )}
+                {needsSetup.includes("fixation") && (
+                  <Select label="Fixation" required value={fixation} onChange={(e) => setFixation(e.target.value)} className={r.headsetField}>
+                    <option value="" disabled>
+                      Choose…
+                    </option>
+                    <option value="cemented">Cemented</option>
+                    <option value="cementless">Cementless</option>
+                  </Select>
+                )}
+              </div>
+            )}
+
             {sealError && (
               <p role="alert" className={r.lockError}>{sealError}</p>
             )}
@@ -387,7 +421,7 @@ export function ReviewWorkspace({ plan, headset }: { plan: PlanDetail; headset?:
               <Button variant="secondary" onClick={() => { setSealError(null); setShowModal(false); }} disabled={isPending}>
                 Cancel
               </Button>
-              <Button variant="primary" onClick={handleConfirmLock} disabled={isPending}>
+              <Button variant="primary" onClick={handleConfirmLock} disabled={isPending || !setupChosen}>
                 {isPending ? "Locking..." : "Confirm & lock"}
               </Button>
             </div>

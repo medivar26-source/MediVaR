@@ -379,6 +379,11 @@ export type PlanDetail = {
   caseId: string;
   isReadyForVr: boolean;
   hasSession: boolean;
+  /**
+   * True when the plan is stored in the database and so survives a restart. False for a plan on a built-in
+   * practice case, which is kept in the dashboard server's memory and is lost when it restarts.
+   */
+  persisted: boolean;
   payload: PlanPayload;
   stepTimings: Record<string, number>;
   case: PlanCase;

@@ -24,7 +24,7 @@ import { listPersonalCases } from "@/lib/data/personal-cases";
 import { getPlans } from "@/lib/data/plans";
 import { cx } from "@/lib/cx";
 import type { PlanState } from "@/lib/plan";
-import { longDuration, relativeTime, titleCase } from "@/lib/format";
+import { longDuration, relativeTime, timeUntil, titleCase } from "@/lib/format";
 import { personaFor } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import { CasePlansPanel, type PlanningCase } from "./CasePlansPanel";
@@ -235,12 +235,12 @@ export default async function PlansPage({
                       <Badge status="pass">Performed</Badge>
                     ) : plan.pin?.state === "live" ? (
                       <Badge status="active">
-                        PIN expires {relativeTime(plan.pin.expiresAt, now)}
+                        Code expires {timeUntil(plan.pin.expiresAt, now)}
                       </Badge>
                     ) : plan.pin?.state === "expired" ? (
-                      <Chip tone="muted">PIN expired</Chip>
+                      <Chip tone="muted">Code expired</Chip>
                     ) : plan.state === "ready" ? (
-                      <Chip tone="muted">No PIN issued</Chip>
+                      <Chip tone="muted">No code issued</Chip>
                     ) : (
                       <Chip tone="muted">Not sealed</Chip>
                     )}

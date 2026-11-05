@@ -493,6 +493,13 @@ The sections above are the target model. These tables exist in the database now 
 | 015 | `device_tokens` | The headset's bearer token, hashed, 30 days, revoked when the device pairs again. |
 | 015 | `run_reports` | Every report a headset uploads, verbatim, with its revision and scoring status (`scored`, `awaiting_inputs`, `not_scored`). `UNIQUE (assignment_id, run_id)`. |
 
+**How `plans` is used (2026-11-05).** A plan row is created as a `draft` when the learner starts planning a library or
+personal case, and every confirmed planner step is merged into `payload` (`POST/PATCH /plans`, `plan_service.py`).
+Locking sets `status = 'locked'` in one update that also records the snapshot, the VR payload and, when the plan had
+never recorded them, the implant design and fixation; the trigger then refuses any later change. A built-in practice
+case is not a row in `cases` or `learner_personal_cases`, so a plan on it cannot exist here and stays in the dashboard
+server's memory. See `changes/plan_storage_2026-11-05.md`.
+
 ```text
 plans ──< assignments >── devices ──< device_tokens
   │            │

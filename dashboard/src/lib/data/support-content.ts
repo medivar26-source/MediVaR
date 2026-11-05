@@ -19,17 +19,17 @@ export const HELP_ARTICLES: HelpArticleSeed[] = [
     slug: "pin-not-recognised",
     topic: "pairing",
     title: "The headset says the PIN is not valid",
-    body: `A pairing PIN is four digits, single use, and lives for thirty minutes. The headset gives the same answer whether the code never existed, has expired, or has already been redeemed — telling the three apart is exactly what someone guessing at ten thousand codes would need to learn, so the product does not.
+    body: `A pairing code is six digits, single use, and lives for ten minutes. The headset says which of three things happened: the code was not recognised, it expired, or it was already used.
 
-Check your own screen first. The plan's handoff page shows the PIN it issued and counts down to its expiry. If the countdown has finished, press Issue a new PIN there; the old one stops working the moment a new one is issued, so there is only ever one live code per plan.
+Check your own screen first. The plan's review page shows the code it issued, once, and counts down to its expiry. A reloaded page cannot show the code again, because it is never stored in the clear. If the countdown has finished, or the page no longer shows the code, press Get a new code there; the old one stops working the moment a new one is issued, so there is only ever one live code per plan.
 
 If the code on screen is still live and the headset still refuses it, the digits were most likely mistyped — the keypad has no correction and a 1 and a 7 look alike on a visor.`,
   },
   {
     slug: "pairing-locked-out",
     topic: "pairing",
-    title: "Pairing says to wait fifteen minutes",
-    body: `Ten failed attempts from the same network address inside fifteen minutes stops that address pairing until the window rolls forward. A teaching lab is usually one address, so the limit is shared by the room.
+    title: "Pairing says to wait",
+    body: `Ten failed attempts from the same network address and headset inside ten minutes stops that headset pairing until the window rolls forward. A teaching lab is usually one address, but each headset is counted separately.
 
 A successful pairing clears the count for that address immediately. If somebody in the room can pair, the block lifts for everyone.
 
@@ -43,7 +43,7 @@ This is the one endpoint in the product that answers a caller holding no account
 
 Take the headset out of pairing, then check which plan issued the code you keyed. Your own plans and their pairing status are listed under Plans.
 
-Issue a new PIN from the correct plan and key that one in.`,
+Get a new code from the correct plan and key that one in.`,
     route: "/plans",
   },
   {

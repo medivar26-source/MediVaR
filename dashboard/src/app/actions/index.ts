@@ -6,6 +6,9 @@ import { planOperativeSide } from "@/lib/plan";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { PLANS, PLAN_BY_ID, type PlanRecord } from "@/lib/data/plans";
+import { createStoredPlan, fetchMyPlans, findPlan, lockStoredPlan, saveStoredPayload } from "@/lib/data/plan-store";
+import { isStoredId, isStoredPlan, newPlanSetup } from "@/lib/plan-api";
+import { BUILT_IN_NOT_SENDABLE, chosenSetup, missingSetup } from "@/lib/headset-link";
 import {
   apiCreateCase,
   apiUpdateCase,
@@ -304,49 +307,64 @@ export async function startPlan(formData: FormData): Promise<void> {
   const blocker = await getPlanBlocker(caseId, userId);
   if (blocker) throw new Error(blocker);
 
+  // Chosen on the case setup and needed by the headset. Kept only when it is a real choice: a missing
+  // implant design or fixation is never defaulted (the lock step asks for it).
+  const setup = newPlanSetup({
+    mode: String(formData.get("mode") ?? ""),
+    difficulty: String(formData.get("difficulty") ?? ""),
+    design: String(formData.get("design") ?? ""),
+    fixation: String(formData.get("fixation") ?? ""),
+  });
+
   // A learner can keep several plans for one case. "Start" resumes the most recent plan that is
   // still a draft; once none is left, or when they ask for a fresh one, it creates a new plan.
   const startFresh = formData.get("new") === "1";
-  let existing = startFresh
-    ? undefined
-    : PLANS.filter((plan: PlanRecord) => plan.caseId === caseId && plan.userId === userId && !plan.isReadyForVr)
-        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  let planId: string;
 
-  if (!existing) {
-    existing = {
-      id: crypto.randomUUID(),
-      userId: userId,
-      caseId: caseId,
-      payload: { 
-        workflow: "tkr",
-        case_id: caseId,
-        session_config: {
-          mode: (formData.get("mode") as any) || "training",
-          difficulty: (formData.get("difficulty") as any) || "intermediate",
-          // Chosen on the case setup and needed by the headset. Kept only when it is a real choice:
-          // a missing one is never defaulted, and sending to a headset then says what is missing.
-          ...(formData.get("design") === "CR" || formData.get("design") === "PS"
-            ? { implant_design: formData.get("design") as "CR" | "PS" }
-            : {}),
-          ...(formData.get("fixation") === "cemented" || formData.get("fixation") === "cementless"
-            ? { fixation: formData.get("fixation") as "cemented" | "cementless" }
-            : {}),
-        },
-      },
-      stepTimings: {},
-      isReadyForVr: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    PLANS.push(existing);
-    PLAN_BY_ID.set(existing.id, existing);
+  if (isStoredId(caseId)) {
+    // A library case or the learner's own case: the plan is stored by the backend and survives a restart.
+    // Reading the learner's plans must not fail quietly here: a missed draft would start a second one.
+    let existing = startFresh
+      ? undefined
+      : (await fetchMyPlans(userId))
+          .filter((plan: PlanRecord) => plan.caseId === caseId && !plan.isReadyForVr)
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+    if (!existing) {
+      const created = await createStoredPlan(caseId, setup);
+      if (!created.ok) throw new Error(created.error);
+      existing = created.value;
+    }
+    planId = existing.id;
+  } else {
+    // A built-in practice case is not a database row, so its plan cannot be either: it lives in this server's
+    // memory and is lost on restart (the planner says so).
+    let existing = startFresh
+      ? undefined
+      : PLANS.filter((plan: PlanRecord) => plan.caseId === caseId && plan.userId === userId && !plan.isReadyForVr)
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+
+    if (!existing) {
+      existing = {
+        id: crypto.randomUUID(),
+        userId: userId,
+        caseId: caseId,
+        payload: { workflow: "tkr", case_id: caseId, session_config: setup },
+        stepTimings: {},
+        isReadyForVr: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      PLANS.push(existing);
+      PLAN_BY_ID.set(existing.id, existing);
+    }
+    planId = existing.id;
   }
-  
+
   // Route directly to the new TKR Assessment Page
   // "Resume planning" in the top bar and the ready-for-VR count change with a new plan.
   revalidatePath("/", "layout");
-  redirect(`/plan/${existing.id}/assessment`);
+  redirect(`/plan/${planId}/assessment`);
 }
 
 export async function updatePlanPayload(
@@ -357,6 +375,7 @@ export async function updatePlanPayload(
   // reachable without a page load, so the route proxy alone is not enough.
   const user = await getCurrentUser();
   try {
+    // A plan for a built-in practice case lives in this server's memory.
     const plan = PLAN_BY_ID.get(planId);
     if (plan && plan.userId !== user.id) {
       return { success: false, error: "You can only change your own plans." };
@@ -367,6 +386,16 @@ export async function updatePlanPayload(
       plan.payload = { ...plan.payload, ...updates };
       plan.updatedAt = new Date().toISOString();
       return { success: true };
+    }
+
+    // Every other plan is stored by the backend, which merges the keys, refuses a locked plan, keeps the
+    // assessment frozen once measured, and only lets the owner write. The key whitelist is checked here too, so
+    // an unknown field is refused without a round trip.
+    if (isStoredId(planId)) {
+      const keys = checkPlanUpdate({ isReadyForVr: false, payload: {} }, updates);
+      if (!keys.ok) return { success: false, error: keys.error };
+      const saved = await saveStoredPayload(planId, updates);
+      return saved.ok ? { success: true } : { success: false, error: saved.error };
     }
     return { success: false, error: "Plan not found." };
   } catch (err: any) {
@@ -415,8 +444,8 @@ export async function sealTkrPlan(
 
   const user = await getCurrentUser();
 
-  const { PLAN_BY_ID } = await import("@/lib/data/plans");
-  const plan = PLAN_BY_ID.get(planId);
+  // A stored plan comes from the backend, a built-in practice plan from this server's memory.
+  const plan = await findPlan(planId);
 
   if (!plan) return { error: "Plan not found." };
   if (plan.userId !== user.id) return { error: "You can only lock your own plans." };
@@ -457,6 +486,24 @@ export async function sealTkrPlan(
     femoral: v1Femoral,
   });
 
+  if (isStoredPlan(plan)) {
+    // The implant design and fixation are the headset's run settings and are frozen with the plan, so a plan
+    // that never recorded them is given them here, by the person locking it, and never by a default.
+    const chosen = chosenSetup(plan.payload.session_config, {
+      implant_design: String(formData.get("implant_design") ?? ""),
+      fixation: String(formData.get("fixation") ?? ""),
+    });
+    if (missingSetup({ ...plan.payload.session_config, ...chosen }).length > 0) {
+      return { error: "Choose the implant design and fixation for this run before locking the plan." };
+    }
+    // The backend freezes the plan it holds (every edit was saved as it was made) and records the VR payload.
+    const locked = await lockStoredPlan(plan.id, vrPayload, chosen);
+    if (!locked.ok) return { error: locked.error };
+    revalidatePath("/", "layout");
+    return { isReadyForVr: true, vrPayload };
+  }
+
+  // A built-in practice plan has no database row, so it is sealed in this server's memory only.
   plan.payload.v1_vr_payload = vrPayload;
   plan.isReadyForVr = true;
   plan.lockedVersion = {
@@ -466,48 +513,11 @@ export async function sealTkrPlan(
     payload: JSON.parse(JSON.stringify(plan.payload)),
   };
 
-  // Keep the sealed version on the backend so a headset can be sent it. Not fatal: the seal stands either
-  // way, and "Send to headset" tries again (the backend treats the same sealed version as one plan).
-  await storeSealedPlan(plan, detail.case.isPersonalCase === true).catch(() => undefined);
-
   revalidatePath("/", "layout");
   return { isReadyForVr: true, vrPayload };
 }
 
 /* ------------------------------- headset link ------------------------------ */
-
-type StoreResult = { ok: true; dbPlanId: string } | { ok: false; notSetUp?: boolean; error: string };
-
-/** POST /plans/locked for a sealed in-memory plan; remembers the backend's id on the record. */
-async function storeSealedPlan(
-  plan: PlanRecord,
-  isPersonalCase: boolean,
-  chosen?: { implant_design?: string; fixation?: string },
-): Promise<StoreResult> {
-  if (plan.dbPlanId) return { ok: true, dbPlanId: plan.dbPlanId };
-  const { CASE_BY_ID } = await import("@/lib/seed");
-  const { lockedPlanBody } = await import("@/lib/headset-link");
-  const built = lockedPlanBody({
-    caseId: plan.caseId,
-    isPersonalCase,
-    isBuiltInCase: CASE_BY_ID.has(plan.caseId),
-    lockedVersion: plan.lockedVersion,
-    stepTimings: plan.stepTimings,
-    chosen,
-  });
-  if ("error" in built) return { ok: false, error: built.error };
-  const { apiClient, ApiError } = await import("@/lib/api-client");
-  try {
-    const res = (await apiClient.post("/plans/locked", built.body)) as { id: string };
-    plan.dbPlanId = res.id;
-    return { ok: true, dbPlanId: res.id };
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 404 && /not set up/i.test(err.message)) {
-      return { ok: false, notSetUp: true, error: "The headset link is not set up on this server yet." };
-    }
-    return { ok: false, error: err instanceof Error ? err.message : "The plan could not be stored for the headset." };
-  }
-}
 
 export type SendToHeadsetState = {
   code?: string;
@@ -522,25 +532,16 @@ export async function sendToHeadset(_prev: SendToHeadsetState, formData: FormDat
   const planId = String(formData.get("planId") ?? "");
   if (!planId) return { error: "This form is missing its plan." };
   const user = await getCurrentUser();
-  const plan = PLAN_BY_ID.get(planId);
+  const plan = await findPlan(planId);
   if (!plan || plan.userId !== user.id) return { error: "Plan not found." };
   if (!plan.lockedVersion) return { error: "Lock the plan before sending it to a headset." };
-
-  const { getPlan } = await import("@/lib/data/plan");
-  const detail = await getPlan(planId);
-  if (!detail) return { error: "Plan not found." };
-
-  const stored = await storeSealedPlan(plan, detail.case.isPersonalCase === true, {
-    implant_design: String(formData.get("implant_design") ?? "") || undefined,
-    fixation: String(formData.get("fixation") ?? "") || undefined,
-  });
-  if (!stored.ok) return { error: stored.error, notSetUp: stored.notSetUp };
+  if (!isStoredPlan(plan)) return { error: BUILT_IN_NOT_SENDABLE };
 
   const mode = String(formData.get("mode") ?? "");
   const { apiClient, ApiError } = await import("@/lib/api-client");
   try {
     const res = (await apiClient.post("/assignments", {
-      plan_id: stored.dbPlanId,
+      plan_id: plan.id,
       ...(mode === "Guided" || mode === "Practice" || mode === "Exam" ? { mode } : {}),
     })) as { id: string; code: string; code_expires_at: string };
     revalidatePath(`/plan/${planId}/review`);

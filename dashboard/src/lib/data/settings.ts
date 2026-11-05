@@ -9,8 +9,8 @@
  */
 
 import type { Difficulty, Profile } from "@/lib/types";
-import { COHORTS, CASE_BY_ID } from "@/lib/seed";
-import { PINS } from "./plans";
+import { COHORTS } from "@/lib/seed";
+import { getPlans } from "./plans";
 
 export type PinLifecycle = {
   planId: string;
@@ -55,34 +55,25 @@ export async function getSettings(user: Profile): Promise<SettingsView> {
     ? COHORTS.find((c) => c.id === user.cohortId)
     : undefined;
 
-  const pins: PinLifecycle[] = PINS.map((row) => {
-    const shape = {
-      planId: row.planId,
-      caseId: row.caseId,
-      caseTitle: CASE_BY_ID.get(row.caseId)?.title ?? row.caseTitle,
-      sessionId: row.sessionId,
-      expiresAt: row.expiresAt,
-      redeemedAt: row.redeemedAt,
-    };
-    return { ...shape, state: pinState(shape) };
-  });
+  // The code lifecycle of the user's own plans: each plan's newest headset assignment (never the digits).
+  const pins: PinLifecycle[] = (await getPlans(undefined, user.id)).plans.flatMap((plan) => (plan.pin ? [plan.pin] : []));
 
   return {
     cohortName: cohort?.name,
     presetName: undefined,
     pins,
     source: {
-      label: "Seed data",
+      label: "Database",
       detail:
-        "Screens render from the local seed. Nothing is fetched and nothing is written, so a reload returns the same rows.",
+        "Plans, sessions, cases, cohorts and results are saved to and read from the backend database, so restarting the server loses nothing. The exception is built-in practice cases: they are not database rows, so a plan on one is kept in memory and is lost when the dashboard server restarts.",
     },
     fleet: undefined,
     about: [
       { label: "Dashboard", value: "Next.js 16 · React 19 · TypeScript" },
-      { label: "Data", value: "Local seed fixtures — no service is called" },
-      { label: "Headset", value: "Unity 6000.0.66f2 · URP · OpenXR (not yet built)" },
+      { label: "Data", value: "Backend database, through the MediVeR API" },
+      { label: "Headset", value: "Quest 3 · pairs with a one-time code from a sealed plan; its report comes back through the API" },
       { label: "Design system", value: "MediVeR Flat — light theme only" },
-      { label: "Scoring", value: "Not implemented — reports carry authored scores" },
+      { label: "Scoring", value: "Headset runs are scored by the backend (sample tolerances, pending clinical approval)" },
     ],
   };
 }

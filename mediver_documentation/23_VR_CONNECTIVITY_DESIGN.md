@@ -70,7 +70,7 @@ Headset paths and shapes follow the headset plan exactly, so the two sides can b
 | Headset | `POST /devices/pair` `{code, deviceId, deviceName, appVersion, schemaVersion}` | `{assignmentId, token, tokenExpiresAt, casePlan}`. **404** unknown · **410** expired or already used · **429** too many wrong codes (`Retry-After`) |
 | Headset | `GET /assignments/{id}/plan` | The CasePlan again (resume, restart). 403 if not this headset's assignment |
 | Headset | `PUT /assignments/{id}/runs/{runId}/report` | `{accepted, receivedAtUtc, scoring, missing}`. Idempotent on `runId`; **401** → re-pair; **422** → poison, never retried; **409** → the plan already has another run |
-| Dashboard | `POST /plans/locked` | Keep a sealed plan (the server checks the case and the V1 payload) |
+| Dashboard | `POST /plans/{id}/lock` | Seal the stored draft (2026-11-05: plans are stored as the learner works, `POST/PATCH /plans`). `POST /plans/locked`, the older one-call store, still works |
 | Dashboard | `POST /assignments` `{plan_id, mode?}` | `{id, code, code_expires_at, …}` **The code is shown once.** |
 | Dashboard | `GET /assignments?plan_id=` | Status of what was sent, never the code |
 
@@ -185,11 +185,13 @@ Built since (dashboard):
 
 - `startPlan` now keeps the implant design and fixation chosen on the case setup (they were dropped, which would have
   blocked every send).
-- Most ways into the planner (a case page, a direct link) never ask for implant design and fixation. Instead of refusing
-  such a plan, the **Send to headset** panel asks for both, as two required dropdowns with nothing preselected (never
-  defaulted). The choice goes into the stored plan's `session_config` and is not asked again for that plan. A choice
+- Most ways into the planner (a case page, a direct link) never ask for implant design and fixation. The database freezes
+  a locked plan's setup, so the **lock dialog** asks for both (two required dropdowns, nothing preselected, never
+  defaulted) when the plan never recorded them (2026-11-05; they used to be asked on the Send to headset box). A choice
   never overrides a value the plan already recorded.
-- `sealTkrPlan` also stores the sealed version (`POST /plans/locked`); not fatal if the link is not set up.
+- `sealTkrPlan` seals the stored draft with `POST /plans/{id}/lock`; plans are stored as the learner works
+  (`changes/plan_storage_2026-11-05.md`). Built-in practice cases are not database rows: their plans stay in memory and
+  cannot be sent.
 - The review page's sealed banner has **Send to headset** (`app/plan/[id]/review/SendToHeadset.tsx`): a one-time code in
   large digits with a 10-minute countdown, then the status (waiting → connected → in progress → report ready / awaiting
   inputs / expired), polled every 4 s while the headset may still act, with a link to the report once scored. It says
@@ -199,11 +201,12 @@ Built since (dashboard):
 
 Not built:
 
-1. `Settings → Pairing` and `/plans` still read the in-memory `PINS`; they should read `GET /assignments`.
-2. **Plans are still memory-only for drafts.** Only *sealed* plans go to the database; the full draft persistence in
-   `22_PERSISTENT_PLANS…` §4 is a separate step. Built-in demo cases (`CASE_001`…) are not database rows and cannot be sent.
-3. **Phase 3:** `POST …/events` and the live stream (Server-Sent Events).
-4. **Run against a real database.** Nothing here has touched one.
+1. ~~`Settings → Pairing` and `/plans` read the in-memory `PINS`~~: done 2026-11-05, both read each plan's real
+   headset assignment.
+2. ~~Drafts are memory-only~~: done 2026-11-05. Plans for library and personal cases are stored from the first
+   save; only plans on built-in practice cases (`CASE_001`…, not database rows) remain in memory.
+3. **Phase 3:** `POST …/events` and the live stream. Designed 2026-11-05 in `25_LIVE_VIEW_AND_RUN_JOURNEY.md` (events + snapshots, polled; not built).
+4. **The plan storage SQL (2026-11-05) has not been run against Postgres by me.** Run `backend/scripts/check_plan_storage.py` once; it rolls everything back.
 
 ## 10. Decisions needed
 
@@ -246,8 +249,8 @@ From `backend/`:
    only in their *development* builds; a release build needs HTTPS (a deployed backend with a public certificate).
 3. Prove the chain with the stand-in headset before the real one is ready:
    - in the dashboard, plan a **library** case (not a built-in practice case), seal it on the review page (step 4,
-     **Lock plan**), then in the **Send to headset** box choose the implant design and fixation if it asks and press
-     **Get a code**;
+     **Lock plan**; the dialog asks for the implant design and fixation if the plan never recorded them), then in the
+     **Send to headset** box press **Get a code**;
    - `./venv/Scripts/python.exe scripts/fake_headset.py --code <the code>`
      (add `--keys headset` to see what happens with a headset build that lacks the requested additions);
    - the review page moves to "Run finished. The report is ready.", and the run appears in Sessions, Insights and the

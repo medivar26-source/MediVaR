@@ -87,8 +87,8 @@ export function useSaveStatus<T>(
     if (lastAttempt.current) void save(lastAttempt.current.updates, lastAttempt.current.value);
   }, [save]);
 
-  // Leaving with edits that were never saved loses them (plans live in server memory only
-  // until confirmed), so ask first.
+  // A step is stored when it is confirmed (Continue / Confirm), not while it is being moved around, so leaving
+  // with edits that were never confirmed loses them. Ask first.
   useEffect(() => {
     if (!dirty || locked) return;
     const handler = (e: BeforeUnloadEvent) => {

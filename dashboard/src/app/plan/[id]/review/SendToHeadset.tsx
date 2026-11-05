@@ -4,7 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { Headset } from "lucide-react";
 import { headsetStatus, sendToHeadset, type SendToHeadsetState } from "@/app/actions";
-import { Button, Select } from "@/components/ui";
+import { Button } from "@/components/ui";
 import {
   assignmentStatusText,
   clockText,
@@ -124,25 +124,6 @@ export function SendToHeadset({ planId, initial }: { planId: string; initial: He
       {canSend && (
         <form action={formAction} className={r.headsetForm}>
           <input type="hidden" name="planId" value={planId} />
-          {/* Asked only when the plan never recorded them, and never preselected: the headset runs what is chosen. */}
-          {link.needs?.includes("implant_design") && (
-            <Select label="Implant design" name="implant_design" required defaultValue="" className={r.headsetField}>
-              <option value="" disabled>
-                Choose…
-              </option>
-              <option value="CR">CR (cruciate-retaining)</option>
-              <option value="PS">PS (posterior-stabilised)</option>
-            </Select>
-          )}
-          {link.needs?.includes("fixation") && (
-            <Select label="Fixation" name="fixation" required defaultValue="" className={r.headsetField}>
-              <option value="" disabled>
-                Choose…
-              </option>
-              <option value="cemented">Cemented</option>
-              <option value="cementless">Cementless</option>
-            </Select>
-          )}
           <Button type="submit" variant="primary" size="sm" loading={pending}>
             {current ? "Get a new code" : "Get a code"}
           </Button>

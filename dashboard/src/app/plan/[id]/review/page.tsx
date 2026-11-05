@@ -18,7 +18,7 @@ export default async function TkrReviewPage({
 
   // Only a sealed plan can go to a headset; the link is read fresh on every request (its status moves).
   const isLocked = plan.isReadyForVr || plan.lockedVersion !== undefined;
-  const headset = isLocked ? await getHeadsetLink(id, { isPersonalCase: plan.case.isPersonalCase === true }) : undefined;
+  const headset = isLocked ? await getHeadsetLink(plan.id) : undefined;
 
   // A plan that has been performed is sealed, so this page shows it read-only; the
   // session and report pages link here as "Open plan".

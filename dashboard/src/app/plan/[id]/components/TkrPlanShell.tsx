@@ -209,6 +209,16 @@ export function TkrPlanShell({
               </span>
               {/* Said in words, not left in a hover tooltip: it changes every measurement. */}
               <span className={s.scaleText}>{calibrationText}</span>
+              {/* A built-in practice case is not a database row, so its plan cannot be one either. Said where the
+                  learner sees it, because the loss on a restart is silent otherwise. */}
+              {!plan.persisted && (
+                <span
+                  className={s.chipWarn}
+                  title="This plan is on a built-in practice case, so it is kept in the server's memory only and is lost when the server restarts. Plan a case from the library to keep it."
+                >
+                  Practice plan · not saved
+                </span>
+              )}
               {identity.patientIdSource === "synthetic fixture" && (
                 <span className={s.chipDemo} title="Synthetic demo case. Not for clinical use.">
                   Demo data

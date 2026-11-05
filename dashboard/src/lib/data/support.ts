@@ -44,7 +44,7 @@ export type HelpTopic = {
 const TOPIC_META: Record<string, { label: string; lede: string }> = {
   pairing: {
     label: "Pairing a headset",
-    lede: "A four-digit PIN, single use, thirty minutes. Most pairing problems are one of five things.",
+    lede: "A six-digit code, single use, ten minutes. Most pairing problems are one of five things.",
   },
   session: {
     label: "During and after a session",

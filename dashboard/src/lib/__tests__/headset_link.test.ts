@@ -6,90 +6,36 @@ import {
   clockText,
   currentAssignment,
   formatPairingCode,
-  lockedPlanBody,
+  missingSetup,
+  chosenSetup,
   secondsLeft,
   shouldPoll,
   type HeadsetAssignment,
 } from "../headset-link";
-import type { PlanSnapshot } from "../plan";
 
-const VR = {
-  patient_id: "SYN-TKA-101",
-  knee_side: "LEFT" as const,
-  assessment: { MAD_mm: 25, AMA_deg: 6.5, mHKA_deg: 8, MPTA_deg: 85, LDFA_deg: 88, PTS_deg: 7 },
-  tibial_component: { implant_size: 4, position_2d: { x_offset_mm: 0, y_offset_mm: 0, rotation_deg: 0 } },
-  femoral_component: { implant_size: 5, position_2d: { x_offset_mm: 0, y_offset_mm: 0, rotation_deg: 0 } },
-};
-
-function snapshot(config: Record<string, unknown> = { mode: "training", difficulty: "intermediate", implant_design: "CR", fixation: "cemented" }): PlanSnapshot {
-  return {
-    versionId: "lv-1",
-    sealedBy: "u-1",
-    sealedAt: "2026-11-03T10:00:00Z",
-    payload: { workflow: "tkr", session_config: config as never, v1_vr_payload: VR as never },
-  };
-}
-
-const base = { caseId: "c-1", isPersonalCase: false, isBuiltInCase: false, stepTimings: { assessment: 120 } };
-
-describe("lockedPlanBody", () => {
-  it("builds the body for a library case with the sealed version", () => {
-    const out = lockedPlanBody({ ...base, lockedVersion: snapshot() });
-    assert.ok("body" in out);
-    assert.equal(out.body.case_id, "c-1");
-    assert.equal(out.body.personal_case_id, undefined);
-    assert.equal(out.body.locked_version_id, "lv-1");
-    assert.deepEqual(out.body.session_config, { mode: "training", difficulty: "intermediate", implant_design: "CR", fixation: "cemented" });
-    assert.equal(out.body.vr_payload.knee_side, "LEFT");
-    assert.deepEqual(out.body.step_timings, { assessment: 120 });
+describe("setup choices the plan never recorded", () => {
+  it("reports what is missing and never defaults it", () => {
+    assert.deepEqual(missingSetup(undefined), ["implant_design", "fixation"]);
+    assert.deepEqual(missingSetup({}), ["implant_design", "fixation"]);
+    assert.deepEqual(missingSetup({ implant_design: "CR" }), ["fixation"]);
+    assert.deepEqual(missingSetup({ fixation: "cemented" }), ["implant_design"]);
+    assert.deepEqual(missingSetup({ implant_design: "CR", fixation: "cemented" }), []);
   });
 
-  it("sends a personal case as personal_case_id", () => {
-    const out = lockedPlanBody({ ...base, isPersonalCase: true, lockedVersion: snapshot() });
-    assert.ok("body" in out);
-    assert.equal(out.body.personal_case_id, "c-1");
-    assert.equal(out.body.case_id, undefined);
-  });
-
-  it("refuses a built-in demo case, an unlocked plan, and a missing VR payload", () => {
-    assert.match((lockedPlanBody({ ...base, isBuiltInCase: true, lockedVersion: snapshot() }) as { error: string }).error, /built-in/);
-    assert.match((lockedPlanBody({ ...base }) as { error: string }).error, /Lock the plan/);
-    const noVr = snapshot();
-    delete noVr.payload.v1_vr_payload;
-    assert.match((lockedPlanBody({ ...base, lockedVersion: noVr }) as { error: string }).error, /VR payload/);
-  });
-
-  it("never defaults the implant design or fixation: it asks for them", () => {
-    const out = lockedPlanBody({ ...base, lockedVersion: snapshot({ mode: "training", difficulty: "expert" }) });
-    assert.ok("error" in out);
-    assert.deepEqual(out.needs, ["implant_design", "fixation"]);
+  it("treats a value that is not a real choice as missing", () => {
+    assert.deepEqual(missingSetup({ implant_design: "XX", fixation: "glued" }), ["implant_design", "fixation"]);
+    assert.deepEqual(missingSetup({ implant_design: "", fixation: "" }), ["implant_design", "fixation"]);
   });
 
   it("takes the sender's choice where the plan recorded nothing, and only a valid one", () => {
-    const bare = snapshot({ mode: "training", difficulty: "expert" });
-    const ok = lockedPlanBody({ ...base, lockedVersion: bare, chosen: { implant_design: "PS", fixation: "cementless" } });
-    assert.ok("body" in ok);
-    assert.equal(ok.body.session_config.implant_design, "PS");
-    assert.equal(ok.body.session_config.fixation, "cementless");
-    const half = lockedPlanBody({ ...base, lockedVersion: bare, chosen: { implant_design: "XX", fixation: "cemented" } });
-    assert.ok("error" in half);
-    assert.deepEqual(half.needs, ["implant_design"]);
+    assert.deepEqual(chosenSetup({}, { implant_design: "PS", fixation: "cementless" }), { implant_design: "PS", fixation: "cementless" });
+    assert.deepEqual(chosenSetup({}, { implant_design: "XX", fixation: "cemented" }), { fixation: "cemented" });
+    assert.deepEqual(chosenSetup({}, { implant_design: null, fixation: undefined }), {});
   });
 
   it("never lets a choice override what the plan already recorded", () => {
-    const out = lockedPlanBody({ ...base, lockedVersion: snapshot(), chosen: { implant_design: "PS", fixation: "cementless" } });
-    assert.ok("body" in out);
-    assert.equal(out.body.session_config.implant_design, "CR");
-    assert.equal(out.body.session_config.fixation, "cemented");
-  });
-
-  it("keeps an assessment plan's mode and treats an unknown mode as training", () => {
-    const exam = lockedPlanBody({ ...base, lockedVersion: snapshot({ mode: "assessment", difficulty: "expert", implant_design: "PS", fixation: "cementless" }) });
-    assert.ok("body" in exam);
-    assert.equal(exam.body.session_config.mode, "assessment");
-    const odd = lockedPlanBody({ ...base, lockedVersion: snapshot({ mode: "weird", difficulty: "expert", implant_design: "PS", fixation: "cementless" }) });
-    assert.ok("body" in odd);
-    assert.equal(odd.body.session_config.mode, "training");
+    assert.deepEqual(chosenSetup({ implant_design: "CR", fixation: "cemented" }, { implant_design: "PS", fixation: "cementless" }), {});
+    assert.deepEqual(chosenSetup({ implant_design: "CR" }, { implant_design: "PS", fixation: "cementless" }), { fixation: "cementless" });
   });
 });
 

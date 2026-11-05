@@ -87,6 +87,17 @@ export function relativeTime(iso: string | undefined, now: string): string {
   return shortDate(iso);
 }
 
+/** "in 9 min" for a time still ahead (a code's expiry). The past is `relativeTime`'s job. */
+export function timeUntil(iso: string | undefined, now: string): string {
+  if (!iso) return "never";
+  const minutes = Math.ceil((Date.parse(iso) - Date.parse(now)) / 60_000);
+  if (Number.isNaN(minutes) || minutes <= 0) return "now";
+  if (minutes < 60) return `in ${minutes} min`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `in ${hours} h`;
+  return `in ${Math.round(hours / 24)} days`;
+}
+
 export function daysSince(iso: string | undefined, now: string): number {
   if (!iso) return Infinity;
   return Math.floor((Date.parse(now) - Date.parse(iso)) / 86_400_000);
