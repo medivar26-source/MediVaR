@@ -289,6 +289,23 @@ export function frameUrl(assignmentId: string, seq: number): string {
   return `/api/live/${encodeURIComponent(assignmentId)}/frame?v=${seq}`;
 }
 
+/** The moving picture (MJPEG off the backend's relay), played by an <img>. `v` restarts the stream after a drop. */
+export function streamUrl(assignmentId: string, attempt: number): string {
+  return `/api/live/${encodeURIComponent(assignmentId)}/stream?v=${attempt}`;
+}
+
+export function streamStatusUrl(assignmentId: string): string {
+  return `/api/live/${encodeURIComponent(assignmentId)}/stream/status`;
+}
+
+/**
+ * Which picture to show: the stream while the headset is on it and the run is live, else the snapshot. A
+ * broken stream (the <img> errored) falls back until the next status poll says the device is back.
+ */
+export function pictureSource(s: Pick<LiveSummary, "liveState">, deviceOnStream: boolean, streamBroken: boolean): "stream" | "snapshot" {
+  return s.liveState === "live" && deviceOnStream && !streamBroken ? "stream" : "snapshot";
+}
+
 export function clockText(totalSeconds: number): string {
   const s = Math.max(0, Math.floor(totalSeconds));
   const h = Math.floor(s / 3600);

@@ -7,6 +7,8 @@ import {
   clockText,
   elapsedNow,
   frameUrl,
+  pictureSource,
+  streamUrl,
   liveChipText,
   livePagePath,
   liveSummaryFromApi,
@@ -141,5 +143,17 @@ describe("where to reach it", () => {
     assert.equal(agoText(2.6), "2 s ago");
     assert.equal(agoText(125), "2 min ago");
     assert.equal(agoText(null), "never");
+  });
+});
+
+describe("the picture", () => {
+  it("is the stream only while the run is live, the headset is on it and the <img> has not broken", () => {
+    assert.equal(pictureSource({ liveState: "live" }, true, false), "stream");
+    assert.equal(pictureSource({ liveState: "live" }, false, false), "snapshot");
+    assert.equal(pictureSource({ liveState: "live" }, true, true), "snapshot");
+    assert.equal(pictureSource({ liveState: "paused" }, true, false), "snapshot");
+  });
+  it("restarts the stream with a new attempt number", () => {
+    assert.equal(streamUrl("a b", 3), "/api/live/a%20b/stream?v=3");
   });
 });

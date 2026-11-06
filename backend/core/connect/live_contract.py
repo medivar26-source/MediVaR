@@ -318,3 +318,58 @@ def frame_meta(headers: Dict[str, str]) -> Dict[str, Any]:
 
 def since(now: datetime, seconds: float) -> datetime:
     return now - timedelta(seconds=seconds)
+
+
+# ---------------------------------------------------------------------------------------------------------
+# 5. The live stream (LAN): many frames a second over one WebSocket, relayed to viewers as MJPEG
+# ---------------------------------------------------------------------------------------------------------
+# Why a second path beside the snapshot PUT (section 4): a picture a second is a snapshot, and the owner asked
+# for a moving picture "like Meta Quest Developer Hub" over the office Wi-Fi (2026-11-06). The headset keeps
+# one WebSocket open per run and pushes small JPEGs on it; the backend keeps only the NEWEST frame per
+# assignment in memory and fans it out to whoever is watching. Nothing of the stream touches the report path.
+import struct
+
+STREAM_MAGIC = b"MJPG"
+STREAM_HEADER = struct.Struct(">4sIIIq")        # magic, seq, width, height, capturedAt (unix ms)
+STREAM_HEADER_BYTES = STREAM_HEADER.size         # 24
+STREAM_DEFAULT_FPS = 10
+STREAM_MAX_FPS = 15
+STREAM_CONTROL_EVERY_SECONDS = 2.0               # the device hears the control block at least this often
+
+
+def parse_stream_frame(data: bytes) -> Tuple[Optional[Dict[str, Any]], Optional[bytes], List[str]]:
+    """One binary WebSocket message from the headset -> (meta, jpeg, problems). The header is fixed and the body
+    is a JPEG under the same ceiling as a snapshot; anything else is named, never guessed at."""
+    problems: List[str] = []
+    if data is None or len(data) < STREAM_HEADER_BYTES:
+        return None, None, ["message shorter than the frame header"]
+    magic, seq, width, height, captured_ms = STREAM_HEADER.unpack_from(data, 0)
+    if magic != STREAM_MAGIC:
+        return None, None, ["frame header magic is not MJPG"]
+    jpeg = bytes(data[STREAM_HEADER_BYTES:])
+    if len(jpeg) == 0:
+        problems.append("frame body is empty")
+    if len(jpeg) > FRAME_MAX_BYTES:
+        problems.append(f"frame is {len(jpeg)} bytes; at most {FRAME_MAX_BYTES} are accepted")
+    if jpeg and not jpeg.startswith(JPEG_MAGIC):
+        problems.append("body is not a JPEG")
+    if seq < 1:
+        problems.append("seq must be >= 1")
+    if not 1 <= width <= FRAME_MAX_WIDTH or not 1 <= height <= FRAME_MAX_HEIGHT:
+        problems.append(f"size must be within {FRAME_MAX_WIDTH}x{FRAME_MAX_HEIGHT}")
+    if problems:
+        return None, None, problems
+    captured = datetime.fromtimestamp(captured_ms / 1000.0, tz=timezone.utc) if captured_ms > 0 else None
+    return {"seq": int(seq), "width": int(width), "height": int(height), "capturedAt": captured}, jpeg, []
+
+
+def pack_stream_frame(seq: int, width: int, height: int, captured_ms: int, jpeg: bytes) -> bytes:
+    """The headset's side of the same header, for the stand-in and the tests."""
+    return STREAM_HEADER.pack(STREAM_MAGIC, seq, width, height, captured_ms) + jpeg
+
+
+def stream_control(watchers: int, fps: int = STREAM_DEFAULT_FPS) -> Dict[str, Any]:
+    """What the device is told on the stream: send only while somebody watches, at most this fast."""
+    fps = max(1, min(STREAM_MAX_FPS, int(fps)))
+    return {"watchers": int(watchers), "wantFrames": watchers > 0, "fps": fps, "maxBytes": FRAME_MAX_BYTES}
+

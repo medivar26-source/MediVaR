@@ -104,6 +104,8 @@ def ingest_events(device: Dict[str, Any], assignment_id: str, run_id: str, body:
             if not row.get("ended_at"):
                 # Two runs cannot be live on one assignment. A new run id replaces an ended one only.
                 raise ConnectError(409, f"Another run ({row['run_id']}) is live on this assignment.")
+            # The ended run's row stays (assignment_id is the key): the insert below upserts over it. A plain
+            # INSERT was a 500 (live_runs_pkey) on every second run of an assignment, found 2026-11-06.
             cur.execute("DELETE FROM live_frames WHERE assignment_id = %s", (assignment_id,))
             row = None
 
@@ -138,7 +140,11 @@ def ingest_events(device: Dict[str, Any], assignment_id: str, run_id: str, body:
         if row is None:
             cur.execute(
                 """INSERT INTO live_runs (assignment_id, run_id, device_id, last_seq, state, started_at, last_event_at, ended_at, outcome)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                   ON CONFLICT (assignment_id) DO UPDATE SET run_id = EXCLUDED.run_id, device_id = EXCLUDED.device_id,
+                       last_seq = EXCLUDED.last_seq, state = EXCLUDED.state, started_at = EXCLUDED.started_at,
+                       last_event_at = EXCLUDED.last_event_at, ended_at = EXCLUDED.ended_at, outcome = EXCLUDED.outcome,
+                       last_viewed_at = NULL""",
                 (assignment_id, run_id, device["uuid"], last_seq, json.dumps(state), started_at, now, ended_at, outcome),
             )
             last_viewed_at = None
@@ -318,6 +324,48 @@ def _plan_values(cur, assignment: Dict[str, Any]) -> List[Dict[str, Any]]:
         out.append({"key": key, "label": meta.label if meta else key, "value": v.get("value"),
                     "tolerance": v.get("tolerance"), "unit": v.get("unit")})
     return out
+
+
+def open_stream(device: Dict[str, Any], assignment_id: str, run_id: str) -> Dict[str, Any]:
+    """The checks a frame upload makes, once, before a stream is accepted: the device is paired to this assignment,
+    the run is the live one and has not ended. Returns the live_runs row."""
+    with cursor() as cur:
+        _require_live(cur)
+        _open_assignment(cur, device, assignment_id)
+        row = _live_run(cur, assignment_id)
+        if row is None or row["run_id"] != run_id:
+            raise ConnectError(409, "No live run with that id on this assignment; send run_started first.")
+        if row.get("ended_at"):
+            raise ConnectError(409, "This run has ended.")
+        return row
+
+
+def store_stream_frame(device: Dict[str, Any], assignment_id: str, run_id: str, meta: Dict[str, Any], jpeg: bytes,
+                       now: Optional[datetime] = None) -> Dict[str, Any]:
+    """A frame off the stream, kept the way a snapshot is (newest row per assignment), so the polling page and
+    GET /live/frame keep working for a viewer that is not on the stream. Called at most about once a second."""
+    headers = {"content-type": "image/jpeg", "x-frame-seq": str(meta["seq"]), "x-frame-width": str(meta["width"]),
+               "x-frame-height": str(meta["height"])}
+    if meta.get("capturedAt"):
+        headers["x-captured-at"] = meta["capturedAt"].strftime("%Y-%m-%dT%H:%M:%SZ")
+    return store_frame(device, assignment_id, run_id, headers, jpeg, now)
+
+
+def may_watch(user, assignment_id: str) -> Dict[str, Any]:
+    """The visibility rule of read_live, on its own, for the stream: who may open it. Returns the assignment."""
+    with cursor() as cur:
+        _require_live(cur)
+        return _visible_assignment(cur, user, assignment_id)
+
+
+def stamp_viewed(assignment_id: str, now: Optional[datetime] = None) -> None:
+    """A stream viewer counts as a watcher for the snapshot path too, so a headset on the OLD build (no stream)
+    still sends its pictures to someone looking at the stream page."""
+    now = _now(now)
+    with cursor() as cur:
+        _require_live(cur)
+        cur.execute("UPDATE live_runs SET last_viewed_at = %s WHERE assignment_id = %s AND ended_at IS NULL",
+                    (now, assignment_id))
 
 
 def read_frame(user, assignment_id: str) -> Optional[Dict[str, Any]]:

@@ -11,7 +11,10 @@ import {
   liveSummaryFromApi,
   liveWording,
   mergeEvents,
+  pictureSource,
   pollIntervalMs,
+  streamStatusUrl,
+  streamUrl,
   sceneStates,
   stepLog,
   stepLogLine,
@@ -40,6 +43,9 @@ export function LiveView({ initial, scenes }: { initial: LiveSummary; scenes: Sc
   const [offline, setOffline] = useState(false);
   const lastSeq = useRef(initial.events.reduce((m, e) => Math.max(m, e.seq), 0));
   const loadingFrame = useRef<number | null>(null);
+  const [deviceOnStream, setDeviceOnStream] = useState(false);
+  const [streamAttempt, setStreamAttempt] = useState(1);
+  const [streamBroken, setStreamBroken] = useState(false);
 
   // The clock.
   useEffect(() => {
@@ -93,6 +99,31 @@ export function LiveView({ initial, scenes }: { initial: LiveSummary; scenes: Sc
     };
   }, [initial]);
 
+  // The stream: ask every 3 s whether the headset is on it; a broken <img> retries on the next "yes".
+  const liveNow = summary.liveState === "live";
+  useEffect(() => {
+    if (!liveNow) { setDeviceOnStream(false); return; }
+    let cancelled = false;
+    const ask = async () => {
+      try {
+        const res = await fetch(streamStatusUrl(summary.assignmentId), { cache: "no-store" });
+        if (!res.ok) throw new Error(String(res.status));
+        const st = (await res.json()) as { deviceConnected?: boolean };
+        if (cancelled) return;
+        const on = Boolean(st.deviceConnected);
+        setDeviceOnStream((was) => {
+          if (on && !was) { setStreamBroken(false); setStreamAttempt((n) => n + 1); }
+          return on;
+        });
+      } catch {
+        if (!cancelled) setDeviceOnStream(false);
+      }
+    };
+    void ask();
+    const id = setInterval(ask, 3000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [liveNow, summary.assignmentId]);
+
   // The snapshot: fetch the next frame off-screen, show it only once it has loaded.
   const frameSeq = summary.frame?.seq ?? null;
   useEffect(() => {
@@ -107,6 +138,7 @@ export function LiveView({ initial, scenes }: { initial: LiveSummary; scenes: Sc
 
   const wording = liveWording(summary);
   const ended = summary.liveState === "ended";
+  const picture = pictureSource(summary, deviceOnStream, streamBroken);
   const elapsed = elapsedNow(summary, (now - readAt) / 1000);
   const sinceRead = (now - readAt) / 1000;
   const lastUpdate = summary.secondsSinceEvent === null || summary.secondsSinceEvent === undefined
@@ -164,9 +196,22 @@ export function LiveView({ initial, scenes }: { initial: LiveSummary; scenes: Sc
 
       <div className={s.grid}>
         <Card padding="none" className={s.frameCard}>
-          <CardHeader flush title="What the resident sees" subtitle="Snapshot, about once a second. Not video." />
+          <CardHeader
+            flush
+            title="What the resident sees"
+            subtitle={picture === "stream" ? "Live from the headset, over the local network." : "Snapshot, about once a second."}
+          />
           <div className={s.frameBox}>
-            {shownFrame ? (
+            {picture === "stream" ? (
+              // The moving picture is an MJPEG stream piped through a route handler; the browser plays it as it arrives.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                className={s.frame}
+                src={streamUrl(summary.assignmentId, streamAttempt)}
+                alt={`Headset view, live, scene ${summary.state.sceneId || "unknown"}`}
+                onError={() => setStreamBroken(true)}
+              />
+            ) : shownFrame ? (
               // The frame is a plain <img>: it is a live JPEG served through a route handler, never optimised or cached.
               // eslint-disable-next-line @next/next/no-img-element
               <img className={s.frame} src={shownFrame} alt={`Headset view, scene ${summary.state.sceneId || "unknown"}`} />
