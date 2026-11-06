@@ -47,6 +47,9 @@ export function planFromApi(row: Record<string, unknown>): PlanRecord {
         status: String(row.headset.status),
         codeExpiresAt: text(row.headset.code_expires_at),
         pairedAt: text(row.headset.paired_at),
+        // Only when the backend sent them (older rows and the tests' fixtures have neither).
+        ...(text(row.headset.id) ? { id: text(row.headset.id) } : {}),
+        ...(text(row.headset.device_name) ? { deviceName: text(row.headset.device_name) } : {}),
       }
     : undefined;
   const timings = isObject(row.step_timings) ? row.step_timings : {};
@@ -78,15 +81,17 @@ export function pinFromHeadset(
 ): PinLifecycle | undefined {
   if (!headset) return undefined;
   const expiresAt = headset.codeExpiresAt ?? headset.pairedAt ?? "";
+  const link = { assignmentId: headset.id, deviceName: headset.deviceName };
   switch (headset.status) {
     case "pending":
-      return { planId: plan.id, caseId: plan.caseId, caseTitle, sessionId, expiresAt, state: "live" };
+      return { planId: plan.id, caseId: plan.caseId, caseTitle, sessionId, expiresAt, state: "live", ...link, connected: true };
     case "expired":
-      return { planId: plan.id, caseId: plan.caseId, caseTitle, sessionId, expiresAt, state: "expired" };
+      return { planId: plan.id, caseId: plan.caseId, caseTitle, sessionId, expiresAt, state: "expired", ...link };
     case "paired":
     case "running":
+      return { planId: plan.id, caseId: plan.caseId, caseTitle, sessionId, expiresAt, redeemedAt: headset.pairedAt, state: "redeemed", ...link, connected: true };
     case "reported":
-      return { planId: plan.id, caseId: plan.caseId, caseTitle, sessionId, expiresAt, redeemedAt: headset.pairedAt, state: "redeemed" };
+      return { planId: plan.id, caseId: plan.caseId, caseTitle, sessionId, expiresAt, redeemedAt: headset.pairedAt, state: "redeemed", ...link };
     default:
       return undefined; // a replaced (cancelled) code is not a pairing
   }

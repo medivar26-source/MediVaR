@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { CalendarPlus, ChevronRight, FilePlus, UserPlus, Users } from "lucide-react";
 import { PageHeader, SectionHeader } from "@/components/shell";
@@ -37,12 +38,15 @@ export function InstructorDashboard({
   data,
   weeks,
   cohorts = [],
+  liveNow,
 }: {
   user: Profile;
   data: Data;
   weeks: number;
   /** Every cohort the instructor owns, from the cohorts API. */
   cohorts?: CohortSummary[];
+  /** The "Live now" strip (headset runs in progress), rendered by the page; nothing when none. */
+  liveNow?: ReactNode;
 }) {
   const { stats } = data;
   const passMark = PASS_MARK.intermediate;
@@ -83,6 +87,7 @@ export function InstructorDashboard({
         }
       />
       <ResultsNote userId={user.id} />
+      {liveNow}
 
       <nav className={s.quickGrid} aria-label="Common jobs">
         {quickActions.map((a) => (

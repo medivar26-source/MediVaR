@@ -135,6 +135,28 @@ export function currentAssignment(list: HeadsetAssignment[]): HeadsetAssignment 
   return list.find((a) => a.status !== "cancelled");
 }
 
+/**
+ * "Disconnect headset" makes sense while a code is out or a headset holds the plan. A reported run is a record
+ * and is left alone; a cancelled or expired link has nothing to disconnect.
+ */
+export function canDisconnect(status: HeadsetAssignment["status"]): boolean {
+  return status === "pending" || status === "paired" || status === "running";
+}
+
+/** What disconnecting does, said before the click, in the words of the state it is in. */
+export function disconnectConsequence(a: HeadsetAssignment): string {
+  switch (a.status) {
+    case "pending":
+      return "The code stops working. You can get a new one straight away.";
+    case "paired":
+      return "The headset is signed out and shows its code screen again. You can get a new code straight away.";
+    case "running":
+      return "The run in progress is abandoned: the headset is signed out and its report will not be accepted. You can get a new code straight away.";
+    default:
+      return "";
+  }
+}
+
 /** Keep asking the backend for news while the headset might still do something. */
 export function shouldPoll(a: HeadsetAssignment | undefined): boolean {
   return !!a && (a.status === "pending" || a.status === "paired" || a.status === "running");

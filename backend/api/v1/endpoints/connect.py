@@ -5,6 +5,7 @@ Dashboard (the signed-in user, Supabase token):
     POST /plans/locked              keep the planner's sealed plan
     POST /assignments               "Send to headset": returns the one-time code, shown once
     GET  /assignments               what was sent, and where each has got to
+    POST /assignments/{id}/disconnect  "Disconnect headset": cancel the link, revoke the device's token
 
 Headset (a bearer token it got by pairing; paths and shapes are the headset plan's contract):
     POST /devices/pair              {code, deviceId, deviceName, appVersion, schemaVersion} -> token + CasePlan
@@ -59,6 +60,11 @@ def create_assignment(body: AssignmentIn, current_user: UserProfile = Depends(ge
 @router.get("/assignments")
 def list_assignments(plan_id: Optional[str] = None, current_user: UserProfile = Depends(get_current_user)):
     return _run(svc.list_assignments, current_user, plan_id)
+
+
+@router.post("/assignments/{assignment_id}/disconnect")
+def disconnect_assignment(assignment_id: str, current_user: UserProfile = Depends(get_current_user)):
+    return _run(svc.disconnect_assignment, current_user, assignment_id)
 
 
 # ------------------------------------------------------------------------------------------------ headset

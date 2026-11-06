@@ -3,6 +3,8 @@ import { describe, it } from "node:test";
 import {
   assignmentFromApi,
   assignmentStatusText,
+  canDisconnect,
+  disconnectConsequence,
   clockText,
   currentAssignment,
   formatPairingCode,
@@ -85,5 +87,26 @@ describe("assignments", () => {
     assert.equal(shouldPoll(row("reported")), false);
     assert.equal(shouldPoll(row("expired")), false);
     assert.equal(shouldPoll(undefined), false);
+  });
+});
+
+describe("disconnecting the headset", () => {
+  const a = (status: HeadsetAssignment["status"]): HeadsetAssignment =>
+    ({ id: "a-1", planId: "p-1", status, headsetMode: "Practice", createdAt: "" }) as HeadsetAssignment;
+
+  it("is offered while a code is out or a headset holds the plan, never for a record", () => {
+    assert.equal(canDisconnect("pending"), true);
+    assert.equal(canDisconnect("paired"), true);
+    assert.equal(canDisconnect("running"), true);
+    assert.equal(canDisconnect("reported"), false);
+    assert.equal(canDisconnect("expired"), false);
+    assert.equal(canDisconnect("cancelled"), false);
+  });
+
+  it("says what it will do before the click", () => {
+    assert.match(disconnectConsequence(a("pending")), /code stops working/);
+    assert.match(disconnectConsequence(a("paired")), /code screen again/);
+    assert.match(disconnectConsequence(a("running")), /abandoned/);
+    assert.equal(disconnectConsequence(a("reported")), "");
   });
 });

@@ -12,6 +12,7 @@ import type { Profile } from "@/lib/types";
 import { AccountForm } from "./AccountForm";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 import { EmbedLinkRedirect } from "./EmbedLinkRedirect";
+import { DisconnectHeadsetButton } from "./DisconnectHeadsetButton";
 import p from "../panels.module.css";
 import s from "./settings.module.css";
 
@@ -298,7 +299,7 @@ export default async function SettingsPage({
                       <p className={p.rowTitle}>{pin.caseTitle}</p>
                       <p className={p.rowDetail}>
                         {pin.state === "redeemed"
-                          ? `Redeemed ${relativeTime(pin.redeemedAt, new Date().toISOString())} — a headset paired`
+                          ? `Redeemed ${relativeTime(pin.redeemedAt, new Date().toISOString())} — ${pin.deviceName ? `${pin.deviceName} paired` : "a headset paired"}${pin.connected ? ", still connected" : ""}`
                           : pin.state === "live"
                             ? `Expires ${timeUntil(pin.expiresAt, new Date().toISOString())}`
                             : `Expired ${relativeTime(pin.expiresAt, new Date().toISOString())}`}
@@ -307,11 +308,14 @@ export default async function SettingsPage({
                     <div className={p.rowAside}>
                       <Chip tone="muted">
                         {pin.state === "redeemed"
-                          ? "Used"
+                          ? pin.connected ? "Connected" : "Used"
                           : pin.state === "live"
                             ? "Live"
                             : "Expired"}
                       </Chip>
+                      {pin.connected && pin.assignmentId && (
+                        <DisconnectHeadsetButton assignmentId={pin.assignmentId} planId={pin.planId} pending={pin.state === "live"} />
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"

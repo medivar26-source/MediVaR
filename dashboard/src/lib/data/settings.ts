@@ -21,6 +21,11 @@ export type PinLifecycle = {
   redeemedAt?: string;
   /** Derived here, not stored — the row carries timestamps, not a verdict. */
   state: "live" | "redeemed" | "expired";
+  /** The newest headset assignment behind the row, when the plan is a stored one. */
+  assignmentId?: string;
+  /** True while a code is out or a headset holds the plan: the row offers Disconnect. */
+  connected?: boolean;
+  deviceName?: string;
 };
 
 export type SettingsView = {

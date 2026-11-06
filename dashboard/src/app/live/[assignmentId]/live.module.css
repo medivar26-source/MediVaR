@@ -1,0 +1,407 @@
+/* The live page. Same band and running-order treatment as the session mirror (`sessions/[id]/live.module.css`),
+   on the design tokens only. No pulsing dot: the clock and the "last update" line already say it is live. */
+
+.headActions {
+  display: flex;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+/* ---------- the live band ---------- */
+
+.banner,
+.bannerIdle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-4) var(--s-6);
+  margin-bottom: var(--s-5);
+  padding: var(--s-5);
+  border-radius: var(--r-xl);
+}
+
+.banner {
+  background: var(--dark);
+  color: var(--surface);
+}
+
+.bannerIdle {
+  border: var(--bw) solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.bannerLabel {
+  font-size: var(--t-caption);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.bannerScene {
+  margin-top: var(--s-1);
+  font-family: var(--font-display);
+  font-size: var(--t-h2);
+  font-weight: 700;
+}
+
+.bannerText {
+  margin-top: var(--s-2);
+  font-size: var(--t-label);
+  opacity: 0.85;
+  max-width: 60ch;
+}
+
+.bannerStats {
+  display: flex;
+  gap: var(--s-6);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.bannerStat {
+  display: flex;
+  flex-direction: column;
+}
+
+.bannerStatLabel {
+  font-size: var(--t-caption);
+  font-weight: 600;
+  opacity: 0.65;
+}
+
+.bannerStatValue {
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bannerTrack {
+  grid-column: 1 / -1;
+  position: relative;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: rgb(255 255 255 / 0.18);
+  overflow: hidden;
+}
+
+.bannerIdle .bannerTrack {
+  background: var(--surface-sunken);
+}
+
+.bannerFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+  transition: width var(--m-base) var(--ease-out);
+}
+
+.bannerActions {
+  grid-column: 1 / -1;
+}
+
+.bannerLink {
+  color: var(--brand);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.bannerMuted {
+  color: var(--text-muted);
+}
+
+/* ---------- the four cards ---------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--s-5);
+  align-items: start;
+}
+
+.frameCard {
+  grid-column: 1;
+}
+
+.valuesCard {
+  grid-column: 2;
+}
+
+.orderCard {
+  grid-column: 2;
+}
+
+.logCard {
+  grid-column: 1;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .frameCard,
+  .valuesCard,
+  .orderCard,
+  .logCard {
+    grid-column: 1;
+  }
+}
+
+.frameBox {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--dark-2);
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.frame {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.frameEmpty {
+  padding: var(--s-6);
+  text-align: center;
+  color: var(--on-dark-muted);
+  font-size: var(--t-label);
+  max-width: 36ch;
+}
+
+.cardEmpty {
+  padding: var(--s-5);
+  color: var(--text-muted);
+  font-size: var(--t-label);
+}
+
+/* values */
+
+.values {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.value {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--s-3);
+  align-items: baseline;
+  padding: var(--s-3) var(--s-5);
+  border-bottom: var(--bw) solid var(--border);
+}
+
+.value:last-child {
+  border-bottom: none;
+}
+
+.valueLabel {
+  font-size: var(--t-label);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.valuePlan {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.valueLive {
+  font-family: var(--font-display);
+  font-size: var(--t-label);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.valueLive[data-committed="true"] {
+  color: var(--ink);
+}
+
+.valueLive small {
+  font-family: var(--font-ui);
+  font-size: var(--t-caption);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* the running order */
+
+.scenes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 520px;
+  overflow: auto;
+}
+
+.scene {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-2) var(--s-5);
+  border-bottom: var(--bw) solid var(--border);
+}
+
+.scene:last-child {
+  border-bottom: none;
+}
+
+.scene[data-current="true"] {
+  background: var(--brand-surface);
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+
+.sceneTag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 var(--s-2);
+  border-radius: var(--r-sm);
+  background: var(--surface-sunken);
+  font-size: var(--t-caption);
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sceneBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sceneLabel {
+  font-size: var(--t-label);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sceneMeta {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+/* The state says its meaning in words; colour is never alone. Content comes from CSS so the row only ever
+   changes one attribute. None of these is a verdict: the scorer decides pass or fail, after the report. */
+.sceneState {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-pill);
+  font-size: var(--t-caption);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sceneState[data-state="pending"] {
+  color: var(--text-muted);
+}
+
+.sceneState[data-state="pending"]::after {
+  content: "Not reached";
+}
+
+.sceneState[data-state="current"] {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.sceneState[data-state="current"]::after {
+  content: "Now";
+}
+
+.sceneState[data-state="done"] {
+  background: var(--text-muted);
+  color: var(--on-brand);
+}
+
+.sceneState[data-state="done"]::after {
+  content: "Done";
+}
+
+.sceneState[data-state="skipped"] {
+  border: var(--bw) solid var(--border-strong);
+  color: var(--text-muted);
+}
+
+.sceneState[data-state="skipped"]::after {
+  content: "Skipped";
+}
+
+.sceneState[data-state="attention"] {
+  background: var(--warn-surface);
+  border: var(--bw) solid var(--warn-border);
+  color: var(--warn);
+}
+
+.sceneState[data-state="attention"]::after {
+  content: "Needs attention";
+}
+
+.sceneState[data-state="failed"] {
+  background: var(--fail-surface);
+  border: var(--bw) solid var(--fail-border);
+  color: var(--fail);
+}
+
+.sceneState[data-state="failed"]::after {
+  content: "Not completed";
+}
+
+/* the trail */
+
+.log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.logRow {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-5);
+  border-bottom: var(--bw) solid var(--border);
+  font-size: var(--t-label);
+}
+
+.logRow:last-child {
+  border-bottom: none;
+}
+
+.logRow[data-kind="warning"] .logText {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.logRow[data-kind="run_ended"] .logText,
+.logRow[data-kind="run_started"] .logText {
+  font-weight: 700;
+}
+
+.logTime {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.logText {
+  color: var(--text);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

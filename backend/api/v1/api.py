@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from api.v1.endpoints import health, auth, cohorts, programs, cases, procedures, residents, admin, personal_cases, results, connect, plans
+from api.v1.endpoints import health, auth, cohorts, programs, cases, procedures, residents, admin, personal_cases, results, connect, plans, live
 
 api_router = APIRouter()
 api_router.include_router(health.router, prefix="", tags=["health"])
@@ -16,5 +16,7 @@ api_router.include_router(results.router, prefix="/results", tags=["results"])
 api_router.include_router(plans.router, prefix="/plans", tags=["plans"])
 # Dashboard <-> Quest 3 (404 until migration 015 is applied). Paths are the headset plan's contract, so no prefix.
 api_router.include_router(connect.router, prefix="", tags=["vr_connectivity"])
+# Live view: events + eye-view frames from the headset, polled by the dashboard (404 until migration 016 is applied).
+api_router.include_router(live.router, prefix="", tags=["live_view"])
 # Future routes:
 # api_router.include_router(sessions.router, prefix="/sessions", tags=["sessions"])

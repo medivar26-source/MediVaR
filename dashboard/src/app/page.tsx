@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/shell";
 import { InstructorDashboard } from "@/components/dashboard/InstructorDashboard";
 import { LearnerDashboard } from "@/components/dashboard/LearnerDashboard";
+import { LiveNow } from "@/components/sessions/LiveNow";
 import {
   getInstructorDashboard,
   getLearnerDashboard,
@@ -46,6 +47,7 @@ export default async function DashboardPage({
           data={instructorData}
           weeks={weeks}
           cohorts={cohorts}
+          liveNow={<LiveNow />}
         />
       </AppShell>
     );
@@ -66,6 +68,7 @@ export default async function DashboardPage({
         programs={programs}
         plans={plansResult.plans}
         cases={casesResult.cases}
+        liveNow={<LiveNow />}
       />
     </AppShell>
   );

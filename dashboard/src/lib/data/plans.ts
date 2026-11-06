@@ -69,7 +69,7 @@ export type PlanRecord = {
   /** The run that was performed against this plan (one plan backs one performance). */
   attemptId?: string;
   /** The newest headset assignment: what the review page and the Pairing list say about its code. */
-  headset?: { status: string; codeExpiresAt?: string; pairedAt?: string };
+  headset?: { id?: string; status: string; codeExpiresAt?: string; pairedAt?: string; deviceName?: string };
 };
 
 const FULL_TIMINGS = { "1": 54, "2": 108, "3": 61, "4": 57, "5": 49, "6": 38, "7": 17 };

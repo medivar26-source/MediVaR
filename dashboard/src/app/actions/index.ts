@@ -554,6 +554,26 @@ export async function sendToHeadset(_prev: SendToHeadsetState, formData: FormDat
   }
 }
 
+export type DisconnectHeadsetState = { done?: boolean; error?: string };
+
+/** "Disconnect headset": cancel the assignment, sign the headset out (its token is revoked), end any live run. */
+export async function disconnectHeadset(_prev: DisconnectHeadsetState, formData: FormData): Promise<DisconnectHeadsetState> {
+  const assignmentId = String(formData.get("assignmentId") ?? "");
+  const planId = String(formData.get("planId") ?? "");
+  if (!assignmentId) return { error: "This form is missing its assignment." };
+  await getCurrentUser();
+  const { apiClient, ApiError } = await import("@/lib/api-client");
+  try {
+    await apiClient.post(`/assignments/${encodeURIComponent(assignmentId)}/disconnect`, {});
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 409) return { error: err.message };
+    return { error: err instanceof Error ? err.message : "Could not disconnect. Try again." };
+  }
+  if (planId) revalidatePath(`/plan/${planId}/review`);
+  revalidatePath("/settings");
+  return { done: true };
+}
+
 /** Where this plan's headset assignments have got to (the review page asks every few seconds while one is live). */
 export async function headsetStatus(planId: string): Promise<import("@/lib/headset-link").HeadsetLink> {
   const { getHeadsetLink } = await import("@/lib/data/headset");

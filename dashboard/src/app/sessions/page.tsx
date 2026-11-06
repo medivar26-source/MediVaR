@@ -26,6 +26,7 @@ import { SessionFilters } from "./SessionFilters";
 import s from "./sessions.module.css";
 import p from "@/app/panels.module.css";
 import { ResultsNote } from "@/components/results/ResultsNote";
+import { LiveNow } from "@/components/sessions/LiveNow";
 
 export const metadata: Metadata = { title: "Sessions" };
 
@@ -90,6 +91,8 @@ export default async function SessionsPage({
         sample="scores, reports and past headset sessions"
         live={persona === "learner" ? "the sessions scheduled for you" : "the sessions scheduled in your cohorts"}
       />
+
+      <LiveNow />
 
       <StatStrip
         label="Session totals"

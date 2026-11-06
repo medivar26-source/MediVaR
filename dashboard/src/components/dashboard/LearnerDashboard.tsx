@@ -34,12 +34,15 @@ export function LearnerDashboard({
   programs = [],
   plans = [],
   cases = [],
+  liveNow,
 }: {
   user: Profile;
   data: Data;
   programs?: ProgramSummary[];
   plans?: PlanRow[];
   cases?: CaseCard[];
+  /** The learner's own run in progress ("Live now"), rendered by the page; nothing when none. */
+  liveNow?: React.ReactNode;
 }) {
   const { stats, activeSession, latestReport } = data;
   const passMark = PASS_MARK[user.defaultDifficulty];
@@ -83,6 +86,7 @@ export function LearnerDashboard({
         }
       />
       <ResultsNote userId={user.id} />
+      {liveNow}
 
       <div className={ls.container}>
         {/* 1. The one thing to do next */}

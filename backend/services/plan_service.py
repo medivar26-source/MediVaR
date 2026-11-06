@@ -115,7 +115,8 @@ def _headsets_for(cur, plan_ids: List[str]) -> Dict[str, Dict[str, Any]]:
     if not row or not row["a"]:
         return {}
     cur.execute(
-        "SELECT DISTINCT ON (plan_id) plan_id, status, code_expires_at, paired_at, created_at "
+        "SELECT DISTINCT ON (plan_id) plan_id, id, status, code_expires_at, paired_at, created_at, "
+        "(SELECT d.name FROM devices d WHERE d.id = assignments.device_id) AS device_name "
         "FROM assignments WHERE plan_id = ANY(%s::uuid[]) ORDER BY plan_id, created_at DESC",
         (plan_ids,),
     )
@@ -125,7 +126,8 @@ def _headsets_for(cur, plan_ids: List[str]) -> Dict[str, Dict[str, Any]]:
         status = r["status"]
         if status == "pending" and r["code_expires_at"] <= now:
             status = "expired"  # derived: a read writes nothing
-        out[str(r["plan_id"])] = {"status": status, "code_expires_at": _iso(r["code_expires_at"]), "paired_at": _iso(r["paired_at"])}
+        out[str(r["plan_id"])] = {"id": str(r["id"]) if r.get("id") else None, "status": status, "code_expires_at": _iso(r["code_expires_at"]),
+                                  "paired_at": _iso(r["paired_at"]), "device_name": r.get("device_name")}
     return out
 
 

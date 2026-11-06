@@ -209,6 +209,33 @@ class TestAssignmentFlow(NoDatabase):
             svc.create_assignment(LEARNER, "p-1")
         self.assertEqual(cm.exception.status, 409)
 
+    def test_disconnect_cancels_the_link_revokes_the_devices_tokens_and_ends_the_live_run(self):
+        fake = FakeCursor([
+            ("to_regclass", TABLES),
+            ("FROM assignments WHERE id", [{"id": "a-1", "plan_id": "p-1", "resident_id": "u-1", "status": "running", "device_id": "d-1"}]),
+            ("public.live_runs", [{"l": "live_runs", "e": "run_events", "f": "live_frames"}]),
+        ])
+        fake.rowcount = 1
+        with patched_cursor(fake), mock.patch("services.live_service.cursor", side_effect=AssertionError("live must share the transaction")):
+            out = svc.disconnect_assignment(LEARNER, "a-1")
+        self.assertEqual((out["status"], out["was"], out["tokens_revoked"]), ("cancelled", "running", 1))
+        self.assertEqual(fake.ran("UPDATE assignments SET status = 'cancelled'"), [("a-1",)])
+        self.assertEqual(fake.ran("UPDATE device_tokens SET revoked_at"), [("d-1",)])
+        self.assertTrue(fake.ran("UPDATE live_runs SET ended_at"), "the live run is closed in the same transaction")
+        self.assertEqual(fake.ran("DELETE FROM live_frames"), [("a-1",)])
+
+    def test_disconnect_leaves_a_reported_run_alone_and_hides_a_strangers(self):
+        fake = FakeCursor([("to_regclass", TABLES),
+                           ("FROM assignments WHERE id", [{"id": "a-1", "plan_id": "p-1", "resident_id": "u-1", "status": "reported", "device_id": "d-1"}])])
+        with patched_cursor(fake), self.assertRaises(svc.ConnectError) as cm:
+            svc.disconnect_assignment(LEARNER, "a-1")
+        self.assertEqual(cm.exception.status, 409)
+        fake = FakeCursor([("to_regclass", TABLES),
+                           ("FROM assignments WHERE id", [{"id": "a-1", "plan_id": "p-1", "resident_id": "someone-else", "status": "paired", "device_id": "d-1"}])])
+        with patched_cursor(fake), self.assertRaises(svc.ConnectError) as cm:
+            svc.disconnect_assignment(LEARNER, "a-1")
+        self.assertEqual(cm.exception.status, 404)
+
     def test_migration_missing_is_reported_as_unavailable(self):
         fake = FakeCursor([("to_regclass", [{"a": None, "r": None, "p": "plans", "t": "attempts"}])])
         with patched_cursor(fake), self.assertRaises(svc.ConnectUnavailable):

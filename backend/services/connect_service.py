@@ -191,7 +191,7 @@ def create_assignment(user, plan_id: str, headset_mode: Optional[str] = None, se
         cur.execute("UPDATE assignments SET status = 'cancelled' WHERE plan_id = %s AND status = 'pending'", (plan_id,))
         cur.execute("SELECT 1 FROM assignments WHERE plan_id = %s AND status IN ('paired', 'running')", (plan_id,))
         if cur.fetchone():
-            raise ConnectError(409, "This plan is already with a headset.")
+            raise ConnectError(409, "This plan is already with a headset. Disconnect the headset first, then get a new code.")
 
         mode = headset_mode or HEADSET_MODE_FOR.get((plan["session_config"] or {}).get("mode", "training"), "Practice")
         expires = datetime.now(timezone.utc) + pairing.CODE_TTL
@@ -213,6 +213,35 @@ def create_assignment(user, plan_id: str, headset_mode: Optional[str] = None, se
                     "code_expires_at": _iso(expires),
                 }
         raise ConnectError(503, "Could not mint a pairing code; try again.")
+
+
+def disconnect_assignment(user, assignment_id: str) -> Dict[str, Any]:
+    """"Disconnect headset": end the link between a plan and the headset holding it, from the dashboard.
+
+    The assignment is cancelled (a pending code too), any live run on it is closed and its frame dropped, and
+    every token the paired device holds is revoked — so the headset's next call answers 401, it marks its
+    pairing rejected and shows the code screen again. A run in progress on that headset is abandoned: its
+    report will not be accepted (the assignment is no longer active). Said on the dashboard before the click.
+    A reported assignment is left alone (its record stands); a stranger's looks like it does not exist."""
+    with cursor() as cur:
+        _require_tables(cur)
+        cur.execute("SELECT id, plan_id, resident_id, status, device_id FROM assignments WHERE id = %s FOR UPDATE", (assignment_id,))
+        row = cur.fetchone()
+        if not row or not _can_act_for(cur, user, row["resident_id"]):
+            raise ConnectError(404, "Unknown assignment.")
+        if row["status"] == "reported":
+            raise ConnectError(409, "This run has already been reported; there is nothing to disconnect.")
+        was = row["status"]
+        if was in ("pending", "paired", "running"):
+            cur.execute("UPDATE assignments SET status = 'cancelled' WHERE id = %s", (assignment_id,))
+        revoked = 0
+        if row["device_id"] is not None:
+            cur.execute("UPDATE device_tokens SET revoked_at = now() WHERE device_id = %s AND revoked_at IS NULL", (row["device_id"],))
+            revoked = cur.rowcount or 0
+        from services import live_service
+        live_service.end_run_in(cur, assignment_id, None, "Abandoned")
+        return {"id": str(row["id"]), "plan_id": str(row["plan_id"]), "status": "cancelled" if was in ("pending", "paired", "running") else was,
+                "was": was, "tokens_revoked": revoked}
 
 
 def list_assignments(user, plan_id: Optional[str] = None, limit: int = 20) -> List[Dict[str, Any]]:
@@ -519,6 +548,9 @@ def ingest_report(device: Dict[str, Any], assignment_id: str, run_id: str, body:
         received = cur.fetchone()["received_at"]
         cur.execute("UPDATE assignments SET status = %s WHERE id = %s",
                     ("reported" if body["outcome"] == "Completed" else "running", assignment_id))
+        # The report is the record: whatever live view was showing for this run is over (no-op before 016).
+        from services import live_service
+        live_service.end_run_in(cur, assignment_id, run_id, body["outcome"])
         return {"accepted": True, "receivedAtUtc": _utc_iso(received), "scoring": scoring["scoring_status"],
                 "missing": scoring["scoring_note"] if scoring["scoring_status"] == "awaiting_inputs" else [],
                 "coverage": scoring["scoring_note"] if scoring["scoring_status"] == "scored" else []}

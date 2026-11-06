@@ -3,12 +3,15 @@
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { Headset } from "lucide-react";
-import { headsetStatus, sendToHeadset, type SendToHeadsetState } from "@/app/actions";
+import { canWatchLive, livePagePath } from "@/lib/live-view";
+import { disconnectHeadset, headsetStatus, sendToHeadset, type DisconnectHeadsetState, type SendToHeadsetState } from "@/app/actions";
 import { Button } from "@/components/ui";
 import {
   assignmentStatusText,
+  canDisconnect,
   clockText,
   currentAssignment,
+  disconnectConsequence,
   formatPairingCode,
   secondsLeft,
   shouldPoll,
@@ -26,6 +29,8 @@ const POLL_MS = 4000;
 export function SendToHeadset({ planId, initial }: { planId: string; initial: HeadsetLink }) {
   const [link, setLink] = useState(initial);
   const [state, formAction, pending] = useActionState<SendToHeadsetState, FormData>(sendToHeadset, {});
+  const [cut, cutAction, cutting] = useActionState<DisconnectHeadsetState, FormData>(disconnectHeadset, {});
+  const [confirmCut, setConfirmCut] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   const current = currentAssignment(link.assignments);
@@ -43,6 +48,14 @@ export function SendToHeadset({ planId, initial }: { planId: string; initial: He
       alive = false;
     };
   }, [state.assignmentId, planId]);
+
+  // After a disconnect, read the link again so the panel shows the cancelled state and offers a new code.
+  useEffect(() => {
+    if (!cut.done) return;
+    headsetStatus(planId).then(setLink).catch(() => undefined);
+  }, [cut.done, planId]);
+  // The confirm step closes itself once the action has run (derived, not set from an effect).
+  const showConfirm = confirmCut && !cut.done;
 
   // Ask for news while the headset may still act; stop once the run is reported or the code has lapsed.
   useEffect(() => {
@@ -112,6 +125,38 @@ export function SendToHeadset({ planId, initial }: { planId: string; initial: He
           its report back here when the case is done.
         </p>
       )}
+
+      {current && canWatchLive(current.status) ? (
+        <Link className={r.headsetLink} href={livePagePath(current.id)}>
+          Watch live
+        </Link>
+      ) : current && current.status === "pending" && !codeExpired ? (
+        <p className={r.headsetMuted}>Live view opens here the moment the headset pairs with this code.</p>
+      ) : null}
+
+      {current && canDisconnect(current.status) && (
+        <form action={cutAction} className={r.headsetForm} aria-label="Disconnect headset">
+          <input type="hidden" name="assignmentId" value={current.id} />
+          <input type="hidden" name="planId" value={planId} />
+          {showConfirm ? (
+            <>
+              <p className={r.headsetMuted}>{disconnectConsequence(current)}</p>
+              <Button type="submit" variant="secondary" size="sm" loading={cutting}>
+                Yes, disconnect
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmCut(false)}>
+                Keep it
+              </Button>
+            </>
+          ) : (
+            <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmCut(true)}>
+              {current.status === "pending" ? "Cancel this code" : "Disconnect headset"}
+            </Button>
+          )}
+        </form>
+      )}
+
+      {cut.error && <p className={r.headsetError}>{cut.error}</p>}
 
       {current?.status === "reported" && current.attemptId && current.scoringStatus === "scored" && (
         <Link className={r.headsetLink} href={`/sessions/${current.attemptId}/report`}>
